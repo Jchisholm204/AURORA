@@ -1,0 +1,40 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Keep braces consistent and readable
+BreakBeforeBraces: Attach
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# Control line length and wrapping
+ColumnLimit: 80
+PenaltyBreakBeforeFirstCallParameter: 50
+PenaltyBreakString: 1000
+PenaltyReturnTypeOnItsOwnLine: 200
+
+# Pointer & reference alignment
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# Namespace formatting
+NamespaceIndentation: None
+CompactNamespaces: false
+
+# Include ordering
+IncludeBlocks: Regroup
+SortIncludes: true
+
+# Other readability tweaks
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInAngles: false
+# Keep enum entries on separate lines
+AllowShortEnumsOnASingleLine: false
+
+

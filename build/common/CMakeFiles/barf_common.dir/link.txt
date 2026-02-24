@@ -1,2 +1,0 @@
-/usr/bin/ar qc libbarf_common.a CMakeFiles/barf_common.dir/log.c/src/log.c.o
-/usr/bin/ranlib libbarf_common.a
