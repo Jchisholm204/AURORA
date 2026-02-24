@@ -1,13 +1,12 @@
 set(LIB_TARG aurora_common)
 
-file(GLOB_RECURSE BARF_COMMON_SOURCES FOLLOW_SYMLINKS 
+file(GLOB_RECURSE AURORA_COMMON_SOURCES FOLLOW_SYMLINKS 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/log.c/src/*.c
 )
 
-# add_library(${LIB_TARG} OBJECT ${BARF_COMMON_SOURCES})
-add_library(${LIB_TARG} STATIC ${BARF_COMMON_SOURCES})
+add_library(${LIB_TARG} STATIC ${AURORA_COMMON_SOURCES})
 
 # Required so this .a can be linked into a .so
 set_target_properties(${LIB_TARG} PROPERTIES POSITION_INDEPENDENT_CODE ON)

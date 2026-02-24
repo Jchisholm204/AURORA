@@ -30,6 +30,8 @@ set(GENERIC_COMPILE_OPTIONS
     -g
     -fopenmp
     -march=native
+    # Color Logs
+    -DLOG_USE_COLOR
 )
 
 # Append to this list
