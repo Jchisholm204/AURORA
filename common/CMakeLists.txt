@@ -1,4 +1,4 @@
-set(LIB_TARG barf_common)
+set(LIB_TARG aurora_common)
 
 file(GLOB_RECURSE BARF_COMMON_SOURCES FOLLOW_SYMLINKS 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c

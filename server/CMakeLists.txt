@@ -1,4 +1,4 @@
-set(TARG barf_server)
+set(TARG aurora_remote_engine)
 
 file(GLOB_RECURSE SERVER_SOURCES FOLLOW_SYMLINKS 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
@@ -7,11 +7,11 @@ file(GLOB_RECURSE SERVER_SOURCES FOLLOW_SYMLINKS
 
 add_executable(${TARG} 
     ${SERVER_SOURCES}
-    $<TARGET_OBJECTS:barf_common>
+    $<TARGET_OBJECTS:aurora_common>
 )
 
 target_include_directories(${TARG} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_options(${TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
-target_link_libraries(${TARG} PRIVATE barf_common ${COMMON_LIBRARIES})
+target_link_libraries(${TARG} PRIVATE aurora_common ${COMMON_LIBRARIES})
