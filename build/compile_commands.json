@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/jacob/Documents/AURORA/build/common",
+  "command": "/usr/bin/gcc  -I/home/jacob/.local/include -I/usr/include/openmpi-x86_64 -I/home/jacob/Documents/AURORA/common/include -I/home/jacob/Documents/AURORA/common/log.c/src  -isystem  -g -std=gnu99 -fPIC -Wall -Wextra -Wpedantic -pedantic -g -fopenmp -march=native -o CMakeFiles/barf_common.dir/log.c/src/log.c.o -c /home/jacob/Documents/AURORA/common/log.c/src/log.c",
+  "file": "/home/jacob/Documents/AURORA/common/log.c/src/log.c",
+  "output": "common/CMakeFiles/barf_common.dir/log.c/src/log.c.o"
+},
+{
+  "directory": "/home/jacob/Documents/AURORA/build/server",
+  "command": "/usr/bin/gcc  -I/home/jacob/.local/include -I/usr/include/openmpi-x86_64 -I/home/jacob/Documents/AURORA/server/include -I/home/jacob/Documents/AURORA/common/include -I/home/jacob/Documents/AURORA/common/log.c/src  -isystem  -g -std=gnu99 -Wall -Wextra -Wpedantic -pedantic -g -fopenmp -march=native -o CMakeFiles/barf_server.dir/src/main.c.o -c /home/jacob/Documents/AURORA/server/src/main.c",
+  "file": "/home/jacob/Documents/AURORA/server/src/main.c",
+  "output": "server/CMakeFiles/barf_server.dir/src/main.c.o"
+}
+]

@@ -1,0 +1,1 @@
+/usr/bin/gcc  -isystem  -g CMakeFiles/barf_server.dir/src/main.c.o ../common/CMakeFiles/barf_common.dir/log.c/src/log.c.o -o barf_server   -L/home/jacob/.local/lib  -L/usr/lib64/openmpi/lib  -Wl,-rpath,/home/jacob/.local/lib:/usr/lib64/openmpi/lib ../common/libbarf_common.a -lm -lpthread -lgfortran -lucp -luct -lucs
