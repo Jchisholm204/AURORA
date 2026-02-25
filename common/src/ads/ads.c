@@ -11,7 +11,6 @@
 
 #define MDNS_BUF_SIZE 2048
 #define ADS_CONN_PORT 9063
-#define ADS_LISTEN_PORT 9064
 #define ADS_LISTEN_N 64
 
 #include "ads/ads.h"
@@ -241,6 +240,7 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
     };
     inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
     if (connect(sd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+        log_error("Failed to connect to server socket");
         return NULL;
     }
     return ads_exchange(sd, pTxData);

@@ -43,9 +43,8 @@ int main(int argc, char **argv) {
     } else {
         log_info("Client");
         ads_conf_t conf = {
-            // .opt_server_ip = "127.0.0.1",
-            .opt_server_ip = NULL,
-            .opt_hostname = NULL,
+            .opt_server_ip = "127.0.0.1",
+            // .opt_server_ip = NULL,
             .timeout_ms = 1000,
         };
         ads_exchange_data_t *rx = ads_request_exchange(&conf, &ads_data);
