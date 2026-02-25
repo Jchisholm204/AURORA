@@ -16,12 +16,20 @@
 
 struct aurora_discovery_service_hndl;
 typedef struct aurora_discovery_service_hndl ads_hndl;
+typedef struct aurora_discovery_service_exchange_data ads_exchange_data_t;
+typedef struct aurora_discovery_service_conf ads_conf_t;
 
-struct ads_exchange_data {
+struct aurora_discovery_service_exchange_data {
     size_t ck_size;
     size_t ud_size;
     void *comm_key;
     void *user_data;
+};
+
+struct aurora_discovery_service_conf {
+    char *opt_server_ip;
+    char *opt_hostname;
+    int timeout_ms;
 };
 
 extern ads_hndl *ads_init(void);
@@ -30,10 +38,10 @@ extern int ads_finalize(ads_hndl **ppHndl);
 
 extern int ads_accept_any(ads_hndl *pHndl);
 
-extern struct ads_exchange_data *ads_accept_exchange(
-    ads_hndl *pHndl, int sock_fd, struct ads_exchange_data *pTxData);
+extern ads_exchange_data_t *ads_exchange(int sock_fd,
+                                         ads_exchange_data_t *pTxData);
 
-extern struct ads_exchange_data *ads_request_exchange(
-    const char *server_ip, int timeout, struct ads_exchange_data *pTxData);
+extern ads_exchange_data_t *ads_request_exchange(
+    const ads_conf_t *pConf, ads_exchange_data_t *pTxData);
 
 #endif
