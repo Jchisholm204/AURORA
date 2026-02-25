@@ -1,7 +1,7 @@
 /**
  * @file aul.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @brief
+ * @brief AURORA User Library
  * @version 0.1
  * @date Created: 2026-02-24
  * @modified Last Modified: 2026-02-24
@@ -11,10 +11,31 @@
 
 #include "aul.h"
 
+#include "ads/ads.h"
 #include "log.h"
-#warning "Unimplemented"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+FILE *log_file = NULL;
 
 int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
+
+    if (!pCFG) {
+        log_error("No Configuration Provided");
+        return -1;
+    }
+
+    // Setup the log file
+    if (pCFG->opt_log_file) {
+        log_file = fopen(pCFG->opt_log_file, "a");
+        if (log_file) {
+            log_add_fp(log_file, LOG_TRACE);
+        }
+    }
+
+    // Configuration Trace
     log_trace("Initializing AUL:");
     log_trace("\tSAVE: %s", pCFG->persistent_path);
     log_trace("\tEC: %d", pCFG->use_error_correction);
@@ -22,6 +43,66 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     log_trace("\tOpt IP: %s", pCFG->opt_ip);
     log_trace("\tLog File: %s", pCFG->opt_log_file);
     log_trace("\tPID: %d", proc_id);
+
+    // Initialize ACI
+
+    ads_exchange_data_t ads_data_tx = {
+        .comm_key = NULL,
+        .ck_size = 0,
+        .user_data = "Hello World",
+        .ud_size = 12,
+    };
+
+    ads_exchange_data_t *ads_data_rx = NULL;
+
+    // Use ADS to finalize ACI
+    ads_conf_t ads_conf = {
+        .timeout_ms = 1000,
+        .opt_server_ip = pCFG->opt_ip,
+    };
+    switch (pCFG->connection_mode) {
+    default:
+        /* fallthrough */
+    case eAULCModeAuto:
+        log_trace("Automatic Connection Enabled");
+        /* fallthrough */
+    case eAULCModeBF:
+        ads_conf.opt_server_ip = "192.168.100.2";
+        ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
+        if (ads_data_rx || pCFG->connection_mode == eAULCModeBF) {
+            break;
+        }
+        log_warn("Connection to BF Internal Failed");
+        /* fallthrough */
+    case eAULCModeHost:
+        ads_conf.opt_server_ip = "127.0.0.1";
+        ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
+        if (ads_data_rx || pCFG->connection_mode == eAULCModeHost) {
+            break;
+        }
+        log_warn("Connection to Host Server Failed");
+        /* fallthrough */
+    case eAULCModeTarget:
+        ads_conf.opt_server_ip = pCFG->opt_ip;
+        ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
+        if (ads_data_rx || pCFG->connection_mode == eAULCModeTarget) {
+            break;
+        }
+        log_warn("Connection to Target Server Failed");
+    }
+
+    if (!ads_data_rx) {
+        log_fatal("All connection methods have failed");
+        (void) AUL_Finalize();
+        return -1;
+    }
+
+    // Finalize the ACI with the ADS exchange data
+
+    // Setup the ACN (Completion Notifications)
+
+    // Setup the ARM (Region Manager)
+
     return 0;
 }
 
@@ -38,18 +119,18 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 }
 
 int AUL_Mem_unprotect(const uint64_t mem_id) {
-    (void)mem_id;
+    (void) mem_id;
     return -1;
 }
 
 int AUL_Checkpoint(const int version, char *name) {
-    (void)version;
-    (void)name;
+    (void) version;
+    (void) name;
     return -1;
 }
 
 int AUL_Restart(const int version, char *name) {
-    (void)version;
-    (void)name;
+    (void) version;
+    (void) name;
     return -1;
 }
