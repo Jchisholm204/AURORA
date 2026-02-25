@@ -28,7 +28,6 @@ struct aurora_discovery_service_exchange_data {
 
 struct aurora_discovery_service_conf {
     char *opt_server_ip;
-    char *opt_hostname;
     int timeout_ms;
 };
 

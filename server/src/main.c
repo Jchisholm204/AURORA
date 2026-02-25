@@ -13,6 +13,7 @@
 #include "log.h"
 
 #include <stdio.h>
+#include <malloc.h>
 
 int main(int argc, char **argv) {
     (void) argc;
@@ -35,8 +36,9 @@ int main(int argc, char **argv) {
             if (sd >= 0) {
                 ads_exchange_data_t *rx = ads_exchange(sd, &ads_data);
                 if (rx) {
-                    printf("%s\n", rx->comm_key);
-                    printf("%s\n", rx->user_data);
+                    printf("%s\n", (char*)rx->comm_key);
+                    printf("%s\n", (char*)rx->user_data);
+                    free(rx);
                 }
             }
         }
@@ -44,13 +46,13 @@ int main(int argc, char **argv) {
         log_info("Client");
         ads_conf_t conf = {
             .opt_server_ip = "127.0.0.1",
-            // .opt_server_ip = NULL,
             .timeout_ms = 1000,
         };
         ads_exchange_data_t *rx = ads_request_exchange(&conf, &ads_data);
         if (rx) {
-            printf("%s\n", rx->comm_key);
-            printf("%s\n", rx->user_data);
+            printf("%s\n", (char*)rx->comm_key);
+            printf("%s\n", (char*)rx->user_data);
+            free(rx);
         }
     }
     // printf("Server Hello World");
