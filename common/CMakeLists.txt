@@ -14,6 +14,7 @@ set_target_properties(${LIB_TARG} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(${LIB_TARG} PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/log.c/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/mdns
 )
 
 target_compile_options(${LIB_TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
