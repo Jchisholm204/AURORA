@@ -15,9 +15,15 @@
 #define _ACI_INTERNAL_H_
 #ifdef ACI_INTERNAL
 
-#include "ucp/api/ucp.h"
+#include <stdatomic.h>
+#include <ucp/api/ucp.h>
 
-extern ucp_context_h _aci_context;
+struct aurora_communication_interface_context {
+    ucp_context_h ucp_ctx;
+    volatile atomic_int refcount;
+};
+
+extern struct aurora_communication_interface_context _aci_ctx;
 
 struct aurora_connection_instance {
     ucp_worker_h ucp_worker;

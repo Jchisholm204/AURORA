@@ -22,13 +22,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct aul_internal_hndl {
+struct aurora_user_library_context {
     FILE *log_file;
     aci_hndl *pACI;
     acn_hndl *pACN;
 };
 
-extern struct aul_internal_hndl _aul;
+extern struct aurora_user_library_context _aul_ctx;
 
 #endif
 #endif

@@ -17,7 +17,7 @@
 #include "aul_internal.h"
 #include "log.h"
 
-struct aul_internal_hndl _aul = {
+struct aurora_user_library_context _aul_ctx = {
     .log_file = NULL,
     .pACI = NULL,
     .pACN = NULL,
@@ -31,9 +31,9 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
 
     // Setup the log file
     if (pCFG->opt_log_file) {
-        _aul.log_file = fopen(pCFG->opt_log_file, "a");
-        if (_aul.log_file) {
-            log_add_fp(_aul.log_file, LOG_TRACE);
+        _aul_ctx.log_file = fopen(pCFG->opt_log_file, "a");
+        if (_aul_ctx.log_file) {
+            log_add_fp(_aul_ctx.log_file, LOG_TRACE);
         }
     }
 
@@ -49,14 +49,14 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     ads_exchange_data_t ads_data_tx = {0};
 
     // Initialize ACI
-    _aul.pACI = aci_create_instance(&ads_data_tx.comm);
-    if(!_aul.pACI){
+    _aul_ctx.pACI = aci_create_instance(&ads_data_tx.comm);
+    if (!_aul_ctx.pACI) {
         log_fatal("Could not create the ACI instance");
         return -1;
     }
     // Initialize ACN
-    _aul.pACN = acn_create_instance(_aul.pACI, &ads_data_tx.notif);
-    if(!_aul.pACN){
+    _aul_ctx.pACN = acn_create_instance(_aul_ctx.pACI, &ads_data_tx.notif);
+    if (!_aul_ctx.pACN) {
         log_fatal("Could not create the ACN instance");
         return -1;
     }
@@ -108,18 +108,22 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     int status = 0;
 
     // Finalize the ACI with the ADS exchange data
-    if((status = aci_connect_instance(_aul.pACI, &ads_data_rx->comm)) != 0){
+    if ((status = aci_connect_instance(_aul_ctx.pACI, &ads_data_tx.comm, &ads_data_rx->comm)) !=
+        0) {
         log_fatal("ACI Connection Failed");
         (void) AUL_Finalize();
         return -1;
     }
 
     // Setup the ACN (Completion Notifications)
-    if((status = acn_connect_instance(_aul.pACN, &ads_data_rx->notif)) != 0){
+    if ((status = acn_connect_instance(_aul_ctx.pACN, &ads_data_rx->notif)) !=
+        0) {
         log_fatal("ACN Connection Failed");
         (void) AUL_Finalize();
         return -1;
     }
+
+    free(ads_data_rx);
 
     // Setup the ARM (Region Manager)
 
@@ -127,7 +131,12 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
 }
 
 int AUL_Finalize(void) {
-    return -1;
+    if(_aul_ctx.log_file){
+        fclose(_aul_ctx.log_file);
+    }
+    aci_destroy_instance(&_aul_ctx.pACI);
+    acn_destroy_instance(&_aul_ctx.pACN);
+    return 0;
 }
 
 int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,

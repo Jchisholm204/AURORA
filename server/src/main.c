@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
     (void) argc;
     (void) argv;
     ads_exchange_data_t ads_data = {
-        .comm = {"HelloWorld", 1},
-        .notif = {"Yeetskeet", 1},
+        .comm = {"HelloWorld", 0},
+        .notif = {"Yeetskeet", 0},
     };
     if (argc == 1) {
         log_info("Server");

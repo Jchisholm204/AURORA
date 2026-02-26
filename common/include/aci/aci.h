@@ -21,7 +21,7 @@ typedef struct aurora_connection_instance aci_hndl;
 
 extern aci_hndl *aci_create_instance(aurora_blob_t *conn_info);
 
-extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *conn_info);
+extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info, aurora_blob_t *remote_info);
 
 extern int aci_destroy_instance(aci_hndl **ppHndl);
 
