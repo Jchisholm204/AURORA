@@ -12,17 +12,15 @@
 #include "ads/ads.h"
 #include "log.h"
 
-#include <stdio.h>
 #include <malloc.h>
+#include <stdio.h>
 
 int main(int argc, char **argv) {
     (void) argc;
     (void) argv;
     ads_exchange_data_t ads_data = {
-        .ck_size = 12,
-        .ud_size = 12,
-        .comm_key = "HelloWorld",
-        .user_data = "Yeetskeet",
+        .comm = {"HelloWorld", 1},
+        .notif = {"Yeetskeet", 1},
     };
     if (argc == 1) {
         log_info("Server");
@@ -36,10 +34,10 @@ int main(int argc, char **argv) {
             if (sd >= 0) {
                 ads_exchange_data_t *rx = ads_exchange(sd, &ads_data);
                 if (rx) {
-                    printf("%s\n", (char*)rx->comm_key);
-                    printf("%s\n", (char*)rx->user_data);
-                    free(rx);
-                }
+                    printf("%s\n", (char*)rx->comm.data);
+                    printf("%s\n", (char*)rx->notif.data);
+                    free(rx);  
+                }  
             }
         }
     } else {
@@ -50,10 +48,10 @@ int main(int argc, char **argv) {
         };
         ads_exchange_data_t *rx = ads_request_exchange(&conf, &ads_data);
         if (rx) {
-            printf("%s\n", (char*)rx->comm_key);
-            printf("%s\n", (char*)rx->user_data);
-            free(rx);
-        }
+            printf("%s\n", (char*)rx->comm.data);
+            printf("%s\n", (char*)rx->notif.data);
+            free(rx);  
+        }  
     }
     // printf("Server Hello World");
     return 0;

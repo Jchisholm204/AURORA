@@ -13,6 +13,7 @@
 #define _ADS_ADS_H_
 
 #include <stddef.h>
+#include "common_types.h"
 
 struct aurora_discovery_service_hndl;
 typedef struct aurora_discovery_service_hndl ads_hndl;
@@ -20,10 +21,8 @@ typedef struct aurora_discovery_service_exchange_data ads_exchange_data_t;
 typedef struct aurora_discovery_service_conf ads_conf_t;
 
 struct aurora_discovery_service_exchange_data {
-    size_t ck_size;
-    size_t ud_size;
-    void *comm_key;
-    void *user_data;
+    aurora_blob_t comm;
+    aurora_blob_t notif;
 };
 
 struct aurora_discovery_service_conf {

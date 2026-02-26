@@ -9,19 +9,21 @@
  * @copyright Copyright (c) 2026
  */
 
+#define AUL_INTERNAL
+
 #include "aul.h"
 
 #include "ads/ads.h"
+#include "aul_internal.h"
 #include "log.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-FILE *log_file = NULL;
+struct aul_internal_hndl _aul = {
+    .log_file = NULL,
+    .pACI = NULL,
+    .pACN = NULL,
+};
 
 int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
-
     if (!pCFG) {
         log_error("No Configuration Provided");
         return -1;
@@ -29,9 +31,9 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
 
     // Setup the log file
     if (pCFG->opt_log_file) {
-        log_file = fopen(pCFG->opt_log_file, "a");
-        if (log_file) {
-            log_add_fp(log_file, LOG_TRACE);
+        _aul.log_file = fopen(pCFG->opt_log_file, "a");
+        if (_aul.log_file) {
+            log_add_fp(_aul.log_file, LOG_TRACE);
         }
     }
 
@@ -44,14 +46,20 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     log_trace("\tLog File: %s", pCFG->opt_log_file);
     log_trace("\tPID: %d", proc_id);
 
-    // Initialize ACI
+    ads_exchange_data_t ads_data_tx = {0};
 
-    ads_exchange_data_t ads_data_tx = {
-        .comm_key = NULL,
-        .ck_size = 0,
-        .user_data = "Hello World",
-        .ud_size = 12,
-    };
+    // Initialize ACI
+    _aul.pACI = aci_create_instance(&ads_data_tx.comm);
+    if(!_aul.pACI){
+        log_fatal("Could not create the ACI instance");
+        return -1;
+    }
+    // Initialize ACN
+    _aul.pACN = acn_create_instance(_aul.pACI, &ads_data_tx.notif);
+    if(!_aul.pACN){
+        log_fatal("Could not create the ACN instance");
+        return -1;
+    }
 
     ads_exchange_data_t *ads_data_rx = NULL;
 
@@ -97,9 +105,21 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
         return -1;
     }
 
+    int status = 0;
+
     // Finalize the ACI with the ADS exchange data
+    if((status = aci_connect_instance(_aul.pACI, &ads_data_rx->comm)) != 0){
+        log_fatal("ACI Connection Failed");
+        (void) AUL_Finalize();
+        return -1;
+    }
 
     // Setup the ACN (Completion Notifications)
+    if((status = acn_connect_instance(_aul.pACN, &ads_data_rx->notif)) != 0){
+        log_fatal("ACN Connection Failed");
+        (void) AUL_Finalize();
+        return -1;
+    }
 
     // Setup the ARM (Region Manager)
 
