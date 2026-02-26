@@ -13,6 +13,7 @@
 #define _ACL_ACL_H_
 
 #include "aim.h"
+#include "ads/ads.h"
 #include <stdbool.h>
 #include <threads.h>
 #include <pthread.h>
@@ -23,6 +24,7 @@ struct aurora_connection_listener
 #ifdef ACL_INTERNAL
 {
     aim_hndl *pAIM;
+    ads_hndl *pADS;
     bool running;
     pthread_t thread_manager;
     atomic_size_t n_worker_threads;
