@@ -36,6 +36,12 @@ acl_hndl *acl_init(aim_hndl *pAIM) {
     // Setup ADS
     pHndl->pADS = ads_init();
 
+    if(!pHndl->pADS){
+        log_fatal("ADS instance creation Failed");
+        free(pHndl);
+        return NULL;
+    }
+
     // Setup Listener Thread
     pHndl->running = true;
     atomic_init(&pHndl->n_worker_threads, 0);
@@ -52,7 +58,7 @@ acl_hndl *acl_init(aim_hndl *pAIM) {
     return pHndl;
 }
 
-int acl_finialize(acl_hndl **ppHndl) {
+int acl_finalize(acl_hndl **ppHndl) {
     if (!ppHndl) {
         return -1;
     }
@@ -113,6 +119,17 @@ void *_acl_connection_accept(void *arg) {
         return NULL;
     }
 
+    log_trace("Attempting to accept new connection");
+
+    ads_exchange_data_t ads_data = {
+        .comm = {"HelloWorld", 0},
+        .notif = {"Yeetskeet", 0},
+    };
+    ads_exchange(pCtx->conn_socket, &ads_data);
+
     free(pCtx);
+
+    log_trace("New connection accepted.");
+
     return NULL;
 }

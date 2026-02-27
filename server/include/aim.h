@@ -17,6 +17,7 @@
 
 #include <stdatomic.h>
 #include <stdalign.h>
+#include <stdint.h>
 
 typedef struct aurora_instance_manager_entry aim_entry_t;
 typedef struct aurora_instance_manager_hndl aim_hndl;

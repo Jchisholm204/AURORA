@@ -10,6 +10,7 @@
  */
 
 #include "ads/ads.h"
+#include "are.h"
 #include "log.h"
 
 #include <malloc.h>
@@ -18,6 +19,13 @@
 int main(int argc, char **argv) {
     (void) argc;
     (void) argv;
+
+    
+    return are_main(argc, argv);
+
+    
+
+
     ads_exchange_data_t ads_data = {
         .comm = {"HelloWorld", 0},
         .notif = {"Yeetskeet", 0},

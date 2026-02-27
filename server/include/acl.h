@@ -34,6 +34,6 @@ struct aurora_connection_listener
 
 extern acl_hndl *acl_init(aim_hndl *pAIM);
 
-extern int acl_finialize(acl_hndl **ppHndl);
+extern int acl_finalize(acl_hndl **ppHndl);
 
 #endif
