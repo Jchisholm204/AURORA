@@ -28,7 +28,7 @@ aim_hndl *aim_init(size_t max_workers) {
 
     // Worker storage area allocation
     pHndl->max_workers = max_workers;
-    pHndl->n_workers = 0;
+    atomic_init(&pHndl->n_workers, 0);
     pHndl->workers = malloc(sizeof(aim_entry_t) * max_workers);
     if (!pHndl->workers) {
         log_error("Failed to allocate AIM worker storage area");
@@ -90,17 +90,17 @@ aim_entry_t *aim_add_entry(aim_hndl *pHndl) {
         log_error("Cannot add entry to NULL handler");
         return NULL;
     }
-    size_t n_workers =
-        atomic_fetch_add(&pHndl->n_workers, memory_order_relaxed);
+    size_t n_workers = atomic_fetch_add(&pHndl->n_workers, 1);
+    log_trace("Attempting to add AIM entry.. %ld in existence", n_workers);
     if (n_workers == pHndl->max_workers) {
-        pHndl->n_workers--;
+        // pHndl->n_workers--;
         log_error("AIM worker max capacity reached.");
         return NULL;
     }
     for (size_t i = 0; i < pHndl->max_workers; i++) {
         size_t expected = 0;
         if (atomic_compare_exchange_strong(&pHndl->workers[i].references,
-                                         &expected, 1)) {
+                                           &expected, 1)) {
             return &pHndl->workers[i];
         }
     }

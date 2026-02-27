@@ -36,7 +36,7 @@ acl_hndl *acl_init(aim_hndl *pAIM) {
     // Setup ADS
     pHndl->pADS = ads_init();
 
-    if(!pHndl->pADS){
+    if (!pHndl->pADS) {
         log_fatal("ADS instance creation Failed");
         free(pHndl);
         return NULL;
@@ -115,17 +115,37 @@ void *_acl_connection_listener(void *arg) {
 
 void *_acl_connection_accept(void *arg) {
     struct acl_connection_context *pCtx = arg;
-    if(!pCtx){
+    if (!pCtx) {
         return NULL;
     }
 
     log_trace("Attempting to accept new connection");
 
-    ads_exchange_data_t ads_data = {
-        .comm = {"HelloWorld", 0},
-        .notif = {"Yeetskeet", 0},
-    };
-    ads_exchange(pCtx->conn_socket, &ads_data);
+    aim_entry_t *pCli = aim_add_entry(pCtx->pAIM);
+    if (!pCli) {
+        log_error("Failed to retrieve memory for new AIM entry");
+        free(pCtx);
+        return NULL;
+    }
+    ads_exchange_data_t ads_data_tx = {0};
+    ads_exchange_data_t *ads_data_rx = NULL;
+
+    pCli->pACI = aci_create_instance(&ads_data_tx.comm);
+    pCli->pACN = acn_create_instance(pCli->pACI, &ads_data_tx.notif);
+
+    ads_data_rx = ads_exchange(pCtx->conn_socket, &ads_data_tx);
+
+    if(!ads_data_rx){
+        log_error("ADS Exchange failure.");
+        free(pCtx);
+        aim_remove_entry(pCtx->pAIM, pCli);
+        return NULL;
+    }
+
+    aci_connect_instance(pCli->pACI, &ads_data_tx.comm, &ads_data_rx->comm);
+    // acn_connect_instance(pCli->pACN, &ads_data_tx.comm, &ads_data_rx->comm);
+
+    aim_enqueue(pCtx->pAIM, pCli);
 
     free(pCtx);
 

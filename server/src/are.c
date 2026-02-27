@@ -27,8 +27,11 @@ int are_main(int argc, char **argv) {
     pAIM = aim_init(AIM_MAX_WORKERS);
     pACL = acl_init(pAIM);
 
-    for (size_t i = 0; i < 99999999; i++)
-        ;
+    // for (size_t i = 0; i < 99999999; i++)
+    //     ;
+
+    while (true) {
+    }
 
     acl_finalize(&pACL);
     aim_finalize(&pAIM);
