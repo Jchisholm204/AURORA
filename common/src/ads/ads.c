@@ -240,7 +240,7 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
     };
     inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
     if (connect(sd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-        log_error("Failed to connect to server socket");
+        log_warn("Failed to connect to server socket");
         return NULL;
     }
     return ads_exchange(sd, pTxData);

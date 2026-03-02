@@ -35,6 +35,7 @@ acl_hndl *acl_init(aim_hndl *pAIM) {
 
     // Setup ADS
     pHndl->pADS = ads_init();
+    pHndl->pAIM = pAIM;
 
     if (!pHndl->pADS) {
         log_fatal("ADS instance creation Failed");
@@ -137,8 +138,8 @@ void *_acl_connection_accept(void *arg) {
 
     if(!ads_data_rx){
         log_error("ADS Exchange failure.");
-        free(pCtx);
         aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
         return NULL;
     }
 
