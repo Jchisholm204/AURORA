@@ -30,5 +30,9 @@ struct aurora_connection_instance {
     ucp_ep_h ucp_ep;
 };
 
+extern ucp_context_h aci_get_context(void);
+
+extern void aci_release_context(ucp_context_h ctx);
+
 #endif
 #endif

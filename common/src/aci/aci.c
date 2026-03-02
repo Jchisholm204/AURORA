@@ -164,3 +164,24 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
 
     return 0;
 }
+
+int aci_poll(aci_hndl *pHndl) {
+    if (!pHndl) {
+        return -1;
+    }
+    return ucp_worker_progress(pHndl->ucp_worker);
+}
+
+ucp_context_h aci_get_context(void) {
+    if (_aci_init_context() != 0) {
+        return NULL;
+    }
+    _aci_ctx.refcount++;
+    return _aci_ctx.ucp_ctx;
+}
+
+void aci_release_context(ucp_context_h ctx) {
+    if (ctx != NULL && ctx == _aci_ctx.ucp_ctx) {
+        _aci_ctx.refcount--;
+    }
+}

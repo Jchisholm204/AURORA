@@ -11,8 +11,12 @@
 
 #include "are.h"
 
+#include "aci/aci.h"
 #include "acl.h"
 #include "aim.h"
+#include "log.h"
+
+#include <unistd.h>
 
 #define AIM_MAX_WORKERS 64
 
@@ -27,10 +31,16 @@ int are_main(int argc, char **argv) {
     pAIM = aim_init(AIM_MAX_WORKERS);
     pACL = acl_init(pAIM);
 
-    // for (size_t i = 0; i < 99999999; i++)
-    //     ;
-
     while (true) {
+        aim_entry_t *pInstance = aim_dequeue(pAIM);
+        if (!pInstance) {
+            usleep(100);
+            continue;
+        }
+        aci_poll(pInstance->pACI);
+        if(aim_enqueue(pAIM, pInstance) != 0){
+            log_error("AIM Enqueue Failed??");
+        }
     }
 
     acl_finalize(&pACL);

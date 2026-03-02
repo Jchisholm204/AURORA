@@ -192,5 +192,10 @@ aim_entry_t *aim_dequeue(aim_hndl *pHndl) {
     atomic_store_explicit(&pHndl->queue.sequences[pos & pHndl->queue.mask],
                           pos + pHndl->queue.mask + 1, memory_order_release);
 
-    return &pHndl->workers[worker_idx];
+    if (pHndl->workers[worker_idx].references > 0) {
+        return &pHndl->workers[worker_idx];
+    }
+    else{
+        return NULL;
+    }
 }

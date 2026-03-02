@@ -25,4 +25,6 @@ extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info, auro
 
 extern int aci_destroy_instance(aci_hndl **ppHndl);
 
+extern int aci_poll(aci_hndl *pHndl);
+
 #endif
