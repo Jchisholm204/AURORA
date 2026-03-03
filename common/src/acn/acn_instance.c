@@ -9,36 +9,13 @@
  * @copyright Copyright (c) 2026
  */
 
+#define ACN_INTERNAL
 #include <ucs/type/status.h>
-#define ACI_INTERNAL
-
 #include "aci/aci_internal.h"
 #include "acn/acn.h"
 #include "log.h"
 
 #include <memory.h>
-#include <ucp/api/ucp.h>
-
-union aurora_completion_notifier_memory {
-    struct {
-        uint64_t mem_key;
-        uint64_t checkpoint_key;
-        uint64_t checkpoint_version;
-        uint64_t tick;
-    };
-    uint64_t data[8];
-};
-
-struct aurora_completion_notifier {
-    // ACI handle
-    aci_hndl *pACI;
-    // Remote Notification
-    ucp_rkey_h remote_rkey;
-    union aurora_completion_notifier_memory *pRemote;
-    // Local Notification
-    ucp_mem_h local_mem_hndl;
-    union aurora_completion_notifier_memory *pLocal;
-};
 
 acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     if (!pACI || !conn_info) {
@@ -66,7 +43,9 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     } else {
         memset(pHndl->pLocal, 0,
                sizeof(union aurora_completion_notifier_memory));
-        pHndl->pLocal->tick = 1;
+        memset(&pHndl->local_private, 0,
+               sizeof(union aurora_completion_notifier_memory));
+        pHndl->local_private.tick = 1;
     }
 
     ucp_mem_map_params_t mparam;

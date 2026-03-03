@@ -14,13 +14,57 @@
 
 #include "aci/aci.h"
 
-struct aurora_completion_notifier;
+#include <stdint.h>
+#ifdef ACN_INTERNAL
+#include <ucp/api/ucp.h>
+union aurora_completion_notifier_memory {
+    struct {
+        volatile uint64_t mem_tick;
+        volatile uint64_t checkpoint_tick;
+        volatile uint64_t checkpoint_version;
+        volatile uint64_t tick;
+    };
+    volatile uint64_t data[8];
+};
+#endif
+
+struct aurora_completion_notifier 
+#ifdef ACN_INTERNAL
+{
+    // ACI handle
+    aci_hndl *pACI;
+    // Remote Notification
+    ucp_rkey_h remote_rkey;
+    union aurora_completion_notifier_memory *pRemote;
+    // Local Notification
+    ucp_mem_h local_mem_hndl;
+    union aurora_completion_notifier_memory * volatile pLocal;
+    union aurora_completion_notifier_memory local_private;
+}
+#endif
+;
+
 typedef struct aurora_completion_notifier acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 
-extern int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info, aurora_blob_t *remote_info);
+extern int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
+                                aurora_blob_t *remote_info);
 
 extern int acn_destroy_instance(acn_hndl **ppHndl);
+
+extern int acn_await_tick(acn_hndl *pHndl);
+
+extern int acn_await_checkpoint(acn_hndl *pHndl);
+
+extern int acn_await_version(acn_hndl *pHndl, int64_t version);
+
+extern int acn_await_memory(acn_hndl *pHndl);
+
+extern int acn_tick_remote(acn_hndl *pHndl);
+
+extern int acn_tick_checkpoint(acn_hndl *pHndl);
+
+extern int acn_tick_memory(acn_hndl *pHndl);
 
 #endif
