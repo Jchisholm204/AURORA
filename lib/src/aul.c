@@ -108,16 +108,16 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     int status = 0;
 
     // Finalize the ACI with the ADS exchange data
-    if ((status = aci_connect_instance(_aul_ctx.pACI, &ads_data_tx.comm, &ads_data_rx->comm)) !=
-        0) {
+    if ((status = aci_connect_instance(_aul_ctx.pACI, &ads_data_tx.comm,
+                                       &ads_data_rx->comm)) != 0) {
         log_fatal("ACI Connection Failed");
         (void) AUL_Finalize();
         return -1;
     }
 
     // Setup the ACN (Completion Notifications)
-    if ((status = acn_connect_instance(_aul_ctx.pACN, &ads_data_rx->notif)) !=
-        0) {
+    if ((status = acn_connect_instance(_aul_ctx.pACN, &ads_data_tx.notif,
+                                       &ads_data_rx->notif)) != 0) {
         log_fatal("ACN Connection Failed");
         (void) AUL_Finalize();
         return -1;
@@ -131,11 +131,11 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
 }
 
 int AUL_Finalize(void) {
-    if(_aul_ctx.log_file){
+    if (_aul_ctx.log_file) {
         fclose(_aul_ctx.log_file);
     }
-    aci_destroy_instance(&_aul_ctx.pACI);
     acn_destroy_instance(&_aul_ctx.pACN);
+    aci_destroy_instance(&_aul_ctx.pACI);
     return 0;
 }
 

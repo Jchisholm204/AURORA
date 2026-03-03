@@ -85,14 +85,15 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
     ucs_status_t ucs_status;
     ucs_status = ucp_ep_create(pHndl->ucp_worker, &ep_params, &pHndl->ucp_ep);
     if (ucs_status != UCS_OK) {
-        log_error("Failed to create UCS endpoint");
+        log_error("Failed to create UCS endpoint: %s",
+                  ucs_status_string(ucs_status));
         return -3;
     }
 
     ucp_worker_release_address(pHndl->ucp_worker, local_info->data);
     free(remote_info->data);
 
-    log_trace("ACI connected");
+    log_debug("ACI connected");
 
     return 0;
 }
@@ -109,6 +110,20 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
     _aci_ctx.refcount--;
 
     log_trace("Closing ACI.. %d references left", _aci_ctx.refcount);
+
+    ucs_status_ptr_t pUcs_status = NULL;
+    ucp_request_param_t rparam;
+    rparam.op_attr_mask = 0;
+    pUcs_status = ucp_worker_flush_nbx((*ppHndl)->ucp_worker, &rparam);
+    if (UCS_PTR_IS_PTR(pUcs_status)) {
+        while (ucp_request_check_status(pUcs_status) == UCS_INPROGRESS) {
+            aci_poll(*ppHndl);
+        }
+        ucp_request_free(pUcs_status);
+    } else if (UCS_PTR_IS_ERR(pUcs_status)) {
+        log_error("Flushing Worker Yeilded Error: %s",
+                  ucs_status_string(UCS_PTR_STATUS(pUcs_status)));
+    }
 
     if ((*ppHndl)->ucp_ep) {
         ucp_request_param_t params = {0};

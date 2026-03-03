@@ -19,7 +19,7 @@ typedef struct aurora_completion_notifier acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 
-extern int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *conn_info);
+extern int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info, aurora_blob_t *remote_info);
 
 extern int acn_destroy_instance(acn_hndl **ppHndl);
 

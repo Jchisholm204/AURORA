@@ -136,7 +136,7 @@ void *_acl_connection_accept(void *arg) {
 
     ads_data_rx = ads_exchange(pCtx->conn_socket, &ads_data_tx);
 
-    if(!ads_data_rx){
+    if (!ads_data_rx) {
         log_error("ADS Exchange failure.");
         aim_remove_entry(pCtx->pAIM, pCli);
         free(pCtx);
@@ -144,7 +144,7 @@ void *_acl_connection_accept(void *arg) {
     }
 
     aci_connect_instance(pCli->pACI, &ads_data_tx.comm, &ads_data_rx->comm);
-    // acn_connect_instance(pCli->pACN, &ads_data_tx.comm, &ads_data_rx->comm);
+    acn_connect_instance(pCli->pACN, &ads_data_tx.notif, &ads_data_rx->notif);
 
     aim_enqueue(pCtx->pAIM, pCli);
 

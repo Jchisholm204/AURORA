@@ -60,6 +60,14 @@ ucs_status_t aci_mem_map(aci_hndl *pHndl, const ucp_mem_map_params_t *params,
     return ucp_mem_map(_aci_ctx.ucp_ctx, params, pMemh);
 }
 
+ucs_status_t aci_mem_unmap(aci_hndl *pHndl, ucp_mem_h memh) {
+    if (!pHndl || _aci_ctx.ucp_ctx == NULL) {
+        log_error("Mem unmap called with null handle");
+        return UCS_ERR_NO_RESOURCE;
+    }
+    return ucp_mem_unmap(_aci_ctx.ucp_ctx, memh);
+}
+
 ucs_status_t aci_rkey_pack(aci_hndl *pHndl, ucp_mem_h memh, void **pRkey_buffer,
                            size_t *pSize) {
     if (!pHndl || _aci_ctx.ucp_ctx == NULL) {

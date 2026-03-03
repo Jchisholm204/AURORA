@@ -34,11 +34,11 @@ int are_main(int argc, char **argv) {
     while (true) {
         aim_entry_t *pInstance = aim_dequeue(pAIM);
         if (!pInstance) {
-            usleep(100);
+            usleep(5000);
             continue;
         }
         aci_poll(pInstance->pACI);
-        if(aim_enqueue(pAIM, pInstance) != 0){
+        if (aim_enqueue(pAIM, pInstance) != 0) {
             log_error("AIM Enqueue Failed??");
         }
     }
