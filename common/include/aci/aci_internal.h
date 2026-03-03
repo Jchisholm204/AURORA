@@ -9,30 +9,32 @@
  * @copyright Copyright (c) 2026
  */
 
-#define ACI_INTERNAL
-
 #ifndef _ACI_INTERNAL_H_
 #define _ACI_INTERNAL_H_
-#ifdef ACI_INTERNAL
+
+#include "aci.h"
 
 #include <stdatomic.h>
 #include <ucp/api/ucp.h>
 
-struct aurora_communication_interface_context {
-    ucp_context_h ucp_ctx;
-    volatile atomic_int refcount;
-};
+ucs_status_t aci_mem_map(aci_hndl *pHndl,
+                                const ucp_mem_map_params_t *params,
+                                ucp_mem_h *pMemh);
 
-extern struct aurora_communication_interface_context _aci_ctx;
+ucs_status_t aci_rkey_pack(aci_hndl *pHndl, ucp_mem_h memh, void **pRkey_buffer,
+                           size_t *pSize);
 
-struct aurora_connection_instance {
-    ucp_worker_h ucp_worker;
-    ucp_ep_h ucp_ep;
-};
+ucs_status_t aci_rkey_unpack(aci_hndl *pHndl, const void *rkey_buffer,
+                             ucp_rkey_h *pRkey);
 
-extern ucp_context_h aci_get_context(void);
+ucs_status_ptr_t aci_put(aci_hndl *pHndl, const void *buffer,
+                                size_t count, uint64_t remote_addr,
+                                ucp_rkey_h rkey,
+                                const ucp_request_param_t *param);
 
-extern void aci_release_context(ucp_context_h ctx);
+ucs_status_ptr_t aci_get(aci_hndl *pHndl, void *buffer,
+                                size_t count, uint64_t remote_addr,
+                                ucp_rkey_h rkey,
+                                const ucp_request_param_t *param);
 
-#endif
 #endif

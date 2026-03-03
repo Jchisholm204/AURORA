@@ -57,9 +57,9 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     mparam.address = pHndl->pLocal;
     mparam.length = sizeof(union aurora_completion_notifier_memory);
 
-    ucp_context_h ucp_ctx = aci_get_context();
+    ucp_context_h ucp_ctx = NULL; //aci_get_context();
     ucs_status_t ucs_status = ucp_mem_map(ucp_ctx, &mparam, &pHndl->ucp_mem);
-    aci_release_context(ucp_ctx);
+    // aci_release_context(ucp_ctx);
     if(ucs_status != UCS_OK){
         log_error("Failed to map ACN memory with UCP");
         acn_destroy_instance(&pHndl);

@@ -15,13 +15,35 @@
 #include "common_types.h"
 
 #include <stdlib.h>
+#ifdef ACI_INTERNAL
+#include <ucp/api/ucp.h>
+#include <stdatomic.h>
+#endif
 
-struct aurora_connection_instance;
 typedef struct aurora_connection_instance aci_hndl;
+
+struct aurora_connection_instance
+#ifdef ACI_INTERNAL
+{
+    ucp_worker_h ucp_worker;
+    ucp_ep_h ucp_ep;
+}
+#endif
+;
+
+#ifdef ACI_INTERNAL
+struct aurora_communication_interface_context {
+    ucp_context_h ucp_ctx;
+    volatile atomic_int refcount;
+};
+extern struct aurora_communication_interface_context _aci_ctx;
+extern int _aci_init_context(void);
+#endif
 
 extern aci_hndl *aci_create_instance(aurora_blob_t *conn_info);
 
-extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info, aurora_blob_t *remote_info);
+extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
+                                aurora_blob_t *remote_info);
 
 extern int aci_destroy_instance(aci_hndl **ppHndl);
 

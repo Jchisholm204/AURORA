@@ -13,43 +13,7 @@
 
 #include "aci/aci.h"
 
-#include "aci/aci_internal.h"
 #include "log.h"
-
-struct aurora_communication_interface_context _aci_ctx = {
-    .refcount = 0,
-    .ucp_ctx = NULL,
-};
-
-int _aci_init_context(void) {
-    // Context already created
-    if (_aci_ctx.ucp_ctx) {
-        return 0;
-    }
-    ucs_status_t ucs_status;
-    ucp_config_t *ucp_config;
-    ucs_status = ucp_config_read(NULL, NULL, &ucp_config);
-    if (ucs_status != UCS_OK) {
-        log_error("Failed to read UCP Configuration: %s",
-                  ucs_status_string(ucs_status));
-        return -1;
-    }
-
-    ucp_params_t ucp_params;
-    ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES;
-    ucp_params.features = UCP_FEATURE_AM | UCP_FEATURE_RMA | UCP_FEATURE_TAG;
-    ucs_status = ucp_init(&ucp_params, ucp_config, &_aci_ctx.ucp_ctx);
-    if (ucs_status != UCS_OK) {
-        log_error("Failed to initialize UCP: %s",
-                  ucs_status_string(ucs_status));
-        return -1;
-    }
-
-    ucp_config_release(ucp_config);
-
-    log_trace("UCP Context Created");
-    return 0;
-}
 
 aci_hndl *aci_create_instance(aurora_blob_t *conn_info) {
     // Ensure the context was created and is active before continuing
@@ -170,18 +134,4 @@ int aci_poll(aci_hndl *pHndl) {
         return -1;
     }
     return ucp_worker_progress(pHndl->ucp_worker);
-}
-
-ucp_context_h aci_get_context(void) {
-    if (_aci_init_context() != 0) {
-        return NULL;
-    }
-    _aci_ctx.refcount++;
-    return _aci_ctx.ucp_ctx;
-}
-
-void aci_release_context(ucp_context_h ctx) {
-    if (ctx != NULL && ctx == _aci_ctx.ucp_ctx) {
-        _aci_ctx.refcount--;
-    }
 }
