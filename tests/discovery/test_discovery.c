@@ -11,7 +11,10 @@
 
 #include "aul.h"
 
+#include <memory.h>
 #include <stdio.h>
+
+#define MEM_SIZE 4
 
 int main(int argc, char **argv) {
     (void) argc;
@@ -21,6 +24,32 @@ int main(int argc, char **argv) {
     AUL_Init(&cfg, 0);
 
     printf("AUL Initialized\n");
+
+    uint64_t buf[MEM_SIZE] = {0xBEEF, 0xDEAD, 0xC0FF1E, 0xBEEF};
+    uint64_t bu2[MEM_SIZE];
+    memcpy(bu2, buf, sizeof(buf));
+
+    AUL_Mem_protect(3, buf, sizeof(buf));
+
+    printf("Starting Checkpoint\n");
+    int s = AUL_Checkpoint(1, "HelloCheckpoint");
+    printf("Finished Checkpoint status=%d\n", s);
+
+    for (int i = 0; i < MEM_SIZE; i++) {
+        buf[i] = 0;
+    }
+
+    printf("Starting Restore\n");
+    int v = AUL_Restart(-1, "HelloCheckpoint");
+    printf("Finished Restore latest version=%d\n", v);
+
+    for (int i = 0; i < MEM_SIZE; i++) {
+        if (buf[i] != bu2[i]) {
+            printf("Error: %ld != %ld\n", buf[i], bu2[i]);
+        }
+    }
+
+    AUL_Mem_unprotect(3);
 
     AUL_Finalize();
 

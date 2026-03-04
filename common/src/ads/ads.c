@@ -73,6 +73,11 @@ extern ads_hndl *ads_init(void) {
         .sin_port = htons(ADS_CONN_PORT),
         .sin_addr = {INADDR_ANY},
     };
+    int opt = 1;
+    if (setsockopt(pHndl->tcp_sock, SOL_SOCKET, SO_REUSEADDR, &opt,
+                   sizeof(opt)) < 0) {
+        log_warn("Failed to set SO_REUSEADDR");
+    }
     int ec = bind(pHndl->tcp_sock, (struct sockaddr *) &addr, sizeof(addr));
     if (ec != 0) {
         log_error("Bind to port %d failed eith e=%d", ADS_CONN_PORT, ec);
