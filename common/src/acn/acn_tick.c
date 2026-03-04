@@ -14,6 +14,8 @@
 #include "acn/acn.h"
 #include "log.h"
 
+#include <unistd.h>
+
 int _acn_aheadbehind(acn_hndl *pHndl, volatile uint64_t *ltick,
                      volatile uint64_t *rtick) {
     if (!pHndl || !ltick || !rtick) {
@@ -50,7 +52,14 @@ int _acn_await(acn_hndl *pHndl, volatile uint64_t *ltick,
     if (!pHndl || !ltick || !rtick) {
         return -1;
     }
-    while (_acn_aheadbehind(pHndl, ltick, rtick) != 0) {
+    int aheadbehind = 0;
+    int aheadbehind_last = 0;
+    while ((aheadbehind = _acn_aheadbehind(pHndl, ltick, rtick)) != 0) {
+        if (aheadbehind != aheadbehind_last) {
+            log_debug("AheadBehind: %d", aheadbehind);
+            aheadbehind_last = aheadbehind;
+        }
+        usleep(50000);
     }
     return 0;
 }
