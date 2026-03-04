@@ -10,12 +10,12 @@
  */
 
 #define ACN_INTERNAL
-#include <ucs/type/status.h>
 #include "aci/aci_internal.h"
 #include "acn/acn.h"
 #include "log.h"
 
 #include <memory.h>
+#include <ucs/type/status.h>
 
 acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     if (!pACI || !conn_info) {
@@ -43,9 +43,6 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     } else {
         memset(pHndl->pLocal, 0,
                sizeof(union aurora_completion_notifier_memory));
-        memset(&pHndl->local_private, 0,
-               sizeof(union aurora_completion_notifier_memory));
-        pHndl->local_private.tick = 1;
     }
 
     ucp_mem_map_params_t mparam;
