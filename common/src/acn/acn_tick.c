@@ -14,6 +14,7 @@
 #include "acn/acn.h"
 #include "log.h"
 
+#include <limits.h>
 #include <unistd.h>
 
 int _acn_aheadbehind(acn_hndl *pHndl, volatile uint64_t *ltick,
@@ -32,7 +33,7 @@ int _acn_aheadbehind(acn_hndl *pHndl, volatile uint64_t *ltick,
     if (UCS_PTR_IS_ERR(ucs_pStatus)) {
         log_error("Remote Read Error: %s",
                   ucs_status_string(UCS_PTR_STATUS(ucs_pStatus)));
-        return 0;
+        return INT_MIN;
     } else if (UCS_PTR_IS_PTR(ucs_pStatus)) {
         while (ucs_status == UCS_INPROGRESS) {
             ucs_status = ucp_request_check_status(ucs_pStatus);
@@ -42,7 +43,7 @@ int _acn_aheadbehind(acn_hndl *pHndl, volatile uint64_t *ltick,
     }
     if (ucs_status != UCS_OK) {
         log_error("Failed remote read: %s", ucs_status_string(ucs_status));
-        return 0;
+        return INT_MIN;
     }
     return (remote_tick_read - *ltick);
 }
@@ -58,6 +59,9 @@ int _acn_await(acn_hndl *pHndl, volatile uint64_t *ltick,
         if (aheadbehind != aheadbehind_last) {
             log_debug("AheadBehind: %d", aheadbehind);
             aheadbehind_last = aheadbehind;
+        }
+        if (aheadbehind == INT_MIN) {
+            return INT_MIN;
         }
         usleep(50000);
     }
