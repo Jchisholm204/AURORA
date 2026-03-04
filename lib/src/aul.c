@@ -141,6 +141,8 @@ int AUL_Finalize(void) {
 
 int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
                     const size_t size) {
+    // Advance the client side memory tick (memory ops pending)
+    // acn_tick_memory(_aul_ctx.pACN);
     (void) mem_id;
     (void) ptr;
     (void) size;
@@ -148,18 +150,30 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 }
 
 int AUL_Mem_unprotect(const uint64_t mem_id) {
+    // Advance the client side memory tick (memory ops pending)
+    // acn_tick_memory(_aul_ctx.pACN);
     (void) mem_id;
     return -1;
 }
 
 int AUL_Checkpoint(const int version, char *name) {
+    // Wait for previous checkpoint to complete
+    (void) acn_await_checkpoint(_aul_ctx.pACN);
     (void) version;
     (void) name;
+
+    (void) acn_tick_version(_aul_ctx.pACN, version);
+    // Trigger for next checkpoint (client side tick)
+    (void) acn_tick_checkpoint(_aul_ctx.pACN);
     return -1;
 }
 
 int AUL_Restart(const int version, char *name) {
+    acn_await_systick(_aul_ctx.pACN);
+    acn_tick_version(_aul_ctx.pACN, version);
+    acn_tick_checkpoint(_aul_ctx.pACN);
     (void) version;
     (void) name;
+    acn_await_checkpoint(_aul_ctx.pACN);
     return -1;
 }

@@ -56,8 +56,8 @@ extern int acn_tick_systick(acn_hndl *pHndl);
 extern int acn_await_systick(acn_hndl *pHndl);
 extern int acn_aheadbehind_systick(acn_hndl *pHndl);
 
-extern int acn_tick_version(acn_hndl *pHndl, int64_t version);
-extern int acn_await_version(acn_hndl *pHndl, int64_t version);
+extern int acn_tick_version(acn_hndl *pHndl, const int64_t version);
+extern int acn_await_version(acn_hndl *pHndl, const int64_t version);
 extern int acn_aheadbehind_version(acn_hndl *pHndl);
 
 extern int acn_tick_memory(acn_hndl *pHndl);

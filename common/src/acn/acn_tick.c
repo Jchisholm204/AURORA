@@ -91,7 +91,7 @@ int acn_aheadbehind_systick(acn_hndl *pHndl) {
                             &pHndl->pRemote->systick);
 }
 
-int acn_tick_version(acn_hndl *pHndl, int64_t version) {
+int acn_tick_version(acn_hndl *pHndl, const int64_t version) {
     if (!pHndl) {
         return -1;
     }
@@ -99,7 +99,7 @@ int acn_tick_version(acn_hndl *pHndl, int64_t version) {
     return 0;
 }
 
-int acn_await_version(acn_hndl *pHndl, int64_t version) {
+int acn_await_version(acn_hndl *pHndl, const int64_t version) {
     if (!pHndl) {
         return -1;
     }
