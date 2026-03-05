@@ -14,15 +14,33 @@
 
 #include "aci/aci.h"
 
+#ifndef BIT
+#define BIT(x) ((1) << (x))
+#endif
+
+enum aurora_completion_notification_e {
+    eACN_systick = BIT(0),
+    eACN_memory = BIT(1),
+    eACN_checkpoint = BIT(2),
+    eACN_restore = BIT(3),
+    eACN_version = BIT(4),
+
+    // Final member
+    eACN_Nnotifications,
+};
+
 #include <stdint.h>
 #ifdef ACN_INTERNAL
 #include <ucp/api/ucp.h>
+// Keep this memory cache aligned
+// This is in a critical path on the server side
 union aurora_completion_notifier_memory {
     struct {
+        volatile uint64_t systick;
         volatile uint64_t mem_tick;
         volatile uint64_t checkpoint_tick;
+        volatile uint64_t restore_tick;
         volatile int64_t checkpoint_version;
-        volatile uint64_t systick;
     };
     volatile uint64_t data[8];
 };
@@ -39,10 +57,12 @@ struct aurora_completion_notifier
     // Local Notification
     ucp_mem_h local_mem_hndl;
     union aurora_completion_notifier_memory *volatile pLocal;
+    union aurora_completion_notifier_memory temp_memory;
 }
 #endif
 ;
 
+typedef enum aurora_completion_notification_e eACN_notification;
 typedef struct aurora_completion_notifier acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
@@ -52,20 +72,15 @@ extern int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
 
 extern int acn_destroy_instance(acn_hndl **ppHndl);
 
-extern int acn_tick_systick(acn_hndl *pHndl);
-extern int acn_await_systick(acn_hndl *pHndl);
-extern int acn_aheadbehind_systick(acn_hndl *pHndl);
+extern int acn_tick(acn_hndl *pHndl, eACN_notification notifs);
 
-extern int acn_tick_version(acn_hndl *pHndl, const int64_t version);
-extern int acn_await_version(acn_hndl *pHndl, const int64_t version);
-extern int acn_aheadbehind_version(acn_hndl *pHndl);
+extern int acn_await(acn_hndl *pHndl, eACN_notification notifs);
 
-extern int acn_tick_memory(acn_hndl *pHndl);
-extern int acn_await_memory(acn_hndl *pHndl);
-extern int acn_aheadbehind_memory(acn_hndl *pHndl);
+extern int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs);
 
-extern int acn_tick_checkpoint(acn_hndl *pHndl);
-extern int acn_await_checkpoint(acn_hndl *pHndl);
-extern int acn_aheadbehind_checkpoint(acn_hndl *pHndl);
+extern int acn_set(acn_hndl *pHndl, eACN_notification notif,
+                   const uint64_t value);
+
+extern int acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue);
 
 #endif

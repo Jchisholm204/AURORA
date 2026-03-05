@@ -158,22 +158,22 @@ int AUL_Mem_unprotect(const uint64_t mem_id) {
 
 int AUL_Checkpoint(const int version, char *name) {
     // Wait for previous checkpoint to complete
-    (void) acn_await_checkpoint(_aul_ctx.pACN);
+    // (void) acn_await_checkpoint(_aul_ctx.pACN);
     (void) version;
     (void) name;
 
-    (void) acn_tick_version(_aul_ctx.pACN, version);
+    // (void) acn_tick_version(_aul_ctx.pACN, version);
     // Trigger for next checkpoint (client side tick)
-    (void) acn_tick_checkpoint(_aul_ctx.pACN);
+    // (void) acn_tick_checkpoint(_aul_ctx.pACN);
     return -1;
 }
 
 int AUL_Restart(const int version, char *name) {
-    acn_await_systick(_aul_ctx.pACN);
-    acn_tick_version(_aul_ctx.pACN, version);
-    acn_tick_checkpoint(_aul_ctx.pACN);
+    // acn_await_systick(_aul_ctx.pACN);
+    // acn_tick_version(_aul_ctx.pACN, version);
+    // acn_tick_checkpoint(_aul_ctx.pACN);
     (void) version;
     (void) name;
-    acn_await_checkpoint(_aul_ctx.pACN);
+    // acn_await_checkpoint(_aul_ctx.pACN);
     return -1;
 }
