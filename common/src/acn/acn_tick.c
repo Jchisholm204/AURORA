@@ -137,3 +137,28 @@ int acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
 
     return 0;
 }
+
+int acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
+    if (!pHndl || !pNotifs) {
+        return 0;
+    }
+    // Load the latest memory chunk
+    int mem_err;
+    if ((mem_err = _acn_loadmem(pHndl)) != 0) {
+        return mem_err;
+    }
+    *pNotifs = 0;
+    uint notifs = (eACN_Nnotifications - 1);
+    for (size_t i = 0; notifs != 0;) {
+        // Get number of lowest bit
+        i = __builtin_ctzll(notifs);
+
+        if (pHndl->temp_memory.data[i] != pHndl->pLocal->data[i]) {
+            *pNotifs |= BIT(i);
+        }
+
+        notifs = notifs >> 1;
+    }
+
+    return 0;
+}

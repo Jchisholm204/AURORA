@@ -22,8 +22,8 @@ enum aurora_completion_notification_e {
     eACN_systick = BIT(0),
     eACN_memory = BIT(1),
     eACN_checkpoint = BIT(2),
-    eACN_restore = BIT(3),
-    eACN_version = BIT(4),
+    eACN_restore = BIT(2),
+    eACN_version = BIT(3),
 
     // Final member
     eACN_Nnotifications,
@@ -40,7 +40,7 @@ union aurora_completion_notifier_memory {
         volatile uint64_t mem_tick;
         volatile uint64_t checkpoint_tick;
         volatile uint64_t restore_tick;
-        volatile int64_t checkpoint_version;
+        volatile int64_t version_tick;
     };
     volatile uint64_t data[8];
 };
@@ -82,5 +82,7 @@ extern int acn_set(acn_hndl *pHndl, eACN_notification notif,
                    const uint64_t value);
 
 extern int acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue);
+
+extern int acn_check(acn_hndl *pHndl, eACN_notification *pNotifs);
 
 #endif
