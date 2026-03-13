@@ -27,6 +27,7 @@ struct aurora_connection_instance
 {
     ucp_worker_h ucp_worker;
     ucp_ep_h ucp_ep;
+    ucs_status_t status;
 }
 #endif
 ;
@@ -47,6 +48,12 @@ extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
 
 extern int aci_destroy_instance(aci_hndl **ppHndl);
 
+/**
+ * @brief Poll the UCP progress worker
+ *
+ * @param pHndl Endpoint handle to poll
+ * @return Returns the latest UCS status from the endpoint (Return Fatal if not 0)
+ */
 extern int aci_poll(aci_hndl *pHndl);
 
 #endif

@@ -13,6 +13,7 @@
 
 #include "aci/aci.h"
 
+#include "aci/aci_callbacks.h"
 #include "log.h"
 
 aci_hndl *aci_create_instance(aurora_blob_t *conn_info) {
@@ -65,6 +66,8 @@ aci_hndl *aci_create_instance(aurora_blob_t *conn_info) {
 
     log_trace("ACI created, %d references", _aci_ctx.refcount);
 
+    pHndl->status = UCS_OK;
+
     return pHndl;
 }
 
@@ -80,7 +83,11 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
     }
 
     ucp_ep_params_t ep_params;
-    ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS;
+    ep_params.field_mask =
+        UCP_EP_PARAM_FIELD_REMOTE_ADDRESS | UCP_EP_PARAM_FIELD_ERR_HANDLER;
+    ep_params.err_handler.arg = pHndl;
+    ep_params.err_handler.cb = _aci_err_cb;
+    ep_params.err_mode = UCS_ERR_ENDPOINT_TIMEOUT | UCS_ERR_CONNECTION_RESET;
     ep_params.address = (const ucp_address_t *) remote_info->data;
     ucs_status_t ucs_status;
     ucs_status = ucp_ep_create(pHndl->ucp_worker, &ep_params, &pHndl->ucp_ep);
@@ -127,7 +134,6 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
 
     if ((*ppHndl)->ucp_ep) {
         ucp_request_param_t params = {0};
-        // params.op_attr_mask = UCP_OP_ATTR_FIELD_REQUEST;
         ucp_ep_close_nbx((*ppHndl)->ucp_ep, &params);
     }
     if ((*ppHndl)->ucp_worker) {
@@ -148,5 +154,9 @@ int aci_poll(aci_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
-    return ucp_worker_progress(pHndl->ucp_worker);
+    if (pHndl->status != UCS_OK) {
+        return pHndl->status;
+    }
+    (void) ucp_worker_progress(pHndl->ucp_worker);
+    return 0;
 }

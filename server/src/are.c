@@ -11,7 +11,6 @@
 
 #include "are.h"
 
-#include "aci/aci.h"
 #include "acl.h"
 #include "aim.h"
 #include "log.h"
@@ -37,7 +36,28 @@ int are_main(int argc, char **argv) {
             usleep(5000);
             continue;
         }
-        aci_poll(pInstance->pACI);
+        eACN_notification pending;
+        int acn_err = acn_check(pInstance->pACN, &pending);
+        if (acn_err != 0) {
+            log_error("ACN Returned Error.. Client Disconnected?");
+            log_info("Forcibly destroying client..");
+            aci_destroy_instance(&pInstance->pACI);
+            acn_destroy_instance(&pInstance->pACN);
+            aim_remove_entry(pAIM, pInstance);
+        }
+
+        if (pending & eACN_checkpoint) {
+            log_info("Checkpoint Pending..");
+        }
+
+        else if (pending & eACN_restore) {
+            log_info("Restore Pending..");
+        }
+
+        else {
+            log_info("Nothing Pending..");
+        }
+
         if (aim_enqueue(pAIM, pInstance) != 0) {
             log_error("AIM Enqueue Failed??");
         }

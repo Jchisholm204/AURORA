@@ -98,11 +98,11 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     return pHndl;
 }
 
-int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
-                         aurora_blob_t *remote_info) {
+eACN_error acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
+                                aurora_blob_t *remote_info) {
     if (!pHndl || !local_info || !remote_info) {
         log_error("Connect instance called with NULL params");
-        return -1;
+        return eACN_ERR_NULL;
     }
 
     ucs_status_t ucs_status = UCS_OK;
@@ -110,13 +110,13 @@ int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
     // Free memory allocated by create instance
     if (!local_info->data || local_info->size == 0) {
         log_error("Local Info NULL.. Unable to connect ACN");
-        return -1;
+        return eACN_ERR_NULL;
     }
 
     // Setup the remote notification instance
     if (!remote_info->data || remote_info->size == 0) {
         log_error("Remote Info NULL.. Unable to connect ACN");
-        return -1;
+        return eACN_ERR_NULL;
     }
 
     memcpy(&pHndl->pRemote, remote_info->data, sizeof(uint64_t));
@@ -128,7 +128,7 @@ int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
     if (ucs_status != UCS_OK) {
         log_error("Error unpacking ACN RKEY: %s",
                   ucs_status_string(ucs_status));
-        return -1;
+        return eACN_ERR_UCS;
     }
 
     // Free Remote Data
@@ -141,36 +141,40 @@ int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
 
     log_debug("ACN Connected");
 
-    return 0;
+    return eACN_OK;
 }
 
-int acn_destroy_instance(acn_hndl **ppHndl) {
+eACN_error acn_destroy_instance(acn_hndl **ppHndl) {
     if (!ppHndl) {
-        return -1;
+        return eACN_ERR_NULL;
     }
     if (!*ppHndl) {
-        return -1;
+        return eACN_ERR_NULL;
     }
     log_trace("Closing ACN");
 
+    // 1. Free RKEY
+    if ((*ppHndl)->remote_rkey) {
+        ucp_rkey_destroy((*ppHndl)->remote_rkey);
+    }
+
+    // 2. Unmap memory
     ucs_status_t ucs_status = UCS_OK;
     if ((*ppHndl)->local_mem_hndl) {
         ucs_status = aci_mem_unmap((*ppHndl)->pACI, (*ppHndl)->local_mem_hndl);
     }
+
     if (ucs_status != UCS_OK) {
         log_error("Failed to munmap ACN memory %s",
                   ucs_status_string(ucs_status));
     }
 
+    // 3. Free whatever is left over or internally allocated
     if ((*ppHndl)->pLocal) {
         free((*ppHndl)->pLocal);
     }
 
-    if ((*ppHndl)->remote_rkey) {
-        ucp_rkey_destroy((*ppHndl)->remote_rkey);
-    }
-
     free(*ppHndl);
     *ppHndl = NULL;
-    return 0;
+    return eACN_OK;
 }
