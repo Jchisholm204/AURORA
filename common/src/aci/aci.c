@@ -98,6 +98,42 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
     return 0;
 }
 
+int aci_disconnect_instance(aci_hndl *pHndl) {
+    if (!pHndl) {
+        return -1;
+    }
+
+    ucs_status_ptr_t ucs_pStatus = NULL;
+    // Request a close if the ep is open
+    if (pHndl->ucp_ep) {
+        ucp_request_param_t ucp_request_param = {0};
+        ucp_request_param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
+        ucp_request_param.flags = UCP_EP_CLOSE_FLAG_FORCE;
+        ucs_pStatus = ucp_ep_close_nbx(pHndl->ucp_ep, &ucp_request_param);
+    }
+
+    // Wait for the ep to get shut down
+    if (UCS_PTR_IS_PTR(ucs_pStatus)) {
+        while (ucp_request_check_status(ucs_pStatus) == UCS_INPROGRESS) {
+            (void) aci_poll(pHndl);
+        }
+        ucp_request_free(ucs_pStatus);
+    } else if (UCS_PTR_IS_ERR(ucs_pStatus)) {
+        log_error("Error closing endpoint: %s",
+                  ucs_status_string(UCS_PTR_STATUS(ucs_pStatus)));
+    }
+
+    for (int i = 0; i < 1000; i++) {
+        while (ucp_worker_progress(pHndl->ucp_worker) > 0)
+            ;
+    }
+
+    // Set endpoint to null
+    pHndl->ucp_ep = NULL;
+
+    return 0;
+}
+
 int aci_destroy_instance(aci_hndl **ppHndl) {
     if (!ppHndl) {
         return -1;
