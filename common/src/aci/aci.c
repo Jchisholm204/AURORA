@@ -118,8 +118,6 @@ int aci_disconnect_instance(aci_hndl *pHndl) {
         ucp_request_param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
         ucp_request_param.flags = UCP_EP_CLOSE_FLAG_FORCE;
         ucs_pStatus = ucp_ep_close_nbx(pHndl->ucp_ep, &ucp_request_param);
-        // ucs_pStatus = ucp_ep_close_nb(pHndl->ucp_ep,
-        // UCP_EP_CLOSE_MODE_FORCE);
     }
 
     // Wait for the ep to get shut down

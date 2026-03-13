@@ -2,9 +2,9 @@
  * @file are.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-02-27
- * @modified Last Modified: 2026-02-27
+ * @modified Last Modified: 2026-03-13
  *
  * @copyright Copyright (c) 2026
  */
