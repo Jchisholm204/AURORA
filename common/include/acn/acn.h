@@ -14,13 +14,10 @@
 
 #include "aci/aci.h"
 
-#include <stdint.h>
-
 #ifndef BIT
 #define BIT(x) ((1) << (x))
 #endif
 
-// Bitflagged enum
 enum aurora_completion_notification_e {
     eACN_systick = BIT(0),
     eACN_memory = BIT(1),
@@ -28,19 +25,11 @@ enum aurora_completion_notification_e {
     eACN_restore = BIT(2),
     eACN_version = BIT(3),
 
-    // Final member (bitflagged increment)
+    // Final member
     eACN_Nnotifications,
 };
 
-enum aurora_completion_notifier_error_e {
-    eACN_OK = 0,
-    eACN_ERR_NULL,
-    eACN_ERR_INPROGRESS,
-    eACN_ERR_UCS,
-    eACN_ERR_FATAL,
-    eACN_N_ERR,
-};
-
+#include <stdint.h>
 #ifdef ACN_INTERNAL
 #include <ucp/api/ucp.h>
 // Keep this memory cache aligned
@@ -69,22 +58,19 @@ struct aurora_completion_notifier
     ucp_mem_h local_mem_hndl;
     union aurora_completion_notifier_memory *volatile pLocal;
     union aurora_completion_notifier_memory temp_memory;
-    // Request Pointer (Single thread access only, Not locked)
-    ucs_status_ptr_t ucs_pRequest;
 }
 #endif
 ;
 
 typedef enum aurora_completion_notification_e eACN_notification;
-typedef enum aurora_completion_notifier_error_e eACN_error;
 typedef struct aurora_completion_notifier acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 
-extern eACN_error acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
+extern int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
                                 aurora_blob_t *remote_info);
 
-extern eACN_error acn_destroy_instance(acn_hndl **ppHndl);
+extern int acn_destroy_instance(acn_hndl **ppHndl);
 
 extern int acn_tick(acn_hndl *pHndl, eACN_notification notifs);
 
@@ -95,8 +81,8 @@ extern int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs);
 extern int acn_set(acn_hndl *pHndl, eACN_notification notif,
                    const uint64_t value);
 
-extern eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue);
+extern int acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue);
 
-extern eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs);
+extern int acn_check(acn_hndl *pHndl, eACN_notification *pNotifs);
 
 #endif

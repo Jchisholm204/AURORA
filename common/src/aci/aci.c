@@ -13,7 +13,6 @@
 
 #include "aci/aci.h"
 
-#include "aci/aci_callbacks.h"
 #include "log.h"
 
 aci_hndl *aci_create_instance(aurora_blob_t *conn_info) {
@@ -66,8 +65,6 @@ aci_hndl *aci_create_instance(aurora_blob_t *conn_info) {
 
     log_trace("ACI created, %d references", _aci_ctx.refcount);
 
-    pHndl->status = UCS_OK;
-
     return pHndl;
 }
 
@@ -83,12 +80,7 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
     }
 
     ucp_ep_params_t ep_params;
-    ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS |
-                           UCP_EP_PARAM_FIELD_ERR_HANDLER |
-                           UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-    ep_params.err_handler.arg = pHndl;
-    ep_params.err_handler.cb = _aci_err_cb;
-    ep_params.err_mode = UCP_ERR_HANDLING_MODE_PEER;
+    ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS;
     ep_params.address = (const ucp_address_t *) remote_info->data;
     ucs_status_t ucs_status;
     ucs_status = ucp_ep_create(pHndl->ucp_worker, &ep_params, &pHndl->ucp_ep);
@@ -150,20 +142,30 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
         return -1;
     }
 
-    // Endpoint should be cleared and null by now (err if not)
-    if ((*ppHndl)->ucp_ep) {
-        // May segfault if the instance was not yet disconnected by higher level
-        // software.. That is the users fault
-        log_warn("USAGE: ACI Disconnect must be called prior to destroy "
-                  "instance... Attempting to clean up for the user...");
-        (void) aci_disconnect_instance(*ppHndl);
-    }
-
     // Decrement the context reference count
     _aci_ctx.refcount--;
 
     log_trace("Closing ACI.. %d references left", _aci_ctx.refcount);
 
+    ucs_status_ptr_t pUcs_status = NULL;
+    ucp_request_param_t rparam;
+    rparam.op_attr_mask = 0;
+    pUcs_status = ucp_worker_flush_nbx((*ppHndl)->ucp_worker, &rparam);
+    if (UCS_PTR_IS_PTR(pUcs_status)) {
+        while (ucp_request_check_status(pUcs_status) == UCS_INPROGRESS) {
+            aci_poll(*ppHndl);
+        }
+        ucp_request_free(pUcs_status);
+    } else if (UCS_PTR_IS_ERR(pUcs_status)) {
+        log_error("Flushing Worker Yeilded Error: %s",
+                  ucs_status_string(UCS_PTR_STATUS(pUcs_status)));
+    }
+
+    if ((*ppHndl)->ucp_ep) {
+        ucp_request_param_t params = {0};
+        // params.op_attr_mask = UCP_OP_ATTR_FIELD_REQUEST;
+        ucp_ep_close_nbx((*ppHndl)->ucp_ep, &params);
+    }
     if ((*ppHndl)->ucp_worker) {
         ucp_worker_destroy((*ppHndl)->ucp_worker);
     }
@@ -172,7 +174,6 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
 
     if (_aci_ctx.refcount == 0) {
         ucp_cleanup(_aci_ctx.ucp_ctx);
-        _aci_ctx.ucp_ctx = NULL;
         log_trace("Cleaned up UCP Context");
     }
 
@@ -183,28 +184,5 @@ int aci_poll(aci_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
-    (void) ucp_worker_progress(pHndl->ucp_worker);
-    if (pHndl->status != UCS_OK) {
-        return pHndl->status;
-    }
-    return 0;
-}
-
-void aci_keepalive(bool enable) {
-    if (enable) {
-        _aci_init_context();
-        _aci_ctx.refcount++;
-        log_debug("Keeping ACI context alive");
-    } else {
-        if (_aci_ctx.refcount >= 1) {
-            _aci_ctx.refcount--;
-        }
-        log_debug("ACI context keepalive disabled.. %d refs remaining",
-                  _aci_ctx.refcount);
-    }
-    if (_aci_ctx.refcount == 0) {
-        ucp_cleanup(_aci_ctx.ucp_ctx);
-        _aci_ctx.ucp_ctx = NULL;
-        log_trace("Cleaned up UCP Context (keepalive)");
-    }
+    return ucp_worker_progress(pHndl->ucp_worker);
 }

@@ -17,44 +17,33 @@
 #include <limits.h>
 #include <unistd.h>
 
-eACN_error _acn_loadmem(acn_hndl *pHndl) {
+int _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
-        return eACN_ERR_NULL;
+        return INT_MIN;
     }
     ucp_request_param_t rparam;
-    rparam.op_attr_mask = UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    rparam.op_attr_mask = 0;
+    ucs_status_ptr_t ucs_pStatus = NULL;
     ucs_status_t ucs_status = UCS_INPROGRESS;
-
-    // Operation lock the request pointer (one pending at a time)
-    if (pHndl->ucs_pRequest != NULL) {
-        return eACN_ERR_INPROGRESS;
-    }
-    pHndl->ucs_pRequest =
+    ucs_pStatus =
         aci_get(pHndl->pACI, &pHndl->temp_memory, sizeof(pHndl->temp_memory),
                 (uint64_t) &pHndl->temp_memory, pHndl->remote_rkey, &rparam);
-
-    if (UCS_PTR_IS_ERR(pHndl->ucs_pRequest)) {
+    if (UCS_PTR_IS_ERR(ucs_pStatus)) {
         log_error("Remote Read Error: %s",
-                  ucs_status_string(UCS_PTR_STATUS(pHndl->ucs_pRequest)));
-        return eACN_ERR_UCS;
-    } else if (UCS_PTR_IS_PTR(pHndl->ucs_pRequest)) {
+                  ucs_status_string(UCS_PTR_STATUS(ucs_pStatus)));
+        return INT_MIN;
+    } else if (UCS_PTR_IS_PTR(ucs_pStatus)) {
         while (ucs_status == UCS_INPROGRESS) {
-            ucs_status = ucp_request_check_status(pHndl->ucs_pRequest);
-            int aci_status = 0;
-            aci_status = aci_poll(pHndl->pACI);
-            if (aci_status != 0) {
-                return eACN_ERR_FATAL;
-            }
+            ucs_status = ucp_request_check_status(ucs_pStatus);
+            aci_poll(pHndl->pACI);
         }
-        ucp_request_free(pHndl->ucs_pRequest);
-        pHndl->ucs_pRequest = NULL;
+        ucp_request_free(ucs_pStatus);
     }
-
     if (ucs_status != UCS_OK) {
         log_error("Failed remote read: %s", ucs_status_string(ucs_status));
-        return eACN_ERR_UCS;
+        return INT_MIN;
     }
-    return eACN_OK;
+    return 0;
 }
 
 int acn_tick(acn_hndl *pHndl, eACN_notification notifs) {
@@ -133,12 +122,12 @@ int acn_set(acn_hndl *pHndl, eACN_notification notif, const uint64_t value) {
     return 0;
 }
 
-eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
+int acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
     if (!pHndl) {
         return 0;
     }
     // Load the latest memory chunk
-    eACN_error mem_err;
+    int mem_err;
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
@@ -149,7 +138,7 @@ eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
     return 0;
 }
 
-eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
+int acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
     if (!pHndl || !pNotifs) {
         return 0;
     }
