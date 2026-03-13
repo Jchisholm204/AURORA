@@ -36,6 +36,4 @@ ucs_status_ptr_t aci_get(aci_hndl *pHndl, void *buffer, size_t count,
                          uint64_t remote_addr, ucp_rkey_h rkey,
                          const ucp_request_param_t *param);
 
-void aci_request_cancel(aci_hndl *pHndl, void *request);
-
 #endif
