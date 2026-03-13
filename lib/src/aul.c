@@ -15,6 +15,7 @@
 
 #include "ads/ads.h"
 #include "aul_internal.h"
+#include "limits.h"
 #include "log.h"
 
 struct aurora_user_library_context _aul_ctx = {
@@ -133,6 +134,7 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
 int AUL_Finalize(void) {
     if (_aul_ctx.log_file) {
         fclose(_aul_ctx.log_file);
+        _aul_ctx.log_file = NULL;
     }
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);
@@ -142,7 +144,7 @@ int AUL_Finalize(void) {
 int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
                     const size_t size) {
     // Advance the client side memory tick (memory ops pending)
-    // acn_tick_memory(_aul_ctx.pACN);
+    acn_tick(_aul_ctx.pACN, eACN_memory);
     (void) mem_id;
     (void) ptr;
     (void) size;
@@ -151,29 +153,44 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 
 int AUL_Mem_unprotect(const uint64_t mem_id) {
     // Advance the client side memory tick (memory ops pending)
-    // acn_tick_memory(_aul_ctx.pACN);
+    acn_tick(_aul_ctx.pACN, eACN_memory);
     (void) mem_id;
     return -1;
 }
 
 int AUL_Checkpoint(const int version, char *name) {
     // Wait for previous checkpoint to complete
-    // (void) acn_await_checkpoint(_aul_ctx.pACN);
-    (void) version;
-    (void) name;
+    if (acn_await(_aul_ctx.pACN, eACN_checkpoint | eACN_version) != 0) {
+        log_fatal("Server disconnected");
+        return INT_MIN;
+    }
 
-    // (void) acn_tick_version(_aul_ctx.pACN, version);
+    // Do Checkpoint
+
+    acn_set(_aul_ctx.pACN, eACN_version, version);
     // Trigger for next checkpoint (client side tick)
-    // (void) acn_tick_checkpoint(_aul_ctx.pACN);
+    acn_tick(_aul_ctx.pACN, eACN_checkpoint | eACN_version);
     return -1;
 }
 
 int AUL_Restart(const int version, char *name) {
-    // acn_await_systick(_aul_ctx.pACN);
-    // acn_tick_version(_aul_ctx.pACN, version);
-    // acn_tick_checkpoint(_aul_ctx.pACN);
-    (void) version;
-    (void) name;
-    // acn_await_checkpoint(_aul_ctx.pACN);
-    return -1;
+    acn_set(_aul_ctx.pACN, eACN_version, version);
+    acn_tick(_aul_ctx.pACN, eACN_restore | eACN_version);
+
+    // Wait for restore
+
+    if (acn_await(_aul_ctx.pACN, eACN_restore | eACN_version) != 0) {
+        // Connection Failure
+        log_fatal("Server disconnected");
+        return INT_MIN;
+    }
+
+    // Check the restored version
+    int64_t vplaced = 0;
+    if (acn_get(_aul_ctx.pACN, eACN_version, (uint64_t *) &vplaced) != 0) {
+        // Server failure
+        log_fatal("Server disconnected");
+        return INT_MIN;
+    }
+    return vplaced;
 }

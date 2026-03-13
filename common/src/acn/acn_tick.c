@@ -113,7 +113,7 @@ int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {
 }
 
 int acn_set(acn_hndl *pHndl, eACN_notification notif, const uint64_t value) {
-    if (!pHndl) {
+    if (!pHndl || notif > eACN_Nnotifications) {
         return -1;
     }
     uint i = __builtin_ctzll(notif);
@@ -123,7 +123,7 @@ int acn_set(acn_hndl *pHndl, eACN_notification notif, const uint64_t value) {
 }
 
 int acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
-    if (!pHndl) {
+    if (!pHndl || notif > eACN_Nnotifications) {
         return 0;
     }
     // Load the latest memory chunk
