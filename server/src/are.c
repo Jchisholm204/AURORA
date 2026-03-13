@@ -12,6 +12,7 @@
 #include "are.h"
 
 #include "acl.h"
+#include "acr.h"
 #include "aim.h"
 #include "log.h"
 
@@ -26,9 +27,11 @@ int are_main(int argc, char **argv) {
 
     aim_hndl *pAIM = NULL;
     acl_hndl *pACL = NULL;
+    acr_hndl *pACR = NULL;
 
     pAIM = aim_init(AIM_MAX_WORKERS);
     pACL = acl_init(pAIM);
+    pACR = acr_init(pAIM);
 
     aci_keepalive(true);
 
@@ -39,35 +42,28 @@ int are_main(int argc, char **argv) {
             continue;
         }
         eACN_notification pending;
-        int acn_err = acn_check(pInstance->pACN, &pending);
-        if (acn_err != 0) {
-            log_error("ACN Returned Error.. Client Disconnected?");
-            log_info("Forcibly destroying client..");
-            acn_destroy_instance(&pInstance->pACN);
-            aci_disconnect_instance(pInstance->pACI);
-            aci_destroy_instance(&pInstance->pACI);
-            aim_remove_entry(pAIM, pInstance);
-        }
+        eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
-        if (pending & eACN_checkpoint) {
-            log_info("Checkpoint Pending..");
-        }
-
-        else if (pending & eACN_restore) {
-            log_info("Restore Pending..");
-        }
-
-        else {
-            log_info("Nothing Pending..");
-        }
-
-        if (aim_enqueue(pAIM, pInstance) != 0) {
-            log_error("AIM Enqueue Failed??");
+        if (acn_err == eACN_ERR_FATAL) {
+            log_info(
+                "ACN Returned Error.. "
+                "Assuming client disconnected and closing the connection.");
+            acr_run(pACR, pInstance, eACR_shutdowndisconnect);
+        } else if (acn_err == eACN_ERR_UCS) {
+            acr_run(pACR, pInstance, eACR_nop);
+        } else if (pending & eACN_checkpoint) {
+            log_debug("Checkpoint Pending..");
+        } else if (pending & eACN_restore) {
+            log_debug("Restore Pending..");
+        } else {
+            log_debug("Nothing Pending..");
+            acr_run(pACR, pInstance, eACR_nop);
         }
     }
 
-
     aci_keepalive(false);
+
+    acr_finalize(&pACR);
     acl_finalize(&pACL);
     aim_finalize(&pAIM);
 

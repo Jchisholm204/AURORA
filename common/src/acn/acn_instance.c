@@ -84,14 +84,14 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     (void) memcpy(&(((uint64_t *) conn_info->data)[1]), rkey_buf,
                   conn_info->size);
 
-    log_debug("Releasing RKEY");
+    log_trace("Releasing RKEY");
 
     // Release the UCP rkey
     ucp_rkey_buffer_release(rkey_buf);
 
     // Adjust size of rkey buffer to include address
     conn_info->size += sizeof(uint64_t);
-    log_debug("Total Exchange size = %ld", conn_info->size);
+    log_trace("Total Exchange size = %ld", conn_info->size);
 
     pHndl->ucs_pRequest = NULL;
 

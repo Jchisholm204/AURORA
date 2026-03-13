@@ -17,9 +17,10 @@
 
 void _aci_err_cb(void *arg, ucp_ep_h ep, ucs_status_t status) {
     aci_hndl *pHndl = arg;
+    (void) ep;
     if (!pHndl) {
         log_fatal("ACI Err Handler NULL Handle");
     }
     pHndl->status = status;
-    log_error("%s", ucs_status_string(status));
+    log_trace("aci error cb: %s", ucs_status_string(status));
 }

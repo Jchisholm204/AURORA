@@ -156,7 +156,7 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
     if ((*ppHndl)->ucp_ep) {
         // May segfault if the instance was not yet disconnected by higher level
         // software.. That is the users fault
-        log_fatal("USAGE: ACI Disconnect must be called prior to destroy "
+        log_warn("USAGE: ACI Disconnect must be called prior to destroy "
                   "instance... Attempting to clean up for the user...");
         (void) aci_disconnect_instance(*ppHndl);
     }
@@ -196,10 +196,13 @@ void aci_keepalive(bool enable) {
     if (enable) {
         _aci_init_context();
         _aci_ctx.refcount++;
+        log_debug("Keeping ACI context alive");
     } else {
         if (_aci_ctx.refcount >= 1) {
             _aci_ctx.refcount--;
         }
+        log_debug("ACI context keepalive disabled.. %d refs remaining",
+                  _aci_ctx.refcount);
     }
     if (_aci_ctx.refcount == 0) {
         ucp_cleanup(_aci_ctx.ucp_ctx);

@@ -12,6 +12,6 @@
 #ifndef _ARE_ARE_H_
 #define _ARE_ARE_H_
 
-extern int are_main(int argc, char**argv);
+extern int are_main(int argc, char **argv);
 
 #endif
