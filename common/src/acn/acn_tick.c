@@ -58,7 +58,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
 }
 
 int acn_tick(acn_hndl *pHndl, eACN_notification notifs) {
-    if (!pHndl) {
+    if (!pHndl || notifs >= eACN_Nnotifications) {
         return -1;
     }
     for (size_t i = 0; notifs != 0;) {
@@ -75,7 +75,7 @@ int acn_tick(acn_hndl *pHndl, eACN_notification notifs) {
 }
 
 int acn_await(acn_hndl *pHndl, eACN_notification notifs) {
-    if (!pHndl) {
+    if (!pHndl || notifs >= eACN_Nnotifications) {
         return -1;
     }
     for (size_t i = 0; notifs != 0;) {
@@ -100,7 +100,7 @@ int acn_await(acn_hndl *pHndl, eACN_notification notifs) {
 }
 
 int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {
-    if (!pHndl) {
+    if (!pHndl || notifs >= eACN_Nnotifications) {
         return INT_MIN;
     }
     // Load the latest memory chunk
@@ -124,7 +124,7 @@ int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {
 }
 
 int acn_set(acn_hndl *pHndl, eACN_notification notif, const uint64_t value) {
-    if (!pHndl) {
+    if (!pHndl || notif >= eACN_Nnotifications) {
         return -1;
     }
     uint i = __builtin_ctzll(notif);
@@ -134,7 +134,7 @@ int acn_set(acn_hndl *pHndl, eACN_notification notif, const uint64_t value) {
 }
 
 eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
-    if (!pHndl) {
+    if (!pHndl || notif >= eACN_Nnotifications) {
         return 0;
     }
     // Load the latest memory chunk
