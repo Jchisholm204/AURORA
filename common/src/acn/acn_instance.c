@@ -93,6 +93,8 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     conn_info->size += sizeof(uint64_t);
     log_debug("Total Exchange size = %ld", conn_info->size);
 
+    pHndl->ucs_pRequest = NULL;
+
     aci_poll(pACI);
 
     return pHndl;
@@ -153,21 +155,22 @@ eACN_error acn_destroy_instance(acn_hndl **ppHndl) {
     }
     log_trace("Closing ACN");
 
-    // 1. Free RKEY
-    if ((*ppHndl)->remote_rkey) {
-        ucp_rkey_destroy((*ppHndl)->remote_rkey);
-    }
-
     ucs_status_t ucs_status = UCS_OK;
     if ((*ppHndl)->ucs_pRequest) {
-        ucs_status = ucp_request_check_status((*ppHndl)->ucs_pRequest);
-        if (ucs_status == UCS_INPROGRESS) {
-            log_error("Outstanding request still in progress");
-            // Pray that this closes it first try
+        aci_request_cancel((*ppHndl)->pACI, (*ppHndl)->ucs_pRequest);
+        ucs_status = UCS_INPROGRESS;
+        while (ucs_status == UCS_INPROGRESS) {
+            // Pray that this closes..
             (void) aci_poll((*ppHndl)->pACI);
+            ucs_status = ucp_request_check_status((*ppHndl)->ucs_pRequest);
         }
         ucp_request_free((*ppHndl)->ucs_pRequest);
         (*ppHndl)->ucs_pRequest = NULL;
+    }
+
+    // 2. Free RKEY
+    if ((*ppHndl)->remote_rkey) {
+        ucp_rkey_destroy((*ppHndl)->remote_rkey);
     }
 
     // 3. Unmap memory

@@ -30,6 +30,8 @@ int are_main(int argc, char **argv) {
     pAIM = aim_init(AIM_MAX_WORKERS);
     pACL = acl_init(pAIM);
 
+    aci_keepalive(true);
+
     while (true) {
         aim_entry_t *pInstance = aim_dequeue(pAIM);
         if (!pInstance) {
@@ -41,8 +43,9 @@ int are_main(int argc, char **argv) {
         if (acn_err != 0) {
             log_error("ACN Returned Error.. Client Disconnected?");
             log_info("Forcibly destroying client..");
-            aci_destroy_instance(&pInstance->pACI);
             acn_destroy_instance(&pInstance->pACN);
+            aci_disconnect_instance(pInstance->pACI);
+            aci_destroy_instance(&pInstance->pACI);
             aim_remove_entry(pAIM, pInstance);
         }
 
@@ -63,6 +66,8 @@ int are_main(int argc, char **argv) {
         }
     }
 
+
+    aci_keepalive(false);
     acl_finalize(&pACL);
     aim_finalize(&pAIM);
 
