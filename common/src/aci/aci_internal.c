@@ -105,3 +105,11 @@ ucs_status_ptr_t aci_get(aci_hndl *pHndl, void *buffer, size_t count,
     }
     return ucp_get_nbx(pHndl->ucp_ep, buffer, count, remote_addr, rkey, param);
 }
+
+void aci_request_cancel(aci_hndl *pHndl, void *request) {
+    if (!pHndl) {
+        log_error("aci request cancel called with null handle");
+        return;
+    }
+    ucp_request_cancel(pHndl->ucp_worker, request);
+}

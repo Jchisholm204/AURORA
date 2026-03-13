@@ -2,9 +2,9 @@
  * @file acn_instance.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-02-25
- * @modified Last Modified: 2026-02-25
+ * @modified Last Modified: 2026-03-12
  *
  * @copyright Copyright (c) 2026
  */
@@ -84,25 +84,27 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     (void) memcpy(&(((uint64_t *) conn_info->data)[1]), rkey_buf,
                   conn_info->size);
 
-    log_debug("Releasing RKEY");
+    log_trace("Releasing RKEY");
 
     // Release the UCP rkey
     ucp_rkey_buffer_release(rkey_buf);
 
     // Adjust size of rkey buffer to include address
     conn_info->size += sizeof(uint64_t);
-    log_debug("Total Exchange size = %ld", conn_info->size);
+    log_trace("Total Exchange size = %ld", conn_info->size);
+
+    pHndl->ucs_pRequest = NULL;
 
     aci_poll(pACI);
 
     return pHndl;
 }
 
-int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
-                         aurora_blob_t *remote_info) {
+eACN_error acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
+                                aurora_blob_t *remote_info) {
     if (!pHndl || !local_info || !remote_info) {
         log_error("Connect instance called with NULL params");
-        return -1;
+        return eACN_ERR_NULL;
     }
 
     ucs_status_t ucs_status = UCS_OK;
@@ -110,13 +112,13 @@ int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
     // Free memory allocated by create instance
     if (!local_info->data || local_info->size == 0) {
         log_error("Local Info NULL.. Unable to connect ACN");
-        return -1;
+        return eACN_ERR_NULL;
     }
 
     // Setup the remote notification instance
     if (!remote_info->data || remote_info->size == 0) {
         log_error("Remote Info NULL.. Unable to connect ACN");
-        return -1;
+        return eACN_ERR_NULL;
     }
 
     memcpy(&pHndl->pRemote, remote_info->data, sizeof(uint64_t));
@@ -128,7 +130,7 @@ int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
     if (ucs_status != UCS_OK) {
         log_error("Error unpacking ACN RKEY: %s",
                   ucs_status_string(ucs_status));
-        return -1;
+        return eACN_ERR_UCS;
     }
 
     // Free Remote Data
@@ -141,36 +143,52 @@ int acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
 
     log_debug("ACN Connected");
 
-    return 0;
+    return eACN_OK;
 }
 
-int acn_destroy_instance(acn_hndl **ppHndl) {
+eACN_error acn_destroy_instance(acn_hndl **ppHndl) {
     if (!ppHndl) {
-        return -1;
+        return eACN_ERR_NULL;
     }
     if (!*ppHndl) {
-        return -1;
+        return eACN_ERR_NULL;
     }
     log_trace("Closing ACN");
 
     ucs_status_t ucs_status = UCS_OK;
+    if ((*ppHndl)->ucs_pRequest) {
+        aci_request_cancel((*ppHndl)->pACI, (*ppHndl)->ucs_pRequest);
+        ucs_status = UCS_INPROGRESS;
+        while (ucs_status == UCS_INPROGRESS) {
+            // Pray that this closes..
+            (void) aci_poll((*ppHndl)->pACI);
+            ucs_status = ucp_request_check_status((*ppHndl)->ucs_pRequest);
+        }
+        ucp_request_free((*ppHndl)->ucs_pRequest);
+        (*ppHndl)->ucs_pRequest = NULL;
+    }
+
+    // 2. Free RKEY
+    if ((*ppHndl)->remote_rkey) {
+        ucp_rkey_destroy((*ppHndl)->remote_rkey);
+    }
+
+    // 3. Unmap memory
     if ((*ppHndl)->local_mem_hndl) {
         ucs_status = aci_mem_unmap((*ppHndl)->pACI, (*ppHndl)->local_mem_hndl);
     }
+
     if (ucs_status != UCS_OK) {
         log_error("Failed to munmap ACN memory %s",
                   ucs_status_string(ucs_status));
     }
 
+    // 4. Free whatever is left over or internally allocated
     if ((*ppHndl)->pLocal) {
         free((*ppHndl)->pLocal);
     }
 
-    if ((*ppHndl)->remote_rkey) {
-        ucp_rkey_destroy((*ppHndl)->remote_rkey);
-    }
-
     free(*ppHndl);
     *ppHndl = NULL;
-    return 0;
+    return eACN_OK;
 }
