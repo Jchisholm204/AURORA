@@ -2,9 +2,9 @@
  * @file acn_instance.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-02-25
- * @modified Last Modified: 2026-02-25
+ * @modified Last Modified: 2026-03-12
  *
  * @copyright Copyright (c) 2026
  */
@@ -158,8 +158,19 @@ eACN_error acn_destroy_instance(acn_hndl **ppHndl) {
         ucp_rkey_destroy((*ppHndl)->remote_rkey);
     }
 
-    // 2. Unmap memory
     ucs_status_t ucs_status = UCS_OK;
+    if ((*ppHndl)->ucs_pRequest) {
+        ucs_status = ucp_request_check_status((*ppHndl)->ucs_pRequest);
+        if (ucs_status == UCS_INPROGRESS) {
+            log_error("Outstanding request still in progress");
+            // Pray that this closes it first try
+            (void) aci_poll((*ppHndl)->pACI);
+        }
+        ucp_request_free((*ppHndl)->ucs_pRequest);
+        (*ppHndl)->ucs_pRequest = NULL;
+    }
+
+    // 3. Unmap memory
     if ((*ppHndl)->local_mem_hndl) {
         ucs_status = aci_mem_unmap((*ppHndl)->pACI, (*ppHndl)->local_mem_hndl);
     }
@@ -169,7 +180,7 @@ eACN_error acn_destroy_instance(acn_hndl **ppHndl) {
                   ucs_status_string(ucs_status));
     }
 
-    // 3. Free whatever is left over or internally allocated
+    // 4. Free whatever is left over or internally allocated
     if ((*ppHndl)->pLocal) {
         free((*ppHndl)->pLocal);
     }
