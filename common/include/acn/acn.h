@@ -64,7 +64,7 @@ struct aurora_completion_notifier
     aci_hndl *pACI;
     // Remote Notification
     ucp_rkey_h remote_rkey;
-    union aurora_completion_notifier_memory *pRemote;
+    uint64_t pRemote;
     // Local Notification
     ucp_mem_h local_mem_hndl;
     union aurora_completion_notifier_memory *volatile pLocal;

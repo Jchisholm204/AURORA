@@ -33,7 +33,7 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
 
     // Setup Local/Remote
     pHndl->pLocal = malloc(sizeof(union aurora_completion_notifier_memory));
-    pHndl->pRemote = NULL;
+    pHndl->pRemote = 0;
     pHndl->remote_rkey = NULL;
 
     if (!pHndl->pLocal) {
@@ -121,11 +121,10 @@ eACN_error acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
         return eACN_ERR_NULL;
     }
 
-    memcpy(&pHndl->pRemote, remote_info->data, sizeof(uint64_t));
+    pHndl->pRemote = ((uint64_t *) remote_info->data)[0];
 
     ucs_status =
-        aci_rkey_unpack(pHndl->pACI,
-                        (uint8_t *) remote_info->data + sizeof(uint64_t),
+        aci_rkey_unpack(pHndl->pACI, &((uint64_t *) remote_info->data)[1],
                         &pHndl->remote_rkey);
     if (ucs_status != UCS_OK) {
         log_error("Error unpacking ACN RKEY: %s",
