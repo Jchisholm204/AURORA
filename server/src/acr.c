@@ -142,6 +142,11 @@ void *_acr_checkpoint(void *arg) {
 
     // Do the command stuff
 
+    char name[ACN_NAME_LEN];
+    acn_get_name(pCtx->pInstance->pACN, name);
+
+    log_debug("ACN Name=%s", name);
+
     // NOP
 
     // Deal with AIM

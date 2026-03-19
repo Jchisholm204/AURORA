@@ -16,6 +16,10 @@
 
 #include <stdint.h>
 
+#ifndef ACN_NAME_LEN
+#define ACN_NAME_LEN 16
+#endif
+
 #ifndef BIT
 #define BIT(x) ((1) << (x))
 #endif
@@ -52,6 +56,8 @@ union aurora_completion_notifier_memory {
         volatile uint64_t checkpoint_tick;
         volatile uint64_t restore_tick;
         volatile int64_t version_tick;
+        // Must be final element in struct
+        volatile char name[ACN_NAME_LEN]
     };
     volatile uint64_t data[8];
 };
@@ -81,8 +87,9 @@ typedef struct aurora_completion_notifier acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 
-extern eACN_error acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
-                                aurora_blob_t *remote_info);
+extern eACN_error acn_connect_instance(acn_hndl *pHndl,
+                                       aurora_blob_t *local_info,
+                                       aurora_blob_t *remote_info);
 
 extern eACN_error acn_destroy_instance(acn_hndl **ppHndl);
 
@@ -95,7 +102,12 @@ extern int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs);
 extern int acn_set(acn_hndl *pHndl, eACN_notification notif,
                    const uint64_t value);
 
-extern eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue);
+extern eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif,
+                          uint64_t *pValue);
+
+extern eACN_error acn_set_name(acn_hndl *pHndl,
+                               const char name[static ACN_NAME_LEN]);
+extern eACN_error acn_get_name(acn_hndl *pHndl, char name[static ACN_NAME_LEN]);
 
 extern eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs);
 

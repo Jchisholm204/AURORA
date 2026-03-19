@@ -15,6 +15,7 @@
 #include "log.h"
 
 #include <limits.h>
+#include <string.h>
 #include <unistd.h>
 
 #define CHECK_NOTIF(notif)                                                     \
@@ -150,6 +151,32 @@ eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
     *pValue = pHndl->temp_memory.data[i];
 
     return 0;
+}
+
+eACN_error acn_set_name(acn_hndl *pHndl, const char name[static ACN_NAME_LEN]) {
+    if (!pHndl) {
+        log_error("Cannot set ACN Name! ACN handle was NULL");
+        return eACN_ERR_NULL;
+    }
+    if (name) {
+        memcpy((char *) pHndl->pLocal->name, name, ACN_NAME_LEN);
+    } else {
+        memset((char *) pHndl->pLocal->name, 0, ACN_NAME_LEN);
+    }
+    return eACN_OK;
+}
+
+eACN_error acn_get_name(acn_hndl *pHndl, char name[static ACN_NAME_LEN]) {
+    // Load the latest memory chunk
+    eACN_error mem_err;
+    if ((mem_err = _acn_loadmem(pHndl)) != 0) {
+        return mem_err;
+    }
+    if (name) {
+        memcpy(name, (char *) pHndl->temp_memory.name, ACN_NAME_LEN);
+        return eACN_OK;
+    }
+    return eACN_ERR_NULL;
 }
 
 eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
