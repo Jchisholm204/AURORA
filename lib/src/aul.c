@@ -18,6 +18,11 @@
 #include "limits.h"
 #include "log.h"
 
+// Compile time error check name lengths
+#if AUL_NAME_LEN != ACN_NAME_LEN
+#error "AUL Name Length Must match ACN name length"
+#endif
+
 struct aurora_user_library_context _aul_ctx = {
     .log_file = NULL,
     .pACI = NULL,
@@ -177,7 +182,8 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
 
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for all pending operations to finish
-    if (acn_await(_aul_ctx.pACN, eACN_systick | eACN_checkpoint | eACN_restore | eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN, eACN_systick | eACN_checkpoint | eACN_restore |
+                                     eACN_version) != 0) {
         // Connection Failure
         log_fatal("Server disconnected");
         return INT_MIN;
