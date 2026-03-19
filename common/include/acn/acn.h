@@ -57,13 +57,13 @@ union aurora_completion_notifier_memory {
         volatile uint64_t restore_tick;
         volatile int64_t version_tick;
         // Must be final element in struct
-        volatile char name[ACN_NAME_LEN]
+        volatile char name[ACN_NAME_LEN];
     };
     volatile uint64_t data[8];
 };
 #endif
 
-struct aurora_completion_notifier
+struct aurora_completion_notifier_hndl
 #ifdef ACN_INTERNAL
 {
     // ACI handle
@@ -83,7 +83,7 @@ struct aurora_completion_notifier
 
 typedef enum aurora_completion_notification_e eACN_notification;
 typedef enum aurora_completion_notifier_error_e eACN_error;
-typedef struct aurora_completion_notifier acn_hndl;
+typedef struct aurora_completion_notifier_hndl acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 

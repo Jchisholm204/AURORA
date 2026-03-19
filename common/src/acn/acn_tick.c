@@ -158,11 +158,7 @@ eACN_error acn_set_name(acn_hndl *pHndl, const char name[static ACN_NAME_LEN]) {
         log_error("Cannot set ACN Name! ACN handle was NULL");
         return eACN_ERR_NULL;
     }
-    if (name) {
-        memcpy((char *) pHndl->pLocal->name, name, ACN_NAME_LEN);
-    } else {
-        memset((char *) pHndl->pLocal->name, 0, ACN_NAME_LEN);
-    }
+    memcpy((char *) pHndl->pLocal->name, name, ACN_NAME_LEN);
     return eACN_OK;
 }
 
@@ -172,10 +168,8 @@ eACN_error acn_get_name(acn_hndl *pHndl, char name[static ACN_NAME_LEN]) {
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
-    if (name) {
-        memcpy(name, (char *) pHndl->temp_memory.name, ACN_NAME_LEN);
-        return eACN_OK;
-    }
+    memcpy(name, (char *) pHndl->temp_memory.name, ACN_NAME_LEN);
+    return eACN_OK;
     return eACN_ERR_NULL;
 }
 
