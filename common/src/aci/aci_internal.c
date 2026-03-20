@@ -113,3 +113,12 @@ void aci_request_cancel(aci_hndl *pHndl, void *request) {
     }
     ucp_request_cancel(pHndl->ucp_worker, request);
 }
+
+ucs_status_t aci_set_am_recv_handler(aci_hndl *pHndl,
+                                     const ucp_am_handler_param_t *params) {
+    if (!pHndl) {
+        log_error("aci set am called with null handle");
+        return NULL;
+    }
+    return ucp_worker_set_am_recv_handler(pHndl->ucp_worker, params);
+}

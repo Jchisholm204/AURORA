@@ -26,6 +26,8 @@
 #include <ucp/api/ucp.h>
 // ARM DMA Threshold (64KB)
 #define ARM_DMA_THRESH (64 * 1024)
+// Default number of instances
+#define ARM_INIT_INSTANCES 16
 #endif
 
 struct aurora_memory_region_hndl {
@@ -80,6 +82,14 @@ typedef enum aurora_region_manager_error_e eARM_error;
  * @return
  */
 extern arm_hndl *arm_create_instance(aci_hndl *pACI);
+
+/**
+ * @brief Destroy an ARM instance
+ *
+ * @param ppHndl ARM handle to destroy
+ * @return
+ */
+extern eARM_error arm_destroy_instance(arm_hndl **ppHndl);
 
 /**
  * @brief Add/Setup a ARM Region
@@ -151,6 +161,6 @@ extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
  * @param pAMR AMR to execute the sync on
  * @return Err or OK
  */
-extern eARM_error arm_sync(arm_hndl *pHndl, const amr_hndl *pAMR);
+extern eARM_error delllsync(arm_hndl *pHndl, const amr_hndl *pAMR);
 
 #endif

@@ -24,12 +24,14 @@
 #define ARM_UCX_ID_RM 44
 #endif
 
-extern ucs_status_t _arm_add_rgn_cb(void *arg, void *header, size_t header_len,
-                                    void *data, size_t data_len,
+extern ucs_status_t _arm_add_rgn_cb(void *arg, const void *header,
+                                    size_t header_len, void *data,
+                                    size_t data_len,
                                     const ucp_am_recv_param_t *pParam);
 
-extern ucs_status_t _arm_rm_rgn_cb(void *arg, void *header, size_t header_len,
-                                   void *data, size_t data_len,
+extern ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header,
+                                   size_t header_len, void *data,
+                                   size_t data_len,
                                    const ucp_am_recv_param_t *pParam);
 
 #endif

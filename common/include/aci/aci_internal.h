@@ -38,4 +38,7 @@ ucs_status_ptr_t aci_get(aci_hndl *pHndl, void *buffer, size_t count,
 
 void aci_request_cancel(aci_hndl *pHndl, void *request);
 
+ucs_status_t aci_set_am_recv_handler(aci_hndl *pHndl,
+                                     const ucp_am_handler_param_t *params);
+
 #endif
