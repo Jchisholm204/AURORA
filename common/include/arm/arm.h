@@ -7,6 +7,7 @@
  * @modified Last Modified: 2026-03-19
  *
  * This code CANNOT be called from multiple threads
+ * The AMR should not handle any external allocations
  *
  * @copyright Copyright (c) 2026
  */
@@ -55,6 +56,7 @@ struct aurora_region_manager_hndl
     aci_hndl *pACI;
     struct aurora_memory_region_hndl *regions;
     size_t n_regions;
+    size_t rgn_capacity;
 }
 #endif
 ;
@@ -153,8 +155,15 @@ extern eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
 extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
                            const uint64_t remote_addr, void *data, size_t size);
 
-// Internal functions to add and remove from internal list (no remote trigger)
+// Internal functions to add and remove from internal list
+// (no remote trigger)
+// (no ucx operations)
+// (no data manipulation)
+// ONLY adds and removes from the list
+#ifdef ARM_INTERNAL
+extern eARM_error _arm_check_amr_hndl(arm_hndl *pHndl, const amr_hndl *pAMR);
 extern eARM_error _arm_add(arm_hndl *pHndl, const amr_hndl *pAMR);
-extern eARM_error _arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR);
+extern eARM_error _arm_remove(arm_hndl *pHndl, const size_t amr_index);
+#endif
 
 #endif

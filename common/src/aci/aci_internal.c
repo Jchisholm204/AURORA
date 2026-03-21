@@ -118,7 +118,7 @@ ucs_status_t aci_set_am_recv_handler(aci_hndl *pHndl,
                                      const ucp_am_handler_param_t *params) {
     if (!pHndl) {
         log_error("aci set am called with null handle");
-        return NULL;
+        return UCS_ERR_NO_RESOURCE;
     }
     return ucp_worker_set_am_recv_handler(pHndl->ucp_worker, params);
 }
