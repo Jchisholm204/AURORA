@@ -153,14 +153,8 @@ extern eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
 extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
                            const uint64_t remote_addr, void *data, size_t size);
 
-/**
- * @brief Specialized Copy/Sync function to copy active memory into the shadow
- * memory
- *
- * @param pHndl ARM Handle
- * @param pAMR AMR to execute the sync on
- * @return Err or OK
- */
-extern eARM_error delllsync(arm_hndl *pHndl, const amr_hndl *pAMR);
+// Internal functions to add and remove from internal list (no remote trigger)
+extern eARM_error _arm_add(arm_hndl *pHndl, const amr_hndl *pAMR);
+extern eARM_error _arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR);
 
 #endif

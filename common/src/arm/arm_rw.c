@@ -1,7 +1,7 @@
 /**
  * @file arm_rw.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @brief AURORA Region Manager R/W operations
+ * @brief AURORA Region Manager - R/W operations
  * @version 0.1
  * @date Created: 2026-03-19
  * @modified Last Modified: 2026-03-19

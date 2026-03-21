@@ -31,6 +31,12 @@ arm_hndl *arm_create_instance(aci_hndl *pACI) {
     pHndl->n_regions = ARM_INIT_INSTANCES;
     pHndl->regions = (amr_hndl *) malloc(sizeof(amr_hndl) * ARM_INIT_INSTANCES);
 
+    if (!pHndl->regions) {
+        log_error("Failed to create ARM instance list");
+        free(pHndl);
+        return NULL;
+    }
+
     ucs_status_t ucs_status = UCS_OK;
     ucp_am_handler_param_t am_params;
     am_params.field_mask =
@@ -62,16 +68,37 @@ arm_hndl *arm_create_instance(aci_hndl *pACI) {
 }
 
 eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
+    // Assumed that if this is called, the worker is already dead
+    if (!ppHndl) {
+        log_error("Cannot clean up a NULL handle");
+        return eARM_ERR_NULL;
+    }
+    arm_hndl *pHndl = *ppHndl;
+    if (!pHndl) {
+        log_error("Cannot clean up a NULL handle");
+        return eARM_ERR_NULL;
+    }
+
+    // Clean up the memory regions (start from last to avoid reshuffle)
+    for (size_t i = pHndl->n_regions; i >= 0; i--) {
+        _arm_remove(pHndl, &pHndl->regions[i]);
+    }
+
+    if (pHndl->regions) {
+        free(pHndl->regions);
+        pHndl->n_regions = 0;
+        pHndl->regions = NULL;
+    }
+
+    // Free the handle itself
+    free(pHndl);
+    *ppHndl = NULL;
+
+    return eARM_OK;
 }
 
-eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
+eARM_error _arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
 }
 
-eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
-}
-
-size_t arm_get_n_regions(arm_hndl *pHndl) {
-}
-
-const amr_hndl *arm_get_regions(arm_hndl *pHndl) {
+eARM_error _arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
 }
