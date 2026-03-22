@@ -29,15 +29,8 @@ arm_hndl *arm_create_instance(aci_hndl *pACI) {
     }
 
     pHndl->pACI = pACI;
-    pHndl->n_regions = 0;
-    pHndl->rgn_capacity = ARM_INIT_INSTANCES;
-    pHndl->regions = (amr_hndl *) malloc(sizeof(amr_hndl) * ARM_INIT_INSTANCES);
-
-    if (!pHndl->regions) {
-        log_error("Failed to create ARM instance list");
-        free(pHndl);
-        return NULL;
-    }
+    _arl_init(&pHndl->local_rgns);
+    _arl_init(&pHndl->remote_rgns);
 
     ucs_status_t ucs_status = UCS_OK;
     ucp_am_handler_param_t am_params;
@@ -81,25 +74,9 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
         return eARM_ERR_NULL;
     }
 
-    // Clean up the memory regions (start from last to avoid reshuffle)
-    for (size_t i = pHndl->n_regions; i > 0; i--) {
-        amr_hndl *pAMR = &pHndl->regions[i];
-        if (pAMR->remote_key) {
-            ucp_rkey_destroy(pAMR->remote_key);
-            pAMR->remote_key = NULL;
-        }
-        if (pAMR->mem_hndl) {
-            aci_mem_unmap(pHndl->pACI, pAMR->mem_hndl);
-            pAMR->mem_hndl = NULL;
-        }
-    }
-
-    if (pHndl->regions) {
-        free(pHndl->regions);
-        pHndl->n_regions = 0;
-        pHndl->rgn_capacity = 0;
-        pHndl->regions = NULL;
-    }
+    // Clean up the memory regions
+    _arl_free_local(&pHndl->local_rgns, pHndl->pACI);
+    _arl_free_remote(&pHndl->remote_rgns, pHndl->pACI);
 
     ucs_status_t ucs_status = UCS_OK;
     ucp_am_handler_param_t am_params;
@@ -120,69 +97,126 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
     return eARM_OK;
 }
 
-// Function to check if an AMR belongs to this handle
-eARM_error _arm_check_amr_hndl(arm_hndl *pHndl, const amr_hndl *pAMR) {
-    if (!pHndl || !pAMR) {
+eARM_error _arl_init(struct aurora_region_list *pList) {
+    if (!pList) {
+        log_debug("NULL argument");
         return eARM_ERR_NULL;
     }
-    const amr_hndl *base_addr = pHndl->regions;
-    const amr_hndl *max_addr = pHndl->regions + pHndl->n_regions;
-    if (pAMR < base_addr || pAMR > max_addr) {
-        return eARM_ERR_MATCH_NOT_FOUND;
+    pList->capacity = ARM_INIT_INSTANCES;
+    pList->size = 0;
+    pList->data = malloc(ARM_INIT_INSTANCES * sizeof(amr_hndl));
+    if (!pList->data) {
+        log_error("Failed to allocate ARL");
+        return eARM_ERR_NULL;
     }
+    (void) memset(pList->data, 0, ARM_INIT_INSTANCES * sizeof(amr_hndl));
     return eARM_OK;
 }
 
-eARM_error _arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
-    if (!pHndl || !pAMR) {
-        log_error("ARM Null");
+eARM_error _arl_free_local(struct aurora_region_list *pList, aci_hndl *pACI) {
+    if (!pList || !pACI) {
+        log_debug("NULL argument");
         return eARM_ERR_NULL;
     }
 
-    // Check if the handle already exists in this AMR
-    if (_arm_check_amr_hndl(pHndl, pAMR) == eARM_OK) {
-        log_debug("Attempted add of region that already exists.");
-        return eARM_OK;
+    log_debug("Deleting %d local regions.", pList->size);
+
+    for (size_t i = pList->size; i > 0; i--) {
+        amr_hndl *pAMR = &pList->data[i];
+        if (pAMR->remote_key) {
+            ucp_rkey_destroy(pAMR->remote_key);
+            pAMR->remote_key = NULL;
+        }
+        if (pAMR->mem_hndl) {
+            aci_mem_unmap(pACI, pAMR->mem_hndl);
+            pAMR->mem_hndl = NULL;
+        }
+        if (pAMR->pActive_memory) {
+            free((void *) pAMR->pActive_memory);
+            pAMR->pActive_memory = 0;
+        }
+        if (pAMR->pShadow_memory) {
+            free((void *) pAMR->pShadow_memory);
+            pAMR->pShadow_memory = 0;
+        }
+    }
+
+    return eARM_OK;
+}
+
+eARM_error _arl_free_remote(struct aurora_region_list *pList, aci_hndl *pACI) {
+    if (!pList || !pACI) {
+        log_debug("NULL argument");
+        return eARM_ERR_NULL;
+    }
+
+    log_debug("Deleting %d remote regions.", pList->size);
+
+    for (size_t i = pList->size; i > 0; i--) {
+        amr_hndl *pAMR = &pList->data[i];
+        if (pAMR->remote_key) {
+            ucp_rkey_destroy(pAMR->remote_key);
+            pAMR->remote_key = NULL;
+        }
+        if (pAMR->mem_hndl) {
+            log_debug("mem hndl in remote?");
+            aci_mem_unmap(pACI, pAMR->mem_hndl);
+            pAMR->mem_hndl = NULL;
+        }
+    }
+
+    return eARM_OK;
+}
+
+amr_hndl *_arl_add(struct aurora_region_list *pList) {
+    if (!pList) {
+        log_error("ARM Null");
+        return NULL;
     }
 
     // Reallocate the array if over size
-    if (pHndl->n_regions >= pHndl->rgn_capacity) {
-        pHndl->rgn_capacity *= 2;
-        pHndl->regions =
-            reallocarray(pHndl->regions, pHndl->rgn_capacity, sizeof(amr_hndl));
+    if (pList->size >= pList->capacity) {
+        pList->capacity *= 2;
+        pList->data =
+            reallocarray(pList->data, pList->capacity, sizeof(amr_hndl));
     }
 
     // Grab the last region and inc the counter
-    amr_hndl *pRgn = &pHndl->regions[pHndl->n_regions++];
+    amr_hndl *pRgn = &pList->data[pList->size++];
 
-    // Copy region data into the handles array
-    (void) memcpy(pRgn, pAMR, sizeof(amr_hndl));
-
-    return eARM_OK;
+    return pRgn;
 }
 
-eARM_error _arm_remove(arm_hndl *pHndl, const size_t amr_index) {
-    if (!pHndl) {
+eARM_error _arl_remove(struct aurora_region_list *pList,
+                       const size_t amr_index) {
+    if (!pList) {
         log_debug("ARM NULL");
         return eARM_ERR_NULL;
     }
 
-    if (amr_index > pHndl->n_regions) {
+    if (amr_index > pList->size) {
         log_error("Index out of range.");
         return eARM_ERR_MATCH_NOT_FOUND;
     }
 
     // Free/Remove the Region from ARM
-    amr_hndl *pAMR = &pHndl->regions[amr_index];
+    amr_hndl *pAMR = &pList->data[amr_index];
 
     // Zero out the rgn
     memset(pAMR, 0, sizeof(amr_hndl));
 
     // Shuffle the array down
-    memmove(pAMR, pAMR + 1,
-            (pHndl->n_regions - amr_index - 1) * sizeof(amr_hndl));
+    memmove(pAMR, pAMR + 1, (pList->size - amr_index - 1) * sizeof(amr_hndl));
 
-    pHndl->n_regions--;
+    pList->size--;
+
+    // Reduce internal storage size
+    if (pList->capacity > (pList->size * 4) &&
+        pList->capacity > ARM_INIT_INSTANCES) {
+        pList->capacity /= 4;
+        pList->data =
+            reallocarray(pList->data, sizeof(amr_hndl), pList->capacity);
+    }
 
     return eARM_OK;
 }

@@ -10,10 +10,21 @@
  */
 
 #define ARM_INTERNAL
-#include "arm/arm.h"
+#include "aci/aci_internal.h"
 #include "arm/arm_am.h"
+#include "arm/arm.h"
 
 eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
+    if(!pHndl || pAMR){
+        return eARM_ERR_NULL;
+    }
+
+    _arl_add(&pHndl->local_rgns);
+
+
+    aci_am_send_nbx(pHndl->pACI, ARM_UCX_ID_ADD, NULL, 0, NULL, 0, NULL);
+
+
 }
 
 eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {

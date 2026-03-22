@@ -21,6 +21,7 @@
 
 #include "aci/aci.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef ARM_INTERNAL
@@ -54,9 +55,15 @@ struct aurora_region_manager_hndl
 {
     // ACI Handle
     aci_hndl *pACI;
-    struct aurora_memory_region_hndl *regions;
-    size_t n_regions;
-    size_t rgn_capacity;
+    struct aurora_region_list {
+        struct aurora_memory_region_hndl *data;
+        size_t size;
+        size_t capacity;
+    }
+    // Memory is physically here
+    local_rgns,
+        // Memory is not physically here
+        remote_rgns;
 }
 #endif
 ;
@@ -161,9 +168,14 @@ extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
 // (no data manipulation)
 // ONLY adds and removes from the list
 #ifdef ARM_INTERNAL
-extern eARM_error _arm_check_amr_hndl(arm_hndl *pHndl, const amr_hndl *pAMR);
-extern eARM_error _arm_add(arm_hndl *pHndl, const amr_hndl *pAMR);
-extern eARM_error _arm_remove(arm_hndl *pHndl, const size_t amr_index);
+extern eARM_error _arl_init(struct aurora_region_list *pList);
+extern eARM_error _arl_free_local(struct aurora_region_list *pList,
+                                  aci_hndl *pACI);
+extern eARM_error _arl_free_remote(struct aurora_region_list *pList,
+                                   aci_hndl *pACI);
+extern amr_hndl *_arl_add(struct aurora_region_list *pList);
+extern eARM_error _arl_remove(struct aurora_region_list *pList,
+                              const size_t amr_index);
 #endif
 
 #endif
