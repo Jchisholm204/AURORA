@@ -35,7 +35,6 @@
 struct aurora_memory_region_hndl {
     // Store as uint64_t to prevent prefetching
     uint64_t pActive_memory;
-    uint64_t pShadow_memory;
     const size_t rgn_size;
     const uint64_t id;
     const char name[ARM_NAME_LEN];
@@ -44,9 +43,10 @@ struct aurora_memory_region_hndl {
         struct {
             ucp_rkey_h remote_key;
             ucp_mem_h mem_hndl;
+            uint64_t pShadow_memory;
         };
 #endif
-        uint64_t __reserved[2];
+        uint64_t __reserved[3];
     };
 };
 
