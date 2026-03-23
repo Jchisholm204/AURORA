@@ -162,12 +162,12 @@ extern eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
 extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
                            const uint64_t remote_addr, void *data, size_t size);
 
+#ifdef ARM_INTERNAL
 // Internal functions to add and remove from internal list
 // (no remote trigger)
 // (no ucx operations)
 // (no data manipulation)
 // ONLY adds and removes from the list
-#ifdef ARM_INTERNAL
 extern eARM_error _arl_init(struct aurora_region_list *pList);
 extern eARM_error _arl_free_local(struct aurora_region_list *pList,
                                   aci_hndl *pACI);
