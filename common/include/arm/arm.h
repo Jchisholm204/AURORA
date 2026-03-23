@@ -115,6 +115,7 @@ extern eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR);
  * @param pHndl ARM Handle to remove from
  * @param pAMR Match Criteria (Will remove any regions that match the values in
  * this struct)
+ * This function may also be called internally free all local data structures
  * @return
  */
 extern eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR);
@@ -125,7 +126,8 @@ extern eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR);
  * @param pHndl ARM Handle
  * @return The number of regions associated with the handle
  */
-extern size_t arm_get_n_regions(arm_hndl *pHndl);
+extern size_t arm_get_n_remote_regions(arm_hndl *pHndl);
+extern size_t arm_get_n_local_regions(arm_hndl *pHndl);
 
 /**
  * @brief Get read only access to a handles regions
@@ -133,7 +135,8 @@ extern size_t arm_get_n_regions(arm_hndl *pHndl);
  * @param pHndl Handle to access
  * @return read only pointer to the internal ARM array
  */
-extern const amr_hndl *arm_get_regions(arm_hndl *pHndl);
+extern const amr_hndl *arm_get_remote_regions(arm_hndl *pHndl);
+extern const amr_hndl *arm_get_local_regions(arm_hndl *pHndl);
 
 /**
  * @brief RDMA Write to a region (shadow or active)
@@ -169,10 +172,6 @@ extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
 // (no data manipulation)
 // ONLY adds and removes from the list
 extern eARM_error _arl_init(struct aurora_region_list *pList);
-extern eARM_error _arl_free_local(struct aurora_region_list *pList,
-                                  aci_hndl *pACI);
-extern eARM_error _arl_free_remote(struct aurora_region_list *pList,
-                                   aci_hndl *pACI);
 extern amr_hndl *_arl_add(struct aurora_region_list *pList);
 extern eARM_error _arl_remove(struct aurora_region_list *pList,
                               const size_t amr_index);

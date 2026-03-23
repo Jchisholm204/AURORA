@@ -15,6 +15,7 @@
 
 #include "aci/aci.h"
 #include "acn/acn.h"
+#include "arm/arm.h"
 #include "aul.h"
 #include "aul_configuration.h"
 
@@ -26,6 +27,7 @@ struct aurora_user_library_context {
     FILE *log_file;
     aci_hndl *pACI;
     acn_hndl *pACN;
+    arm_hndl *pARM;
 };
 
 extern struct aurora_user_library_context _aul_ctx;

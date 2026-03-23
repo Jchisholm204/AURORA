@@ -12,14 +12,31 @@
 #define ARM_INTERNAL
 #include "arm/arm.h"
 
+#warning "Not Implemented"
+
 eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
                      const uint64_t remote_addr, const void *data,
                      size_t size) {
+    (void)pHndl;
+    (void)pAMR;
+    (void)remote_addr;
+    (void)data;
+    (void)size;
+    return eARM_OK;
 }
 
 eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
                     const uint64_t remote_addr, void *data, size_t size) {
+    (void)pHndl;
+    (void)pAMR;
+    (void)remote_addr;
+    (void)data;
+    (void)size;
+    return eARM_OK;
 }
 
 eARM_error arm_sync(arm_hndl *pHndl, const amr_hndl *pAMR) {
+    (void)pHndl;
+    (void)pAMR;
+    return eARM_OK;
 }

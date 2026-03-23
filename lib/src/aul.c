@@ -27,6 +27,7 @@ struct aurora_user_library_context _aul_ctx = {
     .log_file = NULL,
     .pACI = NULL,
     .pACN = NULL,
+    .pARM = NULL,
 };
 
 int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
@@ -132,6 +133,13 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     free(ads_data_rx);
 
     // Setup the ARM (Region Manager)
+    _aul_ctx.pARM = arm_create_instance(_aul_ctx.pACI);
+
+    if (!_aul_ctx.pARM) {
+        log_fatal("Failed to create ARM");
+        (void) AUL_Finalize();
+        return -1;
+    }
 
     return 0;
 }
@@ -143,6 +151,7 @@ int AUL_Finalize(void) {
     }
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);
+    arm_destroy_instance(&_aul_ctx.pARM);
     return 0;
 }
 

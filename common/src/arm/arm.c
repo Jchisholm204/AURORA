@@ -75,8 +75,30 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
     }
 
     // Clean up the memory regions
-    _arl_free_local(&pHndl->local_rgns, pHndl->pACI);
-    _arl_free_remote(&pHndl->remote_rgns, pHndl->pACI);
+    if (pHndl->local_rgns.data) {
+        for (size_t i = 0; i < pHndl->local_rgns.size; i++) {
+            amr_hndl *pAMR = &pHndl->local_rgns.data[i];
+            (void) arm_remove(pHndl, pAMR);
+        }
+        free(pHndl->local_rgns.data);
+        pHndl->local_rgns = (struct aurora_region_list) {0};
+    }
+    if (pHndl->remote_rgns.data) {
+        for (size_t i = pHndl->remote_rgns.size; i > 0; i--) {
+            amr_hndl *pAMR = &pHndl->remote_rgns.data[i];
+            if (pAMR->remote_key) {
+                ucp_rkey_destroy(pAMR->remote_key);
+                pAMR->remote_key = NULL;
+            }
+            if (pAMR->mem_hndl) {
+                log_debug("mem hndl in remote?");
+                (void) aci_mem_unmap(pHndl->pACI, pAMR->mem_hndl);
+                pAMR->mem_hndl = NULL;
+            }
+        }
+        free(pHndl->remote_rgns.data);
+        pHndl->remote_rgns = (struct aurora_region_list) {0};
+    }
 
     ucs_status_t ucs_status = UCS_OK;
     ucp_am_handler_param_t am_params;
@@ -110,61 +132,6 @@ eARM_error _arl_init(struct aurora_region_list *pList) {
         return eARM_ERR_NULL;
     }
     (void) memset(pList->data, 0, ARM_INIT_INSTANCES * sizeof(amr_hndl));
-    return eARM_OK;
-}
-
-eARM_error _arl_free_local(struct aurora_region_list *pList, aci_hndl *pACI) {
-    if (!pList || !pACI) {
-        log_debug("NULL argument");
-        return eARM_ERR_NULL;
-    }
-
-    log_debug("Deleting %d local regions.", pList->size);
-
-    for (size_t i = pList->size; i > 0; i--) {
-        amr_hndl *pAMR = &pList->data[i];
-        if (pAMR->remote_key) {
-            ucp_rkey_destroy(pAMR->remote_key);
-            pAMR->remote_key = NULL;
-        }
-        if (pAMR->mem_hndl) {
-            aci_mem_unmap(pACI, pAMR->mem_hndl);
-            pAMR->mem_hndl = NULL;
-        }
-        if (pAMR->pActive_memory) {
-            free((void *) pAMR->pActive_memory);
-            pAMR->pActive_memory = 0;
-        }
-        if (pAMR->pShadow_memory) {
-            free((void *) pAMR->pShadow_memory);
-            pAMR->pShadow_memory = 0;
-        }
-    }
-
-    return eARM_OK;
-}
-
-eARM_error _arl_free_remote(struct aurora_region_list *pList, aci_hndl *pACI) {
-    if (!pList || !pACI) {
-        log_debug("NULL argument");
-        return eARM_ERR_NULL;
-    }
-
-    log_debug("Deleting %d remote regions.", pList->size);
-
-    for (size_t i = pList->size; i > 0; i--) {
-        amr_hndl *pAMR = &pList->data[i];
-        if (pAMR->remote_key) {
-            ucp_rkey_destroy(pAMR->remote_key);
-            pAMR->remote_key = NULL;
-        }
-        if (pAMR->mem_hndl) {
-            log_debug("mem hndl in remote?");
-            aci_mem_unmap(pACI, pAMR->mem_hndl);
-            pAMR->mem_hndl = NULL;
-        }
-    }
-
     return eARM_OK;
 }
 
@@ -215,7 +182,7 @@ eARM_error _arl_remove(struct aurora_region_list *pList,
         pList->capacity > ARM_INIT_INSTANCES) {
         pList->capacity /= 4;
         pList->data =
-            reallocarray(pList->data, sizeof(amr_hndl), pList->capacity);
+            reallocarray(pList->data, pList->capacity, sizeof(amr_hndl));
     }
 
     return eARM_OK;
