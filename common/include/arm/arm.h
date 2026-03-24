@@ -187,6 +187,7 @@ extern eARM_error _arl_init(struct aurora_region_list *pList);
 extern amr_hndl *_arl_add(struct aurora_region_list *pList);
 extern eARM_error _arl_remove(struct aurora_region_list *pList,
                               const size_t amr_index);
+extern eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR, size_t *pInst_idx);
 #endif
 
 #endif

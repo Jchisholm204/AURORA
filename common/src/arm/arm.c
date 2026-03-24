@@ -187,3 +187,40 @@ eARM_error _arl_remove(struct aurora_region_list *pList,
 
     return eARM_OK;
 }
+
+eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR,
+                     size_t *pInst_idx) {
+    if (!pList || !ppAMR) {
+        return eARM_ERR_NULL;
+    }
+    if (!*ppAMR) {
+        return eARM_ERR_NULL;
+    }
+
+    amr_hndl *pInst_AMR = NULL;
+    if (*ppAMR < pList->data + pList->size && *ppAMR > pList->data) {
+        // Use the passed address directly if it is within internal array bounds
+        // -> Leave pAMR alone
+        *pInst_idx = (size_t) (*ppAMR - pList->data);
+        return eARM_OK;
+    } else {
+        // Find matching AMR
+        for (*pInst_idx = 0; *pInst_idx < pList->size; (*pInst_idx)++) {
+            pInst_AMR = &pList->data[*pInst_idx];
+            bool match = true;
+            match &= (strlen((*ppAMR)->name) == 0 ||
+                      strcmp(pInst_AMR->name, (*ppAMR)->name));
+            match &= ((*ppAMR)->id == 0 || pInst_AMR->id == (*ppAMR)->id);
+            match &= ((*ppAMR)->pActive_memory == pInst_AMR->pActive_memory);
+            if (match) {
+                break;
+            }
+        }
+        if ((*pInst_idx) == pList->size) {
+            log_error("Could not find instance");
+            *ppAMR = NULL;
+            return eARM_ERR_MATCH_NOT_FOUND;
+        }
+    }
+    return eARM_OK;
+}
