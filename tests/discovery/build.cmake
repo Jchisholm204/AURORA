@@ -5,6 +5,6 @@ add_executable(test_discovery discovery/test_discovery.c)
 # OR link against barf_client for "black-box" API testing
 target_link_libraries(test_discovery PRIVATE 
     aurora_user
-    gtest # (If you decide to use GoogleTest later)
+    # gtest # (If you decide to use GoogleTest later)
 )
 
