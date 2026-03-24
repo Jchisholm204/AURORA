@@ -55,6 +55,7 @@ struct aurora_memory_region_hndl {
         struct {
             ucp_rkey_h remote_key;
             ucp_mem_h mem_hndl;
+            // Store as uint64_t to prevent prefetching
             uint64_t pShadow_memory;
         };
 #endif
@@ -187,7 +188,8 @@ extern eARM_error _arl_init(struct aurora_region_list *pList);
 extern amr_hndl *_arl_add(struct aurora_region_list *pList);
 extern eARM_error _arl_remove(struct aurora_region_list *pList,
                               const size_t amr_index);
-extern eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR, size_t *pInst_idx);
+extern eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR,
+                            size_t *pInst_idx);
 #endif
 
 #endif

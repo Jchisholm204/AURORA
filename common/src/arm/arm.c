@@ -208,10 +208,14 @@ eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR,
         for (*pInst_idx = 0; *pInst_idx < pList->size; (*pInst_idx)++) {
             pInst_AMR = &pList->data[*pInst_idx];
             bool match = true;
+            // Compare the name variable
             match &= (strlen((*ppAMR)->name) == 0 ||
                       strcmp(pInst_AMR->name, (*ppAMR)->name));
+            // Compare the ID
             match &= ((*ppAMR)->id == 0 || pInst_AMR->id == (*ppAMR)->id);
+            // Compare the AM address
             match &= ((*ppAMR)->pActive_memory == pInst_AMR->pActive_memory);
+            // Do NOT compare the shadow memory (cannot be set by user)
             if (match) {
                 break;
             }
