@@ -177,8 +177,16 @@ eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
     if (!pHndl || !pNotifs) {
         return 0;
     }
+    // Check the UCS Connection Status
+    int aci_status = aci_poll(pHndl->pACI);
+    if (aci_status == UCS_ERR_CONNECTION_RESET) {
+        return eACN_ERR_FATAL;
+    } else if (aci_status != UCS_OK) {
+        return eACN_ERR_UCS;
+    }
+
     // Load the latest memory chunk
-    int mem_err;
+    eACN_error mem_err;
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
@@ -195,5 +203,5 @@ eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
         notifs = notifs >> 1;
     }
 
-    return 0;
+    return eACN_OK;
 }

@@ -145,7 +145,7 @@ void *_acr_checkpoint(void *arg) {
     char name[ACN_NAME_LEN];
     acn_get_name(pCtx->pInstance->pACN, name);
 
-    log_debug("ACN Name=%s", name);
+    // log_debug("ACN Name=%s", name);
 
     // NOP
 
@@ -190,6 +190,7 @@ void *_acr_shutdowndisconnect(void *arg) {
     log_trace("ACR is intentionally destroying an instance");
 
     // Run the command stuffs
+    arm_destroy_instance(&pCtx->pInstance->pARM);
     acn_destroy_instance(&pCtx->pInstance->pACN);
     aci_disconnect_instance(pCtx->pInstance->pACI);
     aci_destroy_instance(&pCtx->pInstance->pACI);

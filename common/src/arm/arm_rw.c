@@ -34,9 +34,3 @@ eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
     (void)size;
     return eARM_OK;
 }
-
-eARM_error arm_sync(arm_hndl *pHndl, const amr_hndl *pAMR) {
-    (void)pHndl;
-    (void)pAMR;
-    return eARM_OK;
-}

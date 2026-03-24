@@ -18,7 +18,7 @@
 #include <string.h>
 
 eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
-    if (!pHndl || pAMR) {
+    if (!pHndl || !pAMR) {
         log_error("NULL parameter");
         return eARM_ERR_NULL;
     }
@@ -100,6 +100,8 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_UCS;
     }
 
+    log_debug("added region %d", pInst_AMR->id);
+
     return eARM_OK;
 }
 
@@ -116,6 +118,8 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
         log_error("ARM Error");
         return arm_status;
     }
+
+    log_debug("removing region %d", pInst_AMR->id);
 
     ucp_request_param_t rparam = {0};
     rparam.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
@@ -153,8 +157,13 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
         free((void *) pInst_AMR->pShadow_memory);
         pInst_AMR->pShadow_memory = 0;
     }
-    if (pInst_AMR->free && pInst_AMR->pActive_memory) {
+    // Attempt to use the provided free
+    if (pAMR->free && pInst_AMR->pActive_memory) {
+        pAMR->free(pInst_AMR);
+        *((uint64_t *) (&pInst_AMR->pActive_memory)) = 0;
+    } else if (pInst_AMR->free && pInst_AMR->pActive_memory) {
         pInst_AMR->free(pInst_AMR);
+        *((uint64_t *) (&pInst_AMR->pActive_memory)) = 0;
     }
     return _arl_remove(&pHndl->local_rgns, inst_idx);
 }

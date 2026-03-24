@@ -27,8 +27,10 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
     arm_hndl *pHndl = (arm_hndl *) arg;
     amr_hndl *pAMR = (amr_hndl *) header;
     void *packed_rkey = (amr_hndl *) data;
+    // Unused, SHould be NULL
     (void) pParam;
-    if (header_len != sizeof(arm_hndl) || data_len != sizeof(amr_hndl)) {
+
+    if (header_len != sizeof(amr_hndl)) {
         log_error("UCS Error");
         // Return OK to avoid killing UCS
         return UCS_OK;
@@ -56,6 +58,7 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
     pInst_AMR->remote_key = NULL;
     pInst_AMR->mem_hndl = NULL;
 
+    (void) data_len;
     ucs_status_t ucs_status =
         aci_rkey_unpack(pHndl->pACI, packed_rkey, &pInst_AMR->remote_key);
 
@@ -66,6 +69,8 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
         return UCS_OK;
     }
 
+    log_debug("Added new remote region. %d %s", pInst_AMR->id, pInst_AMR->name);
+
     return UCS_OK;
 }
 
@@ -74,7 +79,11 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
                             const ucp_am_recv_param_t *pParam) {
     arm_hndl *pHndl = (arm_hndl *) arg;
     amr_hndl *pAMR = (amr_hndl *) header;
+    // Unused, Should be NULL
+    (void) data;
+    (void) data_len;
     (void) pParam;
+
     if (header_len != sizeof(amr_hndl)) {
         log_error("UCS Error");
         // Return OK to avoid killing UCS
@@ -100,7 +109,9 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
         pInst_AMR->remote_key = NULL;
     }
 
-    _arl_remove(&pHndl->remote_rgns, inst_idx);
+    (void) _arl_remove(&pHndl->remote_rgns, inst_idx);
+
+    log_debug("Removed remote region");
 
     return UCS_OK;
 }

@@ -31,6 +31,9 @@ int main(int argc, char **argv) {
 
     AUL_Mem_protect(3, buf, sizeof(buf));
 
+    AUL_Mem_protect(5, buf, sizeof(buf));
+    AUL_Mem_protect(7, buf, sizeof(buf));
+
     printf("Starting Checkpoint\n");
     int s = AUL_Checkpoint(1, "HelloCheckpoint");
     printf("Finished Checkpoint status=%d\n", s);

@@ -44,7 +44,7 @@ int are_main(int argc, char **argv) {
         eACN_notification pending;
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
-        log_debug("Polling Index: %d", pInstance->__reserved[0]);
+        // log_debug("Polling Index: %d", pInstance->__reserved[0]);
 
         if (acn_err == eACN_ERR_FATAL) {
             log_info(
@@ -54,13 +54,13 @@ int are_main(int argc, char **argv) {
         } else if (acn_err == eACN_ERR_UCS) {
             acr_run(pACR, pInstance, eACR_nop);
         } else if (pending & eACN_checkpoint) {
-            log_debug("Checkpoint Pending..");
+            // log_debug("Checkpoint Pending..");
             acr_run(pACR, pInstance, eACR_checkpoint);
         } else if (pending & eACN_restore) {
-            log_debug("Restore Pending..");
+            // log_debug("Restore Pending..");
             acr_run(pACR, pInstance, eACR_restore);
         } else {
-            log_debug("Nothing Pending..");
+            // log_debug("Nothing Pending..");
             acr_run(pACR, pInstance, eACR_nop);
         }
         // sleep(1);

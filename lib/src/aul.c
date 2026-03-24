@@ -30,6 +30,14 @@ struct aurora_user_library_context _aul_ctx = {
     .pARM = NULL,
 };
 
+void _arm_free(const amr_hndl *const pAMR) {
+    if (pAMR) {
+        if (pAMR->pActive_memory) {
+            free((void *) pAMR->pActive_memory);
+        }
+    }
+}
+
 int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     if (!pCFG) {
         log_error("No Configuration Provided");
@@ -158,18 +166,53 @@ int AUL_Finalize(void) {
 int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
                     const size_t size) {
     // Advance the client side memory tick (memory ops pending)
-    acn_tick(_aul_ctx.pACN, eACN_memory);
-    (void) mem_id;
-    (void) ptr;
-    (void) size;
-    return -1;
+    int acn_status = 0;
+    acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
+    if (acn_status != 0) {
+        log_error("ACN Error");
+        return acn_status;
+    }
+
+    amr_hndl amr = {
+        .pActive_memory = (uint64_t) ptr,
+        .rgn_size = size,
+        .id = mem_id,
+        .free = _arm_free,
+        .name = "",
+        .__reserved = {0ULL},
+    };
+    eARM_error arm_status = eARM_OK;
+    arm_status = arm_add(_aul_ctx.pARM, &amr);
+    if (arm_status != eARM_OK) {
+        log_error("%d", arm_status);
+        return -arm_status;
+    }
+    return 0;
 }
 
 int AUL_Mem_unprotect(const uint64_t mem_id) {
     // Advance the client side memory tick (memory ops pending)
-    acn_tick(_aul_ctx.pACN, eACN_memory);
-    (void) mem_id;
-    return -1;
+    int acn_status = 0;
+    acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
+    if (acn_status != 0) {
+        log_error("ACN Error");
+        return acn_status;
+    }
+
+    amr_hndl amr = {
+        .pActive_memory = 0ULL,
+        .rgn_size = 0ULL,
+        .id = mem_id,
+        .free = NULL,
+        .name = "",
+        .__reserved = {0ULL},
+    };
+    eARM_error arm_status = eARM_OK;
+    arm_status = arm_remove(_aul_ctx.pARM, &amr);
+    if (arm_status != eARM_OK) {
+        return -arm_status;
+    }
+    return 0;
 }
 
 int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {

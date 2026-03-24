@@ -74,19 +74,15 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
         return eARM_ERR_NULL;
     }
 
+    log_debug("Destroying Instance");
+
     // Clean up the memory regions
-    if (pHndl->local_rgns.data) {
-        for (size_t i = 0; i < pHndl->local_rgns.size; i++) {
-            amr_hndl *pAMR = &pHndl->local_rgns.data[i];
-            (void) arm_remove(pHndl, pAMR);
-        }
-        free(pHndl->local_rgns.data);
-        pHndl->local_rgns = (struct aurora_region_list) {0};
-    }
+
     if (pHndl->remote_rgns.data) {
-        for (size_t i = pHndl->remote_rgns.size; i > 0; i--) {
+        for (size_t i = 0; i < pHndl->remote_rgns.size; i++) {
             amr_hndl *pAMR = &pHndl->remote_rgns.data[i];
             if (pAMR->remote_key) {
+                log_debug("destroy rkey 0x%lx", pAMR->remote_key);
                 ucp_rkey_destroy(pAMR->remote_key);
                 pAMR->remote_key = NULL;
             }
@@ -98,6 +94,15 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
         }
         free(pHndl->remote_rgns.data);
         pHndl->remote_rgns = (struct aurora_region_list) {0};
+    }
+
+    if (pHndl->local_rgns.data) {
+        for (size_t i = 0; i < pHndl->local_rgns.size; i++) {
+            amr_hndl *pAMR = &pHndl->local_rgns.data[i];
+            (void) arm_remove(pHndl, pAMR);
+        }
+        free(pHndl->local_rgns.data);
+        pHndl->local_rgns = (struct aurora_region_list) {0};
     }
 
     ucs_status_t ucs_status = UCS_OK;
@@ -212,9 +217,10 @@ eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR,
             match &= (strlen((*ppAMR)->name) == 0 ||
                       strcmp(pInst_AMR->name, (*ppAMR)->name));
             // Compare the ID
-            match &= ((*ppAMR)->id == 0 || pInst_AMR->id == (*ppAMR)->id);
-            // Compare the AM address
-            match &= ((*ppAMR)->pActive_memory == pInst_AMR->pActive_memory);
+            match &= (pInst_AMR->id == (*ppAMR)->id);
+            // Compare the AM address if its not NULL
+            match &= ((*ppAMR)->pActive_memory == pInst_AMR->pActive_memory) ||
+                     (!(*ppAMR)->pActive_memory);
             // Do NOT compare the shadow memory (cannot be set by user)
             if (match) {
                 break;
