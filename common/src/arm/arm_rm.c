@@ -75,7 +75,7 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_UCS;
     }
 
-    ucp_request_param_t rparam;
+    ucp_request_param_t rparam = {0};
 
     ucs_status_ptr_t pStatus =
         aci_am_send_nbx(pHndl->pACI, ARM_UCX_ID_ADD, pInst_AMR,
@@ -110,29 +110,37 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
 
     amr_hndl *pInst_AMR = NULL;
     size_t inst_idx = 0;
-    if (pAMR < pHndl->local_rgns.data + pHndl->local_rgns.size &&
-        pAMR > pHndl->local_rgns.data) {
-        // Use the passed address directly if it is within internal array bounds
-        pInst_AMR = (amr_hndl *) pAMR;
-        inst_idx = (size_t) (pAMR - pHndl->local_rgns.data);
-    } else {
-        // Find matching AMR
-        for (inst_idx = 0; inst_idx > pHndl->local_rgns.size; inst_idx++) {
-            pInst_AMR = &pHndl->local_rgns.data[inst_idx];
-            bool match = true;
-            match &= (strlen(pAMR->name) == 0 ||
-                      strcmp(pInst_AMR->name, pAMR->name));
-            match &= (pAMR->id == 0 || pInst_AMR->id == pAMR->id);
-            match &= (pAMR->pActive_memory == pInst_AMR->pActive_memory);
-            if (match) {
-                break;
-            }
-        }
-        if (inst_idx == pHndl->local_rgns.size) {
-            log_error("Could not find the instance to remove.");
-            return eARM_ERR_MATCH_NOT_FOUND;
-        }
+    eARM_error arm_status;
+    arm_status = _arm_find(&pHndl->local_rgns, &pInst_AMR, &inst_idx);
+    if (arm_status != eARM_OK || !pInst_AMR) {
+        log_error("ARM Error");
+        return arm_status;
     }
+
+    ucp_request_param_t rparam = {0};
+    rparam.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
+    rparam.flags = UCP_AM_SEND_FLAG_COPY_HEADER;
+
+    ucs_status_t ucs_status = UCS_OK;
+    ucs_status_ptr_t pStatus =
+        aci_am_send_nbx(pHndl->pACI, ARM_UCX_ID_RM, pInst_AMR, sizeof(amr_hndl),
+                        NULL, 0, &rparam);
+    if (UCS_PTR_IS_ERR(pStatus)) {
+        log_error("UCS Error %s", ucs_status_string(UCS_PTR_STATUS(pStatus)));
+        (void) arm_remove(pHndl, pInst_AMR);
+        return eARM_ERR_UCS;
+    } else if (UCS_PTR_IS_PTR(pStatus)) {
+        do {
+            aci_poll(pHndl->pACI);
+            ucs_status = ucp_request_check_status(pStatus);
+
+        } while (ucs_status == UCS_INPROGRESS);
+    }
+
+    if (ucs_status != UCS_OK) {
+        log_error("UCS Error %s", ucs_status_string(UCS_PTR_STATUS(pStatus)));
+    }
+
     if (pInst_AMR->remote_key) {
         ucp_rkey_destroy(pInst_AMR->remote_key);
         pInst_AMR->remote_key = NULL;
