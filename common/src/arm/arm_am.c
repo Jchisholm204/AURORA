@@ -14,7 +14,6 @@
 #include "arm/arm_am.h"
 
 #include "arm/arm.h"
-#warning "Not Implemented"
 
 ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
                              void *data, size_t data_len,
@@ -31,6 +30,7 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
 ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
                             void *data, size_t data_len,
                             const ucp_am_recv_param_t *pParam) {
+#warning "Not Implemented"
     (void) arg;
     (void) header;
     (void) header_len;

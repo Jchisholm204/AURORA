@@ -28,6 +28,11 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_NULL;
     }
 
+    if (!pAMR->free) {
+        log_error("NULL parameter");
+        return eARM_ERR_NULL;
+    }
+
     void *shadow_memory = malloc(pAMR->rgn_size);
 
     if (!shadow_memory) {
@@ -123,7 +128,7 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
                 break;
             }
         }
-        if(inst_idx == pHndl->local_rgns.size){
+        if (inst_idx == pHndl->local_rgns.size) {
             log_error("Could not find the instance to remove.");
             return eARM_ERR_MATCH_NOT_FOUND;
         }
@@ -139,6 +144,9 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
     if (pInst_AMR->pShadow_memory) {
         free((void *) pInst_AMR->pShadow_memory);
         pInst_AMR->pShadow_memory = 0;
+    }
+    if (pInst_AMR->free && pInst_AMR->pActive_memory) {
+        pInst_AMR->free(pInst_AMR);
     }
     return _arl_remove(&pHndl->local_rgns, inst_idx);
 }

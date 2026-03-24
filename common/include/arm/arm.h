@@ -32,11 +32,23 @@
 #define ARM_INIT_INSTANCES 16
 #endif
 
+struct aurora_memory_region_hndl;
+
+/**
+ * @brief Active Region Free Callback
+ *
+ * @param pAMR The Active Memory Region being Free'd
+ * @return NOTHING. This should always succeed
+ */
+typedef void (*aurora_memory_free_cb_t)(
+    const struct aurora_memory_region_hndl *const pAMR);
+
 struct aurora_memory_region_hndl {
     // Store as uint64_t to prevent prefetching
-    uint64_t pActive_memory;
+    const uint64_t pActive_memory;
     const size_t rgn_size;
     const uint64_t id;
+    const aurora_memory_free_cb_t free;
     const char name[ARM_NAME_LEN];
     union {
 #ifdef ARM_INTERNAL
