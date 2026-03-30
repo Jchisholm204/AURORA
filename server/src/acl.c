@@ -68,6 +68,7 @@ int acl_finalize(acl_hndl **ppHndl) {
     }
     (*ppHndl)->running = false;
     pthread_join((*ppHndl)->thread_manager, NULL);
+    (void)ads_finalize(&(*ppHndl)->pADS);
     free(*ppHndl);
     *ppHndl = NULL;
     return 0;
