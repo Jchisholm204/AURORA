@@ -108,9 +108,9 @@ int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {
         return INT_MIN;
     }
     // Load the latest memory chunk
-    int mem_err;
+    int mem_err = 0;
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
-        return mem_err;
+        // Do not return on error, use the last one if needed
     }
 
     int diff = 0;
