@@ -107,8 +107,8 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
     }
 
     if (pHndl->local_rgns.data) {
-        for (size_t i = 0; i < pHndl->local_rgns.size; i++) {
-            amr_hndl *pAMR = &pHndl->local_rgns.data[i];
+        while (pHndl->local_rgns.size > 0) {
+            amr_hndl *pAMR = &pHndl->local_rgns.data[0];
             (void) arm_remove(pHndl, pAMR);
         }
         free(pHndl->local_rgns.data);
@@ -213,10 +213,11 @@ eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR,
     }
 
     amr_hndl *pInst_AMR = NULL;
-    if (*ppAMR < pList->data + pList->size && *ppAMR > pList->data) {
+    if (*ppAMR <= pList->data + pList->size && *ppAMR > pList->data) {
         // Use the passed address directly if it is within internal array bounds
         // -> Leave pAMR alone
         *pInst_idx = (size_t) (*ppAMR - pList->data);
+        log_trace("Local Instance %d id=%d", *pInst_idx, (*ppAMR)->id);
         return eARM_OK;
     } else {
         // Find matching AMR
@@ -233,6 +234,7 @@ eARM_error _arm_find(struct aurora_region_list *pList, amr_hndl **ppAMR,
                      (!(*ppAMR)->pActive_memory);
             // Do NOT compare the shadow memory (cannot be set by user)
             if (match) {
+                *ppAMR = pInst_AMR;
                 break;
             }
         }

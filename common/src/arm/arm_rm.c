@@ -143,6 +143,7 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
             ucs_status = ucp_request_check_status(pStatus);
 
         } while (ucs_status == UCS_INPROGRESS);
+        ucp_request_release(pStatus);
     }
 
     free(rkey_buffer);
@@ -163,16 +164,17 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_NULL;
     }
 
-    amr_hndl *pInst_AMR = NULL;
+    amr_hndl *pInst_AMR = (amr_hndl *) pAMR;
     size_t inst_idx = 0;
     eARM_error arm_status;
     arm_status = _arm_find(&pHndl->local_rgns, &pInst_AMR, &inst_idx);
     if (arm_status != eARM_OK || !pInst_AMR) {
-        log_error("ARM Error");
+        log_error("ARM Error %d", arm_status);
         return arm_status;
     }
 
-    log_debug("removing region %d", pInst_AMR->id);
+    log_trace("removing region %d, %d left", pInst_AMR->id,
+              pHndl->local_rgns.size - 1);
 
     ucp_request_param_t rparam = {0};
     rparam.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
@@ -184,14 +186,15 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
                         NULL, 0, &rparam);
     if (UCS_PTR_IS_ERR(pStatus)) {
         log_error("UCS Error %s", ucs_status_string(UCS_PTR_STATUS(pStatus)));
-        (void) arm_remove(pHndl, pInst_AMR);
-        return eARM_ERR_UCS;
+        // Not much we can do about an error here..
+        // This function may be used when UCP is already in an error state
     } else if (UCS_PTR_IS_PTR(pStatus)) {
         do {
-            aci_poll(pHndl->pACI);
+            (void) aci_poll(pHndl->pACI);
             ucs_status = ucp_request_check_status(pStatus);
 
         } while (ucs_status == UCS_INPROGRESS);
+        ucp_request_release(pStatus);
     }
 
     if (ucs_status != UCS_OK) {

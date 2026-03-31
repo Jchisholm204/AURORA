@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    AUL_Mem_unprotect(3);
+    // AUL_Mem_unprotect(3);
 
     AUL_Finalize();
 

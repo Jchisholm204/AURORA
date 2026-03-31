@@ -32,9 +32,6 @@ struct aurora_user_library_context _aul_ctx = {
 
 void _arm_free(const amr_hndl *const pAMR) {
     if (pAMR) {
-        if (pAMR->pActive_memory) {
-            free((void *) pAMR->pActive_memory);
-        }
         if (pAMR->pShadow_memory) {
             free((void *) pAMR->pShadow_memory);
         }
@@ -160,9 +157,9 @@ int AUL_Finalize(void) {
         fclose(_aul_ctx.log_file);
         _aul_ctx.log_file = NULL;
     }
+    arm_destroy_instance(&_aul_ctx.pARM);
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);
-    arm_destroy_instance(&_aul_ctx.pARM);
     return 0;
 }
 

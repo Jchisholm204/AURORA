@@ -111,7 +111,7 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
                             void *data, size_t data_len,
                             const ucp_am_recv_param_t *pParam) {
     arm_hndl *pHndl = (arm_hndl *) arg;
-    amr_hndl *pAMR = (amr_hndl *) header;
+    amr_hndl *pRemote_AMR = (amr_hndl *) header;
     // Unused, Should be NULL
     (void) data;
     (void) data_len;
@@ -122,13 +122,15 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
         // Return OK to avoid killing UCS
         return UCS_OK;
     }
-    if (!pHndl || !pAMR) {
+    if (!pHndl || !pRemote_AMR) {
         log_error("UCS Error");
         // Return OK to avoid killing UCS
         return UCS_OK;
     }
 
-    amr_hndl *pInst_AMR = NULL;
+    log_trace("Removing id=%d", pRemote_AMR->id);
+
+    amr_hndl *pInst_AMR = (amr_hndl *) pRemote_AMR;
     size_t inst_idx = 0;
     eARM_error arm_status;
     arm_status = _arm_find(&pHndl->remote_rgns, &pInst_AMR, &inst_idx);
@@ -137,19 +139,20 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
         return UCS_OK;
     }
 
-    if (pInst_AMR->shadow_remote_key) {
-        (void) ucp_rkey_destroy(pInst_AMR->shadow_remote_key);
-        pInst_AMR->shadow_remote_key = NULL;
-    }
-
     if (pInst_AMR->active_remote_key) {
-        (void) ucp_rkey_destroy(pInst_AMR->active_remote_key);
+        log_trace("destroy rkey 0x%lx", pInst_AMR->active_remote_key);
+        ucp_rkey_destroy(pInst_AMR->active_remote_key);
         pInst_AMR->active_remote_key = NULL;
+    }
+    if (pInst_AMR->shadow_remote_key) {
+        log_trace("destroy rkey 0x%lx", pInst_AMR->shadow_remote_key);
+        ucp_rkey_destroy(pInst_AMR->shadow_remote_key);
+        pInst_AMR->shadow_remote_key = NULL;
     }
 
     (void) _arl_remove(&pHndl->remote_rgns, inst_idx);
 
-    log_debug("Removed remote region");
+    log_trace("Removed remote region");
 
     return UCS_OK;
 }

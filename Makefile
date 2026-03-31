@@ -41,5 +41,5 @@ valgrind: build
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --error-limit=no --log-file=valgrindout.txt ./build/${PROJ_NAME}
 
 cachegrind: build
-	valgrind --tool=callgrind --callgrind-out-file=callgrind.out --dump-instr=yes ./build/${PROJ_NAME}
+	valgrind --tool=callgrind --callgrind-out-file=callgrind.out --dump-instr=yes ./build/tests/test_discovery
 
