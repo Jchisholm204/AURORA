@@ -35,6 +35,9 @@ void _arm_free(const amr_hndl *const pAMR) {
         if (pAMR->pActive_memory) {
             free((void *) pAMR->pActive_memory);
         }
+        if (pAMR->pShadow_memory) {
+            free((void *) pAMR->pShadow_memory);
+        }
     }
 }
 
@@ -175,6 +178,7 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 
     amr_hndl amr = {
         .pActive_memory = (uint64_t) ptr,
+        .pShadow_memory = (uint64_t) malloc(size),
         .rgn_size = size,
         .id = mem_id,
         .free = _arm_free,

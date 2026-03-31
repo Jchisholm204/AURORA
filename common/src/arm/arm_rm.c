@@ -23,7 +23,7 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_NULL;
     }
 
-    if (!pAMR->pActive_memory) {
+    if (!pAMR->pActive_memory || !pAMR->pShadow_memory) {
         log_error("NULL parameter");
         return eARM_ERR_NULL;
     }
@@ -33,50 +33,103 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_NULL;
     }
 
-    void *shadow_memory = malloc(pAMR->rgn_size);
-
-    if (!shadow_memory) {
-        log_error("Bad Malloc");
-        return eARM_ERR_NULL;
-    }
-
     amr_hndl *pInst_AMR = _arl_add(&pHndl->local_rgns);
 
     if (!pInst_AMR) {
         log_error("Failed to create AMR");
-        free(shadow_memory);
         return eARM_ERR_NULL;
     }
 
     (void) memcpy(pInst_AMR, pAMR, sizeof(amr_hndl));
 
-    pInst_AMR->pShadow_memory = (uint64_t) shadow_memory;
-
-    ucp_mem_map_params_t mparam;
-    mparam.field_mask =
-        UCP_MEM_MAP_PARAM_FIELD_ADDRESS | UCP_MEM_MAP_PARAM_FIELD_LENGTH;
-    mparam.address = (void *) pInst_AMR->pShadow_memory;
-    mparam.length = pInst_AMR->rgn_size;
-    ucs_status_t ucs_status = UCS_OK;
-    ucs_status = aci_mem_map(pHndl->pACI, &mparam, &pInst_AMR->mem_hndl);
-    if (ucs_status != UCS_OK) {
-        log_error("UCS Failure");
-        (void) arm_remove(pHndl, pInst_AMR);
-        return eARM_ERR_UCS;
-    }
-
     void *rkey_buffer = NULL;
     size_t rkey_size = 0;
-    ucs_status = aci_rkey_pack(pHndl->pACI, pInst_AMR->mem_hndl, &rkey_buffer,
-                               &rkey_size);
-    if (ucs_status != UCS_OK) {
-        log_error("UCS Failure");
-        (void) arm_remove(pHndl, pInst_AMR);
-        return eARM_ERR_UCS;
-    }
+
+    { // BEGIN Map the shadow region
+        ucp_mem_map_params_t mparam;
+        mparam.field_mask =
+            UCP_MEM_MAP_PARAM_FIELD_ADDRESS | UCP_MEM_MAP_PARAM_FIELD_LENGTH;
+        mparam.address = (void *) pInst_AMR->pShadow_memory;
+        mparam.length = pInst_AMR->rgn_size;
+        ucs_status_t ucs_status = UCS_OK;
+        ucs_status =
+            aci_mem_map(pHndl->pACI, &mparam, &pInst_AMR->shadow_mem_hndl);
+        if (ucs_status != UCS_OK) {
+            log_error("UCS Failure");
+            (void) arm_remove(pHndl, pInst_AMR);
+            return eARM_ERR_UCS;
+        }
+        // Pack the shadow rkey into the global buffer
+        ucs_status = aci_rkey_pack(pHndl->pACI, pInst_AMR->shadow_mem_hndl,
+                                   &rkey_buffer, &rkey_size);
+        if (ucs_status != UCS_OK) {
+            log_error("UCS Failure");
+            (void) arm_remove(pHndl, pInst_AMR);
+            return eARM_ERR_UCS;
+        }
+    } // END Map the shadow region
+
+    { // BEGIN Map the active region
+        ucp_mem_map_params_t mparam;
+        // Same mask as shadow region
+        mparam.field_mask =
+            UCP_MEM_MAP_PARAM_FIELD_ADDRESS | UCP_MEM_MAP_PARAM_FIELD_LENGTH;
+        mparam.address = (void *) pInst_AMR->pActive_memory;
+        mparam.length = pInst_AMR->rgn_size;
+        ucs_status_t ucs_status = UCS_OK;
+        ucs_status =
+            aci_mem_map(pHndl->pACI, &mparam, &pInst_AMR->active_mem_hndl);
+        if (ucs_status != UCS_OK) {
+            log_error("UCS Failure");
+            (void) arm_remove(pHndl, pInst_AMR);
+            return eARM_ERR_UCS;
+        }
+        void *active_rkey_buf = NULL;
+        size_t active_rkey_size = 0;
+        ucs_status = aci_rkey_pack(pHndl->pACI, pInst_AMR->active_mem_hndl,
+                                   &active_rkey_buf, &active_rkey_size);
+        if (ucs_status != UCS_OK) {
+            log_error("UCS Failure");
+            // Release the rkey buffer
+            if (rkey_buffer) {
+                ucp_rkey_buffer_release(rkey_buffer);
+                rkey_size = 0;
+                rkey_buffer = NULL;
+            }
+            (void) arm_remove(pHndl, pInst_AMR);
+            return eARM_ERR_UCS;
+        }
+
+        // Pack the rkeys
+        uint8_t *global_rkey_buf =
+            malloc(active_rkey_size + rkey_size + sizeof(size_t));
+        if (!global_rkey_buf) {
+            log_error("Bad Alloc");
+            (void) arm_remove(pHndl, pInst_AMR);
+            return eARM_ERR_NULL;
+        }
+
+        *((size_t *) global_rkey_buf) = rkey_size;
+
+        // Copy rkeys into the buffer
+        (void) memcpy(global_rkey_buf + sizeof(size_t), rkey_buffer, rkey_size);
+        (void) memcpy(global_rkey_buf + sizeof(size_t) + rkey_size,
+                      active_rkey_buf, rkey_size);
+
+        // Free UCP buffers
+        (void) ucp_rkey_buffer_release(rkey_buffer);
+        rkey_buffer = NULL;
+        (void) ucp_rkey_buffer_release(active_rkey_buf);
+        active_rkey_buf = NULL;
+
+        // Finalize rkey buffer in super context
+        rkey_size = active_rkey_size + rkey_size + sizeof(size_t);
+        rkey_buffer = global_rkey_buf;
+
+    } // END Map the active region
 
     ucp_request_param_t rparam = {0};
-
+    ucs_status_t ucs_status = UCS_OK;
     ucs_status_ptr_t pStatus =
         aci_am_send_nbx(pHndl->pACI, ARM_UCX_ID_ADD, pInst_AMR,
                         sizeof(amr_hndl), rkey_buffer, rkey_size, &rparam);
@@ -86,13 +139,13 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(pStatus)) {
         do {
-            aci_poll(pHndl->pACI);
+            (void) aci_poll(pHndl->pACI);
             ucs_status = ucp_request_check_status(pStatus);
 
         } while (ucs_status == UCS_INPROGRESS);
     }
 
-    ucp_rkey_buffer_release(rkey_buffer);
+    free(rkey_buffer);
 
     if (ucs_status != UCS_OK) {
         log_error("UCS Error %s", ucs_status_string(UCS_PTR_STATUS(pStatus)));
@@ -145,26 +198,33 @@ eARM_error arm_remove(arm_hndl *pHndl, const amr_hndl *pAMR) {
         log_error("UCS Error %s", ucs_status_string(UCS_PTR_STATUS(pStatus)));
     }
 
-    if (pInst_AMR->remote_key) {
-        ucp_rkey_destroy(pInst_AMR->remote_key);
-        pInst_AMR->remote_key = NULL;
+    if (pInst_AMR->active_remote_key) {
+        ucp_rkey_destroy(pInst_AMR->active_remote_key);
+        pInst_AMR->active_remote_key = NULL;
     }
-    if (pInst_AMR->mem_hndl) {
-        aci_mem_unmap(pHndl->pACI, pInst_AMR->mem_hndl);
-        pInst_AMR->mem_hndl = NULL;
+    if (pInst_AMR->active_mem_hndl) {
+        aci_mem_unmap(pHndl->pACI, pInst_AMR->active_mem_hndl);
+        pInst_AMR->active_mem_hndl = NULL;
     }
-    if (pInst_AMR->pShadow_memory) {
-        free((void *) pInst_AMR->pShadow_memory);
-        pInst_AMR->pShadow_memory = 0;
+    if (pInst_AMR->shadow_remote_key) {
+        ucp_rkey_destroy(pInst_AMR->shadow_remote_key);
+        pInst_AMR->shadow_remote_key = NULL;
     }
+    if (pInst_AMR->shadow_mem_hndl) {
+        aci_mem_unmap(pHndl->pACI, pInst_AMR->shadow_mem_hndl);
+        pInst_AMR->shadow_mem_hndl = NULL;
+    }
+
     // Attempt to use the provided free
-    if (pAMR->free && pInst_AMR->pActive_memory) {
-        pAMR->free(pInst_AMR);
+    if (pAMR->free &&
+        (pInst_AMR->pActive_memory || pInst_AMR->pShadow_memory)) {
+        // Call the provided free function
+        (void) pAMR->free(pInst_AMR);
+        // Ensure memory is zeroed out
         *((uint64_t *) (&pInst_AMR->pActive_memory)) = 0;
-    } else if (pInst_AMR->free && pInst_AMR->pActive_memory) {
-        pInst_AMR->free(pInst_AMR);
-        *((uint64_t *) (&pInst_AMR->pActive_memory)) = 0;
+        *((uint64_t *) (&pInst_AMR->pShadow_memory)) = 0;
     }
+
     return _arl_remove(&pHndl->local_rgns, inst_idx);
 }
 

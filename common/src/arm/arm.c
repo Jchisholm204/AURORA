@@ -81,15 +81,25 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
     if (pHndl->remote_rgns.data) {
         for (size_t i = 0; i < pHndl->remote_rgns.size; i++) {
             amr_hndl *pAMR = &pHndl->remote_rgns.data[i];
-            if (pAMR->remote_key) {
-                log_debug("destroy rkey 0x%lx", pAMR->remote_key);
-                ucp_rkey_destroy(pAMR->remote_key);
-                pAMR->remote_key = NULL;
+            if (pAMR->active_remote_key) {
+                log_debug("destroy rkey 0x%lx", pAMR->active_remote_key);
+                ucp_rkey_destroy(pAMR->active_remote_key);
+                pAMR->active_remote_key = NULL;
             }
-            if (pAMR->mem_hndl) {
+            if (pAMR->active_mem_hndl) {
                 log_debug("mem hndl in remote?");
-                (void) aci_mem_unmap(pHndl->pACI, pAMR->mem_hndl);
-                pAMR->mem_hndl = NULL;
+                (void) aci_mem_unmap(pHndl->pACI, pAMR->active_mem_hndl);
+                pAMR->active_mem_hndl = NULL;
+            }
+            if (pAMR->shadow_remote_key) {
+                log_debug("destroy rkey 0x%lx", pAMR->shadow_remote_key);
+                ucp_rkey_destroy(pAMR->shadow_remote_key);
+                pAMR->shadow_remote_key = NULL;
+            }
+            if (pAMR->shadow_mem_hndl) {
+                log_debug("mem hndl in remote?");
+                (void) aci_mem_unmap(pHndl->pACI, pAMR->shadow_mem_hndl);
+                pAMR->shadow_mem_hndl = NULL;
             }
         }
         free(pHndl->remote_rgns.data);

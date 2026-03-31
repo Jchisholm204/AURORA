@@ -35,9 +35,11 @@
 struct aurora_memory_region_hndl;
 
 /**
- * @brief Active Region Free Callback
+ * @brief Region Free Callback.
  *
- * @param pAMR The Active Memory Region being Free'd
+ * Must free both the Active and shadow memory
+ *
+ * @param pAMR The Memory Region being Free'd
  * @return NOTHING. This should always succeed
  */
 typedef void (*aurora_memory_free_cb_t)(
@@ -46,6 +48,7 @@ typedef void (*aurora_memory_free_cb_t)(
 struct aurora_memory_region_hndl {
     // Store as uint64_t to prevent prefetching
     const uint64_t pActive_memory;
+    const uint64_t pShadow_memory;
     const size_t rgn_size;
     const uint64_t id;
     const aurora_memory_free_cb_t free;
@@ -53,13 +56,13 @@ struct aurora_memory_region_hndl {
     union {
 #ifdef ARM_INTERNAL
         struct {
-            ucp_rkey_h remote_key;
-            ucp_mem_h mem_hndl;
-            // Store as uint64_t to prevent prefetching
-            uint64_t pShadow_memory;
+            ucp_rkey_h active_remote_key;
+            ucp_mem_h active_mem_hndl;
+            ucp_rkey_h shadow_remote_key;
+            ucp_mem_h shadow_mem_hndl;
         };
 #endif
-        uint64_t __reserved[3];
+        uint64_t __reserved[4];
     };
 };
 
