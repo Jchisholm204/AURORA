@@ -139,6 +139,7 @@ void *_acr_checkpoint(void *arg) {
         return NULL;
     }
     struct aurora_command_ctx *pCtx = arg;
+    aim_entry_t *pInstance = pCtx->pInstance;
 
     // Do the command stuff
 
@@ -148,6 +149,8 @@ void *_acr_checkpoint(void *arg) {
     // log_debug("ACN Name=%s", name);
 
     // NOP
+#warning "bad"
+    acn_tick(pInstance->pACN, eACN_checkpoint);
 
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
@@ -165,10 +168,43 @@ void *_acr_restore(void *arg) {
         return NULL;
     }
     struct aurora_command_ctx *pCtx = arg;
+    aim_entry_t *pInstance = pCtx->pInstance;
 
     // Do the command stuff
 
-    // NOP
+    int64_t restore_version = 0;
+    acn_get(pInstance->pACN, eACN_version, (uint64_t *) &restore_version);
+
+    char restore_name[ACN_NAME_LEN];
+    acn_get_name(pInstance->pACN, restore_name);
+
+    log_debug("Restore Triggered -> %d: %s", restore_version, restore_name);
+
+    size_t inst_n_rgns = arm_get_n_remote_regions(pInstance->pARM);
+    log_trace("Remote has %lu regions", inst_n_rgns);
+
+    const amr_hndl *AMR_list = arm_get_remote_regions(pInstance->pARM);
+
+    uint64_t test_data[4] = {0x0000, 0x1111, 0x2222, 0x3333};
+
+    for (size_t i = 0; i < inst_n_rgns; i++) {
+        const amr_hndl *pAMR = &AMR_list[i];
+        log_trace("RGN: %d: %s", pAMR->id, pAMR->name);
+        eARM_error arm_status =
+            arm_write(pInstance->pARM, pAMR, pAMR->pActive_memory, test_data,
+                      pAMR->rgn_size);
+        if (arm_status != eARM_OK) {
+            log_error("ARM Err %d", arm_status);
+        }
+    }
+
+    acn_set(pInstance->pACN, eACN_version, 7);
+
+    log_trace("Set Version");
+
+    acn_tick(pInstance->pACN, eACN_restore);
+
+    log_trace("Ticked Restore");
 
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
@@ -177,6 +213,7 @@ void *_acr_restore(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
+    log_debug("Finished Restore Operation");
     return NULL;
 }
 

@@ -53,12 +53,12 @@ int are_main(int argc, char **argv) {
             acr_run(pACR, pInstance, eACR_shutdowndisconnect);
         } else if (acn_err == eACN_ERR_UCS) {
             acr_run(pACR, pInstance, eACR_nop);
-        } else if (pending & eACN_checkpoint) {
-            // log_debug("Checkpoint Pending..");
-            acr_run(pACR, pInstance, eACR_checkpoint);
         } else if (pending & eACN_restore) {
-            // log_debug("Restore Pending..");
+            // log_debug("Checkpoint Pending..");
             acr_run(pACR, pInstance, eACR_restore);
+        } else if (pending & eACN_checkpoint) {
+            // log_debug("Restore Pending..");
+            acr_run(pACR, pInstance, eACR_checkpoint);
         } else {
             // log_debug("Nothing Pending..");
             acr_run(pACR, pInstance, eACR_nop);

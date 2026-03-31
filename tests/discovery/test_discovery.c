@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < MEM_SIZE; i++) {
         if (buf[i] != bu2[i]) {
-            printf("Error: %ld != %ld\n", buf[i], bu2[i]);
+            printf("Error: 0x%lx != 0x%lx\n", buf[i], bu2[i]);
         }
     }
 

@@ -82,7 +82,7 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
         for (size_t i = 0; i < pHndl->remote_rgns.size; i++) {
             amr_hndl *pAMR = &pHndl->remote_rgns.data[i];
             if (pAMR->active_remote_key) {
-                log_debug("destroy rkey 0x%lx", pAMR->active_remote_key);
+                log_trace("destroy rkey 0x%lx", pAMR->active_remote_key);
                 ucp_rkey_destroy(pAMR->active_remote_key);
                 pAMR->active_remote_key = NULL;
             }

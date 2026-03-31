@@ -221,7 +221,7 @@ int AUL_Mem_unprotect(const uint64_t mem_id) {
 
 int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for previous checkpoint to complete
-    if (acn_await(_aul_ctx.pACN, eACN_checkpoint | eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN, eACN_checkpoint) != 0) {
         log_fatal("Server disconnected");
         return INT_MIN;
     }
@@ -232,14 +232,14 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
     acn_set_name(_aul_ctx.pACN, name);
     acn_set(_aul_ctx.pACN, eACN_version, version);
     // Trigger for next checkpoint (client side tick)
-    acn_tick(_aul_ctx.pACN, eACN_checkpoint | eACN_version);
+    acn_tick(_aul_ctx.pACN, eACN_checkpoint);
     return -1;
 }
 
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for all pending operations to finish
-    if (acn_await(_aul_ctx.pACN, eACN_systick | eACN_checkpoint | eACN_restore |
-                                     eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN,
+                  eACN_systick | eACN_checkpoint | eACN_restore) != 0) {
         // Connection Failure
         log_fatal("Server disconnected");
         return INT_MIN;
@@ -247,12 +247,12 @@ int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
 
     // Setup the version and name we want
     acn_set_name(_aul_ctx.pACN, name);
-    acn_set(_aul_ctx.pACN, eACN_version, version);
-    acn_tick(_aul_ctx.pACN, eACN_restore | eACN_version);
+    acn_set(_aul_ctx.pACN, eACN_version, ((int64_t) version));
+    acn_tick(_aul_ctx.pACN, eACN_restore);
 
     // Wait for restore
 
-    if (acn_await(_aul_ctx.pACN, eACN_restore | eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN, eACN_restore) != 0) {
         // Connection Failure
         log_fatal("Server disconnected");
         return INT_MIN;

@@ -26,11 +26,12 @@
 
 // Bitflagged enum
 enum aurora_completion_notification_e {
-    eACN_systick = BIT(0),
-    eACN_memory = BIT(1),
-    eACN_checkpoint = BIT(2),
-    eACN_restore = BIT(2),
-    eACN_version = BIT(3),
+    // Cannot start this list at 0 due to clzll usage
+    eACN_systick = BIT(1),
+    eACN_memory = BIT(2),
+    eACN_checkpoint = BIT(3),
+    eACN_restore = BIT(4),
+    eACN_version = BIT(5),
 
     // Final member (bitflagged increment)
     eACN_Nnotifications,
