@@ -141,51 +141,85 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
     send(sock_fd, pTxData, sizeof(ads_exchange_data_t), 0);
     send(sock_fd, pTxData->comm.data, pTxData->comm.size, 0);
     send(sock_fd, pTxData->notif.data, pTxData->notif.size, 0);
+    send(sock_fd, pTxData->config.data, pTxData->config.size, 0);
 
     ads_exchange_data_t *pRx = malloc(sizeof(ads_exchange_data_t));
     if (!pRx) {
         log_error("Failed to allocate RX buffer");
         return NULL;
     }
-    ssize_t rx_bytes = 0;
-    rx_bytes = recv(sock_fd, pRx, sizeof(ads_exchange_data_t), MSG_WAITALL);
-    if (rx_bytes != sizeof(ads_exchange_data_t)) {
-        log_error("Failed to correctly recv header");
-    }
+
+    { // BEGIN Exchange header struct
+        ssize_t rx_bytes = 0;
+        rx_bytes = recv(sock_fd, pRx, sizeof(ads_exchange_data_t), MSG_WAITALL);
+        if (rx_bytes != sizeof(ads_exchange_data_t)) {
+            log_error("Failed to correctly recv header");
+        }
+    } // END Exchange header struct
 
     // Ensure the pointers are zeroed
     pRx->comm.data = NULL;
     pRx->notif.data = NULL;
 
     // Recv exchange data
-    pRx->comm.data = malloc(pRx->comm.size);
-    if (!pRx->comm.data) {
-        log_error("Failed to allocate comm key recv buffer");
-        free(pRx);
-        return NULL;
-    }
-    rx_bytes = recv(sock_fd, pRx->comm.data, pRx->comm.size, MSG_WAITALL);
-    if (rx_bytes != (ssize_t) pRx->comm.size) {
-        log_error("Failed to correctly recv header");
-        free(pRx->comm.data);
-        free(pRx);
-        return NULL;
-    }
-    pRx->notif.data = malloc(pRx->notif.size);
-    if (!pRx->notif.data) {
-        log_error("Failed to allocate user data recv buffer");
-        free(pRx->comm.data);
-        free(pRx);
-        return NULL;
-    }
-    rx_bytes = recv(sock_fd, pRx->notif.data, pRx->notif.size, MSG_WAITALL);
-    if (rx_bytes != (ssize_t) pRx->notif.size) {
-        log_error("Failed to correctly recv header");
-        free(pRx->comm.data);
-        free(pRx->notif.data);
-        free(pRx);
-        return NULL;
-    }
+    { // BEGIN Comms Exchange
+        pRx->comm.data = malloc(pRx->comm.size);
+        if (!pRx->comm.data) {
+            log_error("Failed to allocate comm key recv buffer");
+            free(pRx);
+            return NULL;
+        }
+        ssize_t rx_bytes =
+            recv(sock_fd, pRx->comm.data, pRx->comm.size, MSG_WAITALL);
+        if (rx_bytes != (ssize_t) pRx->comm.size) {
+            log_error("Failed to correctly recv header");
+            free(pRx->comm.data);
+            free(pRx);
+            return NULL;
+        }
+    } // END Comms Exchange
+
+    { // BEGIN Notification keys exchange
+        pRx->notif.data = malloc(pRx->notif.size);
+        if (!pRx->notif.data) {
+            log_error("Failed to allocate user data recv buffer");
+            free(pRx->comm.data);
+            free(pRx);
+            return NULL;
+        }
+
+        ssize_t rx_bytes =
+            recv(sock_fd, pRx->notif.data, pRx->notif.size, MSG_WAITALL);
+        if (rx_bytes != (ssize_t) pRx->notif.size) {
+            log_error("Failed to correctly recv header");
+            free(pRx->comm.data);
+            free(pRx->notif.data);
+            free(pRx);
+            return NULL;
+        }
+    } // END Notification keys exchange
+
+    { // BEGIN Config Exchange
+        pRx->config.data = malloc(pRx->config.size);
+        if (!pRx->config.data) {
+            log_error("Failed to allocate user data recv buffer");
+            free(pRx->comm.data);
+            free(pRx->notif.data);
+            free(pRx);
+            return NULL;
+        }
+
+        ssize_t rx_bytes =
+            recv(sock_fd, pRx->config.data, pRx->config.size, MSG_WAITALL);
+        if (rx_bytes != (ssize_t) pRx->config.size) {
+            log_error("Failed to correctly recv header");
+            free(pRx->comm.data);
+            free(pRx->notif.data);
+            free(pRx->config.data);
+            free(pRx);
+            return NULL;
+        }
+    } // END Notification keys exchange
 
     close(sock_fd);
 
