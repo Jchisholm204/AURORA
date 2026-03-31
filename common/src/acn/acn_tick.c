@@ -108,9 +108,9 @@ int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {
         return INT_MIN;
     }
     // Load the latest memory chunk
-    int mem_err;
+    int mem_err = 0;
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
-        return mem_err;
+        // Do not return on error, use the last one if needed
     }
 
     int diff = 0;
@@ -158,11 +158,7 @@ eACN_error acn_set_name(acn_hndl *pHndl, const char name[static ACN_NAME_LEN]) {
         log_error("Cannot set ACN Name! ACN handle was NULL");
         return eACN_ERR_NULL;
     }
-    if (name) {
-        memcpy((char *) pHndl->pLocal->name, name, ACN_NAME_LEN);
-    } else {
-        memset((char *) pHndl->pLocal->name, 0, ACN_NAME_LEN);
-    }
+    memcpy((char *) &pHndl->pLocal->name, name, ACN_NAME_LEN);
     return eACN_OK;
 }
 
@@ -172,10 +168,8 @@ eACN_error acn_get_name(acn_hndl *pHndl, char name[static ACN_NAME_LEN]) {
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
-    if (name) {
-        memcpy(name, (char *) pHndl->temp_memory.name, ACN_NAME_LEN);
-        return eACN_OK;
-    }
+    memcpy(name, (char *) pHndl->temp_memory.name, ACN_NAME_LEN);
+    return eACN_OK;
     return eACN_ERR_NULL;
 }
 
@@ -183,8 +177,16 @@ eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
     if (!pHndl || !pNotifs) {
         return 0;
     }
+    // Check the UCS Connection Status
+    int aci_status = aci_poll(pHndl->pACI);
+    if (aci_status == UCS_ERR_CONNECTION_RESET) {
+        return eACN_ERR_FATAL;
+    } else if (aci_status != UCS_OK) {
+        return eACN_ERR_UCS;
+    }
+
     // Load the latest memory chunk
-    int mem_err;
+    eACN_error mem_err;
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
@@ -201,5 +203,5 @@ eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
         notifs = notifs >> 1;
     }
 
-    return 0;
+    return eACN_OK;
 }

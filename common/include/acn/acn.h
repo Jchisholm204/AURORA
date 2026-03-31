@@ -2,9 +2,9 @@
  * @file acn.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-02-25
- * @modified Last Modified: 2026-02-25
+ * @modified Last Modified: 2026-03-19
  *
  * @copyright Copyright (c) 2026
  */
@@ -26,11 +26,12 @@
 
 // Bitflagged enum
 enum aurora_completion_notification_e {
+    // Cannot start this list at 0 due to clzll usage
     eACN_systick = BIT(0),
     eACN_memory = BIT(1),
     eACN_checkpoint = BIT(2),
-    eACN_restore = BIT(2),
-    eACN_version = BIT(3),
+    eACN_restore = BIT(3),
+    eACN_version = BIT(4),
 
     // Final member (bitflagged increment)
     eACN_Nnotifications,
@@ -51,19 +52,19 @@ enum aurora_completion_notifier_error_e {
 // This is in a critical path on the server side
 union aurora_completion_notifier_memory {
     struct {
-        volatile uint64_t systick;
-        volatile uint64_t mem_tick;
-        volatile uint64_t checkpoint_tick;
-        volatile uint64_t restore_tick;
-        volatile int64_t version_tick;
+        uint64_t systick;
+        uint64_t mem_tick;
+        uint64_t checkpoint_tick;
+        uint64_t restore_tick;
+        int64_t version_tick;
         // Must be final element in struct
-        volatile char name[ACN_NAME_LEN]
+        char name[ACN_NAME_LEN];
     };
-    volatile uint64_t data[8];
+    uint64_t data[8];
 };
 #endif
 
-struct aurora_completion_notifier
+struct aurora_completion_notifier_hndl
 #ifdef ACN_INTERNAL
 {
     // ACI handle
@@ -83,7 +84,7 @@ struct aurora_completion_notifier
 
 typedef enum aurora_completion_notification_e eACN_notification;
 typedef enum aurora_completion_notifier_error_e eACN_error;
-typedef struct aurora_completion_notifier acn_hndl;
+typedef struct aurora_completion_notifier_hndl acn_hndl;
 
 extern acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 

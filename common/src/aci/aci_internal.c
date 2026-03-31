@@ -113,3 +113,24 @@ void aci_request_cancel(aci_hndl *pHndl, void *request) {
     }
     ucp_request_cancel(pHndl->ucp_worker, request);
 }
+
+ucs_status_t aci_set_am_recv_handler(aci_hndl *pHndl,
+                                     const ucp_am_handler_param_t *params) {
+    if (!pHndl) {
+        log_error("aci set am called with null handle");
+        return UCS_ERR_NO_RESOURCE;
+    }
+    return ucp_worker_set_am_recv_handler(pHndl->ucp_worker, params);
+}
+
+ucs_status_ptr_t aci_am_send_nbx(aci_hndl *pHndl, unsigned int id,
+                                 const void *header, size_t header_len,
+                                 const void *data, size_t data_len,
+                                 const ucp_request_param_t *param) {
+    if (!pHndl) {
+        log_error("aci am send called with null handle");
+        return NULL;
+    }
+    return ucp_am_send_nbx(pHndl->ucp_ep, id, header, header_len, data,
+                           data_len, param);
+}

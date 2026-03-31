@@ -27,7 +27,16 @@ struct aurora_user_library_context _aul_ctx = {
     .log_file = NULL,
     .pACI = NULL,
     .pACN = NULL,
+    .pARM = NULL,
 };
+
+void _arm_free(const amr_hndl *const pAMR) {
+    if (pAMR) {
+        if (pAMR->pShadow_memory) {
+            free((void *) pAMR->pShadow_memory);
+        }
+    }
+}
 
 int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     if (!pCFG) {
@@ -132,6 +141,13 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     free(ads_data_rx);
 
     // Setup the ARM (Region Manager)
+    _aul_ctx.pARM = arm_create_instance(_aul_ctx.pACI);
+
+    if (!_aul_ctx.pARM) {
+        log_fatal("Failed to create ARM");
+        (void) AUL_Finalize();
+        return -1;
+    }
 
     return 0;
 }
@@ -141,6 +157,7 @@ int AUL_Finalize(void) {
         fclose(_aul_ctx.log_file);
         _aul_ctx.log_file = NULL;
     }
+    arm_destroy_instance(&_aul_ctx.pARM);
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);
     return 0;
@@ -149,23 +166,59 @@ int AUL_Finalize(void) {
 int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
                     const size_t size) {
     // Advance the client side memory tick (memory ops pending)
-    acn_tick(_aul_ctx.pACN, eACN_memory);
-    (void) mem_id;
-    (void) ptr;
-    (void) size;
-    return -1;
+    int acn_status = 0;
+    acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
+    if (acn_status != 0) {
+        log_error("ACN Error");
+        return acn_status;
+    }
+
+    amr_hndl amr = {
+        .pActive_memory = (uint64_t) ptr,
+        .pShadow_memory = (uint64_t) malloc(size),
+        .rgn_size = size,
+        .id = mem_id,
+        .free = _arm_free,
+        .name = "",
+        .__reserved = {0ULL},
+    };
+    eARM_error arm_status = eARM_OK;
+    arm_status = arm_add(_aul_ctx.pARM, &amr);
+    if (arm_status != eARM_OK) {
+        log_error("%d", arm_status);
+        return -arm_status;
+    }
+    return 0;
 }
 
 int AUL_Mem_unprotect(const uint64_t mem_id) {
     // Advance the client side memory tick (memory ops pending)
-    acn_tick(_aul_ctx.pACN, eACN_memory);
-    (void) mem_id;
-    return -1;
+    int acn_status = 0;
+    acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
+    if (acn_status != 0) {
+        log_error("ACN Error");
+        return acn_status;
+    }
+
+    amr_hndl amr = {
+        .pActive_memory = 0ULL,
+        .rgn_size = 0ULL,
+        .id = mem_id,
+        .free = NULL,
+        .name = "",
+        .__reserved = {0ULL},
+    };
+    eARM_error arm_status = eARM_OK;
+    arm_status = arm_remove(_aul_ctx.pARM, &amr);
+    if (arm_status != eARM_OK) {
+        return -arm_status;
+    }
+    return 0;
 }
 
 int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for previous checkpoint to complete
-    if (acn_await(_aul_ctx.pACN, eACN_checkpoint | eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN, eACN_checkpoint) != 0) {
         log_fatal("Server disconnected");
         return INT_MIN;
     }
@@ -176,14 +229,14 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
     acn_set_name(_aul_ctx.pACN, name);
     acn_set(_aul_ctx.pACN, eACN_version, version);
     // Trigger for next checkpoint (client side tick)
-    acn_tick(_aul_ctx.pACN, eACN_checkpoint | eACN_version);
+    acn_tick(_aul_ctx.pACN, eACN_checkpoint);
     return -1;
 }
 
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for all pending operations to finish
-    if (acn_await(_aul_ctx.pACN, eACN_systick | eACN_checkpoint | eACN_restore |
-                                     eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN,
+                  eACN_systick | eACN_checkpoint | eACN_restore) != 0) {
         // Connection Failure
         log_fatal("Server disconnected");
         return INT_MIN;
@@ -191,12 +244,12 @@ int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
 
     // Setup the version and name we want
     acn_set_name(_aul_ctx.pACN, name);
-    acn_set(_aul_ctx.pACN, eACN_version, version);
-    acn_tick(_aul_ctx.pACN, eACN_restore | eACN_version);
+    acn_set(_aul_ctx.pACN, eACN_version, ((int64_t) version));
+    acn_tick(_aul_ctx.pACN, eACN_restore);
 
     // Wait for restore
 
-    if (acn_await(_aul_ctx.pACN, eACN_restore | eACN_version) != 0) {
+    if (acn_await(_aul_ctx.pACN, eACN_restore) != 0) {
         // Connection Failure
         log_fatal("Server disconnected");
         return INT_MIN;

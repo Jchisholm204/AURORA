@@ -68,6 +68,7 @@ int acl_finalize(acl_hndl **ppHndl) {
     }
     (*ppHndl)->running = false;
     pthread_join((*ppHndl)->thread_manager, NULL);
+    (void)ads_finalize(&(*ppHndl)->pADS);
     free(*ppHndl);
     *ppHndl = NULL;
     return 0;
@@ -134,17 +135,60 @@ void *_acl_connection_accept(void *arg) {
     pCli->pACI = aci_create_instance(&ads_data_tx.comm);
     pCli->pACN = acn_create_instance(pCli->pACI, &ads_data_tx.notif);
 
-    ads_data_rx = ads_exchange(pCtx->conn_socket, &ads_data_tx);
-
-    if (!ads_data_rx) {
-        log_error("ADS Exchange failure.");
+    if (!pCli->pACI || !pCli->pACN) {
+        log_error("Instance Failure");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
         free(pCtx);
         return NULL;
     }
 
-    aci_connect_instance(pCli->pACI, &ads_data_tx.comm, &ads_data_rx->comm);
-    acn_connect_instance(pCli->pACN, &ads_data_tx.notif, &ads_data_rx->notif);
+    ads_data_rx = ads_exchange(pCtx->conn_socket, &ads_data_tx);
+
+    if (!ads_data_rx) {
+        log_error("ADS Exchange failure.");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
+        return NULL;
+    }
+
+    int aci_status = 0;
+    aci_status =
+        aci_connect_instance(pCli->pACI, &ads_data_tx.comm, &ads_data_rx->comm);
+    if (aci_status != 0) {
+        log_error("Instance Failure");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
+        return NULL;
+    }
+    eACN_error acn_status = eACN_OK;
+    acn_status = acn_connect_instance(pCli->pACN, &ads_data_tx.notif,
+                                      &ads_data_rx->notif);
+    if (acn_status != eACN_OK) {
+        log_error("Instance Failure");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
+        return NULL;
+    }
+
+    // ARM must be created after ACI
+    pCli->pARM = arm_create_instance(pCli->pACI);
+
+    if (!pCli->pARM) {
+        log_error("Instance Failure");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
+        return NULL;
+    }
 
     aim_enqueue(pCtx->pAIM, pCli);
 

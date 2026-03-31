@@ -44,26 +44,20 @@ int are_main(int argc, char **argv) {
         eACN_notification pending;
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
-        log_debug("Polling Index: %d", pInstance->__reserved[0]);
-
         if (acn_err == eACN_ERR_FATAL) {
             log_info(
-                "ACN Returned Error.. "
+                "ACN Returned Fatal Error.. "
                 "Assuming client disconnected and closing the connection.");
             acr_run(pACR, pInstance, eACR_shutdowndisconnect);
         } else if (acn_err == eACN_ERR_UCS) {
-            acr_run(pACR, pInstance, eACR_nop);
-        } else if (pending & eACN_checkpoint) {
-            log_debug("Checkpoint Pending..");
-            acr_run(pACR, pInstance, eACR_checkpoint);
+            log_error("UCS Error");
         } else if (pending & eACN_restore) {
-            log_debug("Restore Pending..");
             acr_run(pACR, pInstance, eACR_restore);
+        } else if (pending & eACN_checkpoint) {
+            acr_run(pACR, pInstance, eACR_checkpoint);
         } else {
-            log_debug("Nothing Pending..");
             acr_run(pACR, pInstance, eACR_nop);
         }
-        // sleep(1);
     }
 
     aci_keepalive(false);

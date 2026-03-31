@@ -20,9 +20,9 @@
 #include <ucp/api/ucp.h>
 #endif
 
-typedef struct aurora_connection_instance aci_hndl;
+typedef struct aurora_connection_instance_hndl aci_hndl;
 
-struct aurora_connection_instance
+struct aurora_connection_instance_hndl
 #ifdef ACI_INTERNAL
 {
     ucp_worker_h ucp_worker;

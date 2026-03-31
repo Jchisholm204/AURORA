@@ -14,9 +14,10 @@
 
 #include "aci/aci.h"
 #include "acn/acn.h"
+#include "arm/arm.h"
 
-#include <stdatomic.h>
 #include <stdalign.h>
+#include <stdatomic.h>
 #include <stdint.h>
 
 typedef struct aurora_instance_manager_entry aim_entry_t;
@@ -25,6 +26,7 @@ typedef struct aurora_instance_manager_hndl aim_hndl;
 struct aurora_instance_manager_entry {
     aci_hndl *pACI;
     acn_hndl *pACN;
+    arm_hndl *pARM;
     union {
 #ifdef AIM_INTERNAL
         struct {
@@ -59,7 +61,7 @@ struct aurora_instance_manager_hndl
  * @brief Initialize an AIM instance
  *
  * @param max_workers Maximum number of AIM clients
- * @return 
+ * @return
  */
 extern aim_hndl *aim_init(size_t max_workers);
 
@@ -94,13 +96,14 @@ extern int aim_remove_entry(aim_hndl *pHndl, aim_entry_t *pEntry);
  *
  * @param pHndl AIM handle
  * @param pEntry Entry handle to release to AIM
- * @return 
+ * @return
  */
 extern int aim_enqueue(aim_hndl *pHndl, aim_entry_t *pEntry);
 
 /**
  * @brief Take ownership of the next unlocked entry.
- * Memory returned by this function can be passed to either aim_remove_entry or aim_enqueue
+ * Memory returned by this function can be passed to either aim_remove_entry or
+ * aim_enqueue
  *
  * @param pHndl AIM Handle
  * @return worker entry (memory must not be freed)

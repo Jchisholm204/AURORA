@@ -184,10 +184,7 @@ int aci_poll(aci_hndl *pHndl) {
         return -1;
     }
     (void) ucp_worker_progress(pHndl->ucp_worker);
-    if (pHndl->status != UCS_OK) {
-        return pHndl->status;
-    }
-    return 0;
+    return pHndl->status;
 }
 
 void aci_keepalive(bool enable) {
