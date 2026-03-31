@@ -35,15 +35,18 @@ int main(int argc, char **argv) {
     AUL_Mem_protect(7, buf, sizeof(buf));
 
     printf("Starting Checkpoint\n");
-    int s = AUL_Checkpoint(1, "HelloCheckpoint");
+    // *nowarn*
+    int s = AUL_Checkpoint(1, "TestCkpt");
     printf("Finished Checkpoint status=%d\n", s);
 
     for (int i = 0; i < MEM_SIZE; i++) {
         buf[i] = 0;
     }
+    AUL_Mem_unprotect(3);
 
     printf("Starting Restore\n");
-    int v = AUL_Restart(-1, "HelloCheckpoint");
+    // *nowarn*
+    int v = AUL_Restart(-1, "TestRestore");
     printf("Finished Restore latest version=%d\n", v);
 
     for (int i = 0; i < MEM_SIZE; i++) {
@@ -52,7 +55,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    // AUL_Mem_unprotect(3);
 
     AUL_Finalize();
 

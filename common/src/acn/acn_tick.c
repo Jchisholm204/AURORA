@@ -158,7 +158,7 @@ eACN_error acn_set_name(acn_hndl *pHndl, const char name[static ACN_NAME_LEN]) {
         log_error("Cannot set ACN Name! ACN handle was NULL");
         return eACN_ERR_NULL;
     }
-    memcpy((char *) pHndl->pLocal->name, name, ACN_NAME_LEN);
+    memcpy((char *) &pHndl->pLocal->name, name, ACN_NAME_LEN);
     return eACN_OK;
 }
 

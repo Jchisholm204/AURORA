@@ -17,6 +17,7 @@
 #include "log.h"
 
 #include <stdatomic.h>
+#include <unistd.h>
 
 // ACR Threads
 void *_acr_nop(void *);
@@ -144,9 +145,11 @@ void *_acr_checkpoint(void *arg) {
     // Do the command stuff
 
     char name[ACN_NAME_LEN];
+    int64_t version;
+    acn_get(pInstance->pACN, eACN_version, &version);
     acn_get_name(pCtx->pInstance->pACN, name);
 
-    // log_debug("ACN Name=%s", name);
+    log_debug("checkpoint: %d %.*s", version, ACN_NAME_LEN, name);
 
     // NOP
 #warning "bad"
@@ -172,13 +175,16 @@ void *_acr_restore(void *arg) {
 
     // Do the command stuff
 
+    usleep(500);
+
     int64_t restore_version = 0;
     acn_get(pInstance->pACN, eACN_version, (uint64_t *) &restore_version);
 
-    char restore_name[ACN_NAME_LEN];
+    char restore_name[ACN_NAME_LEN] = "NULL";
     acn_get_name(pInstance->pACN, restore_name);
 
-    log_debug("Restore Triggered -> %d: %s", restore_version, restore_name);
+    log_debug("Restore Triggered -> %d: %.*s (%d)", restore_version,
+              ACN_NAME_LEN, restore_name, 0);
 
     size_t inst_n_rgns = arm_get_n_remote_regions(pInstance->pARM);
     log_trace("Remote has %lu regions", inst_n_rgns);
@@ -213,7 +219,8 @@ void *_acr_restore(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
-    log_debug("Finished Restore Operation");
+    log_debug("Restore Finished -> %d: %.*s (%d)", restore_version,
+              ACN_NAME_LEN, restore_name, 0);
     return NULL;
 }
 

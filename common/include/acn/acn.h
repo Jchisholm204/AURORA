@@ -27,11 +27,11 @@
 // Bitflagged enum
 enum aurora_completion_notification_e {
     // Cannot start this list at 0 due to clzll usage
-    eACN_systick = BIT(1),
-    eACN_memory = BIT(2),
-    eACN_checkpoint = BIT(3),
-    eACN_restore = BIT(4),
-    eACN_version = BIT(5),
+    eACN_systick = BIT(0),
+    eACN_memory = BIT(1),
+    eACN_checkpoint = BIT(2),
+    eACN_restore = BIT(3),
+    eACN_version = BIT(4),
 
     // Final member (bitflagged increment)
     eACN_Nnotifications,
@@ -52,15 +52,15 @@ enum aurora_completion_notifier_error_e {
 // This is in a critical path on the server side
 union aurora_completion_notifier_memory {
     struct {
-        volatile uint64_t systick;
-        volatile uint64_t mem_tick;
-        volatile uint64_t checkpoint_tick;
-        volatile uint64_t restore_tick;
-        volatile int64_t version_tick;
+        uint64_t systick;
+        uint64_t mem_tick;
+        uint64_t checkpoint_tick;
+        uint64_t restore_tick;
+        int64_t version_tick;
         // Must be final element in struct
-        volatile char name[ACN_NAME_LEN];
+        char name[ACN_NAME_LEN];
     };
-    volatile uint64_t data[8];
+    uint64_t data[8];
 };
 #endif
 
