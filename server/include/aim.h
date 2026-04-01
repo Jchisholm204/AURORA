@@ -15,6 +15,7 @@
 #include "aci/aci.h"
 #include "acn/acn.h"
 #include "arm/arm.h"
+#include "operating_configuration.h"
 
 #include <stdalign.h>
 #include <stdatomic.h>
@@ -27,6 +28,7 @@ struct aurora_instance_manager_entry {
     aci_hndl *pACI;
     acn_hndl *pACN;
     arm_hndl *pARM;
+    struct aurora_operating_configuration *pConfig;
     union {
 #ifdef AIM_INTERNAL
         struct {

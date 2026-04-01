@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     (void) argv;
 
     aul_configuration_t cfg = AUL_CONFIG_DEFAULT;
-    AUL_Init(&cfg, 0);
+    AUL_Init(&cfg);
 
     printf("AUL Initialized\n");
 
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
     printf("Starting Checkpoint\n");
     // *nowarn*
-    int s = AUL_Checkpoint(1, "TestCkpt");
+    int s = AUL_Checkpoint(1, "TestCkpt0000000");
     printf("Finished Checkpoint status=%d\n", s);
 
     for (int i = 0; i < MEM_SIZE; i++) {
@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 
     printf("Starting Restore\n");
     // *nowarn*
-    int v = AUL_Restart(-1, "TestRestore");
+    int v = AUL_Restart(-1, "TestRestore0000");
     printf("Finished Restore latest version=%d\n", v);
 
     for (int i = 0; i < MEM_SIZE; i++) {
@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
             printf("Error: 0x%lx != 0x%lx\n", buf[i], bu2[i]);
         }
     }
-
 
     AUL_Finalize();
 

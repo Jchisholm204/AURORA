@@ -12,6 +12,9 @@
 #include "aul_configuration.h"
 
 const aul_configuration_t AUL_CONFIG_DEFAULT = {
+    .rank = 0,
+    .opt_group_id = 0,
+    .opt_group_size = -1,
     .persistent_path = "./checkpoints",
     .use_error_correction = false,
     .connection_mode = eAULCModeAuto,

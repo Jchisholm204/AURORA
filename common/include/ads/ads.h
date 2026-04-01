@@ -23,6 +23,7 @@ typedef struct aurora_discovery_service_conf ads_conf_t;
 struct aurora_discovery_service_exchange_data {
     aurora_blob_t comm;
     aurora_blob_t notif;
+    aurora_blob_t config;
 };
 
 struct aurora_discovery_service_conf {

@@ -21,7 +21,7 @@
 #define AUL_NAME_LEN 16
 #endif
 
-int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id);
+int AUL_Init(const aul_configuration_t *pCFG);
 
 int AUL_Finalize(void);
 

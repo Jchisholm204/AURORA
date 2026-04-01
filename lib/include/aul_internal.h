@@ -18,6 +18,7 @@
 #include "arm/arm.h"
 #include "aul.h"
 #include "aul_configuration.h"
+#include "operating_configuration.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +29,7 @@ struct aurora_user_library_context {
     aci_hndl *pACI;
     acn_hndl *pACN;
     arm_hndl *pARM;
+    struct aurora_operating_configuration *pConfig;
 };
 
 extern struct aurora_user_library_context _aul_ctx;
