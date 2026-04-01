@@ -13,6 +13,7 @@
 #define _COMMON_TYPES_H_
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 typedef struct {
