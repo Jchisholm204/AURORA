@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 // Aurora Connection Mode
 enum eAULConnMode {
@@ -27,10 +28,20 @@ enum eAULConnMode {
 };
 
 typedef struct {
+    // MPI
+    uint64_t rank;
+    uint64_t opt_group_id;
+    int64_t opt_group_size;
+
+    // Checkpointing
     char *persistent_path;
     bool use_error_correction;
+
+    // Connection
     enum eAULConnMode connection_mode;
     char *opt_ip;
+
+    // Logging
     char *opt_log_file;
 } aul_configuration_t;
 

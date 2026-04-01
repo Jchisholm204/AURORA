@@ -28,6 +28,7 @@ struct aurora_user_library_context _aul_ctx = {
     .pACI = NULL,
     .pACN = NULL,
     .pARM = NULL,
+    .pConfig = NULL,
 };
 
 void _arm_free(const amr_hndl *const pAMR) {
@@ -38,7 +39,7 @@ void _arm_free(const amr_hndl *const pAMR) {
     }
 }
 
-int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
+int AUL_Init(const aul_configuration_t *pCFG) {
     if (!pCFG) {
         log_error("No Configuration Provided");
         return -1;
@@ -59,20 +60,50 @@ int AUL_Init(const aul_configuration_t *pCFG, const uint64_t proc_id) {
     log_trace("\tCon Mode: %d", pCFG->connection_mode);
     log_trace("\tOpt IP: %s", pCFG->opt_ip);
     log_trace("\tLog File: %s", pCFG->opt_log_file);
-    log_trace("\tPID: %d", proc_id);
+    log_trace("\tRank: %d", pCFG->rank);
+    log_trace("\tOpt GID: %d", pCFG->opt_group_id);
+    log_trace("\tOpt GSize: %d", pCFG->opt_group_size);
+
+    _aul_ctx.pConfig = aoc_alloc(pCFG->persistent_path);
+    if (!_aul_ctx.pConfig) {
+        log_error("Configuration Failed");
+        if (_aul_ctx.log_file) {
+            fclose(_aul_ctx.log_file);
+            _aul_ctx.log_file = NULL;
+        }
+        return -2;
+    }
+
+    _aul_ctx.pConfig->rank = pCFG->rank;
+    _aul_ctx.pConfig->group.id = pCFG->opt_group_id;
+    _aul_ctx.pConfig->group.size = pCFG->opt_group_size;
+    _aul_ctx.pConfig->group.size = pCFG->opt_group_size;
+    _aul_ctx.pConfig->chkpt_opts.use_error_correction =
+        pCFG->use_error_correction;
 
     ads_exchange_data_t ads_data_tx = {0};
+
+    // Pack Configuration Data
+    ads_data_tx.config.data = _aul_ctx.pConfig;
+    ads_data_tx.config.size = aoc_size(_aul_ctx.pConfig);
+    if (!ads_data_tx.config.data) {
+        log_fatal("Bad Alloc??");
+        AUL_Finalize();
+        return -1;
+    }
 
     // Initialize ACI
     _aul_ctx.pACI = aci_create_instance(&ads_data_tx.comm);
     if (!_aul_ctx.pACI) {
         log_fatal("Could not create the ACI instance");
+        AUL_Finalize();
         return -1;
     }
     // Initialize ACN
     _aul_ctx.pACN = acn_create_instance(_aul_ctx.pACI, &ads_data_tx.notif);
     if (!_aul_ctx.pACN) {
         log_fatal("Could not create the ACN instance");
+        AUL_Finalize();
         return -1;
     }
 
@@ -157,6 +188,8 @@ int AUL_Finalize(void) {
         fclose(_aul_ctx.log_file);
         _aul_ctx.log_file = NULL;
     }
+    // All handlers placed here must be able to handle a hardfault
+    aoc_free(&_aul_ctx.pConfig);
     arm_destroy_instance(&_aul_ctx.pARM);
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);

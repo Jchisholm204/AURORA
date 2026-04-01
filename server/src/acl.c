@@ -68,7 +68,7 @@ int acl_finalize(acl_hndl **ppHndl) {
     }
     (*ppHndl)->running = false;
     pthread_join((*ppHndl)->thread_manager, NULL);
-    (void)ads_finalize(&(*ppHndl)->pADS);
+    (void) ads_finalize(&(*ppHndl)->pADS);
     free(*ppHndl);
     *ppHndl = NULL;
     return 0;
@@ -188,6 +188,28 @@ void *_acl_connection_accept(void *arg) {
         aim_remove_entry(pCtx->pAIM, pCli);
         free(pCtx);
         return NULL;
+    }
+
+    pCli->pConfig = ads_data_rx->config.data;
+
+    if (!pCli->pConfig || ads_data_rx->config.size == sizeof(opconf_t)) {
+        log_error("No/Invalid Configuration??");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        pCli->pConfig = NULL;
+        aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
+        return NULL;
+    }
+
+    else {
+        pCli->pConfig->chkpt_opts.persistent_path =
+            (char *) ((uint8_t *) pCli->pConfig) + sizeof(opconf_t);
+
+        log_debug("rank=%d", pCli->pConfig->rank);
+        log_debug("group_id=%d", pCli->pConfig->group.id);
+        log_debug("group_size=%d", pCli->pConfig->group.size);
+        log_debug("path=%s", pCli->pConfig->chkpt_opts.persistent_path);
     }
 
     aim_enqueue(pCtx->pAIM, pCli);

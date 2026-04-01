@@ -146,7 +146,7 @@ void *_acr_checkpoint(void *arg) {
 
     char name[ACN_NAME_LEN];
     int64_t version;
-    acn_get(pInstance->pACN, eACN_version, &version);
+    acn_get(pInstance->pACN, eACN_version, (uint64_t *) &version);
     acn_get_name(pCtx->pInstance->pACN, name);
 
     log_debug("checkpoint: %d %.*s", version, ACN_NAME_LEN, name);

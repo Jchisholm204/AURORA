@@ -18,16 +18,55 @@
 #include <string.h>
 
 struct aurora_operating_configuration {
+    uint64_t rank;
     struct {
-        int64_t group;
-        uint64_t rank;
-    } id;
+        uint64_t id;
+        int64_t size;
+    } group;
 
     struct {
         char *persistent_path;
         bool use_error_correction;
     } chkpt_opts;
 };
+
+typedef struct aurora_operating_configuration opconf_t;
+
+static inline opconf_t *aoc_alloc(char *persistent_path) {
+    if (!persistent_path) {
+        return NULL;
+    }
+
+    size_t strsize = strlen(persistent_path) + 1;
+    size_t structsize = sizeof(opconf_t);
+    uint8_t *structbuf = malloc(strsize + structsize);
+
+    if (!structbuf) {
+        // ERROR: Bad Alloc??
+        return NULL;
+    }
+
+    opconf_t *pConfig = (void *) structbuf;
+    pConfig->chkpt_opts.persistent_path = (void *) (structbuf + structsize);
+
+    pConfig->group.id = 0;
+    pConfig->group.size = -1;
+    pConfig->rank = 0;
+
+    strcpy(pConfig->chkpt_opts.persistent_path, persistent_path);
+
+    return pConfig;
+}
+
+static inline void aoc_free(struct aurora_operating_configuration **ppConfig) {
+    if (ppConfig) {
+        if (*ppConfig) {
+            (*ppConfig)->chkpt_opts.persistent_path = NULL;
+            free(*ppConfig);
+            *ppConfig = NULL;
+        }
+    }
+}
 
 static inline size_t aoc_size(
     const struct aurora_operating_configuration *pConfig) {
@@ -37,59 +76,9 @@ static inline size_t aoc_size(
     size_t size = 0;
     size += sizeof(struct aurora_operating_configuration);
     if (pConfig->chkpt_opts.persistent_path) {
-        size += strlen(pConfig->chkpt_opts.persistent_path);
+        size += strlen(pConfig->chkpt_opts.persistent_path) + 1;
     }
     return size;
-}
-
-static inline void *aoc_pack(
-    const struct aurora_operating_configuration *pConfig) {
-    if (!pConfig) {
-        return NULL;
-    }
-    uint8_t *buffer = malloc(aoc_size(pConfig));
-    if (!buffer) {
-        return NULL;
-    }
-    (void) memcpy(buffer, pConfig,
-                  sizeof(struct aurora_operating_configuration));
-    if (pConfig->chkpt_opts.persistent_path) {
-        strcpy((char *) buffer + sizeof(struct aurora_operating_configuration),
-               pConfig->chkpt_opts.persistent_path);
-    }
-    return buffer;
-}
-
-static inline struct aurora_operating_configuration *aoc_unpack(
-    const void *buffer, size_t size) {
-    if (!buffer || size == 0) {
-        return NULL;
-    }
-    struct aurora_operating_configuration *pConfig =
-        malloc(sizeof(struct aurora_operating_configuration));
-
-    if (!pConfig) {
-        return NULL;
-    }
-
-    (void) memcpy(pConfig, buffer,
-                  sizeof(struct aurora_operating_configuration));
-
-    pConfig->chkpt_opts.persistent_path = NULL;
-
-    if (size > sizeof(struct aurora_operating_configuration)) {
-        size_t str_len = size - sizeof(struct aurora_operating_configuration);
-        pConfig->chkpt_opts.persistent_path = malloc(str_len);
-        if (!pConfig->chkpt_opts.persistent_path) {
-            free(pConfig);
-            return NULL;
-        }
-        (void)memcpy(pConfig->chkpt_opts.persistent_path,
-               (char *) buffer + sizeof(struct aurora_operating_configuration),
-               str_len);
-    }
-
-    return pConfig;
 }
 
 #endif
