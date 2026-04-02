@@ -37,5 +37,17 @@ void *acr_cmd_connection_down(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
+    int release = 0;
+    int attempts = 0;
+    do {
+        attempts++;
+        release = _acr_ctx_release(pCtx);
+    } while (release != 0 && attempts < 10);
+    if (release != 0) {
+        log_warn("Failed to release");
+    }
+    else{
+        log_trace("Released");
+    }
     return NULL;
 }

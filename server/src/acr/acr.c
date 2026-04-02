@@ -12,8 +12,6 @@
 #define ACR_INTERNAL
 #include "acr/acr.h"
 
-#include "acn/acn.h"
-#include "afv/afv.h"
 #include "aim.h"
 #include "log.h"
 
@@ -46,8 +44,11 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
     pHndl->thread_contexts =
         malloc(sizeof(struct aurora_command_ctx) * max_workers);
     for (size_t i = 0; i < max_workers; i++) {
-        pHndl->thread_contexts[i].restricted.next = i + 1;
+        pHndl->thread_contexts[i].__restricted.next = i + 1;
+        pHndl->thread_contexts[i].__restricted.pHndl = pHndl;
     }
+    pHndl->thread_contexts[max_workers - 1].__restricted.next = 0xFFFFFFFF;
+    pHndl->thread_contexts[max_workers - 1].__restricted.pHndl = NULL;
 
     return pHndl;
 }
@@ -66,6 +67,10 @@ int acr_finalize(acr_hndl **ppHndl) {
         return -2;
     }
 
+    if ((*ppHndl)->thread_contexts) {
+        free((*ppHndl)->thread_contexts);
+        (*ppHndl)->thread_contexts = NULL;
+    }
     free(*ppHndl);
     *ppHndl = NULL;
 
@@ -85,7 +90,7 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     // Early end for NOPs
     if (cmd_function == acr_cmd_nop) {
-        struct aurora_command_ctx nop_ctx;
+        struct aurora_command_ctx nop_ctx = {0};
         nop_ctx.pInstance = pInstance;
         nop_ctx.flags = -1;
         nop_ctx.pAIM = pHndl->pAIM;
@@ -98,8 +103,8 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     if (refcount == MAX_WORKERS) {
         pHndl->refcount--; // Atomic
-        // log_warn("MAX Workers Reached.. NOPed");
-        struct aurora_command_ctx nop_ctx;
+        log_warn("Max Workers Reached.");
+        struct aurora_command_ctx nop_ctx = {0};
         nop_ctx.pInstance = pInstance;
         nop_ctx.flags = -1;
         nop_ctx.pAIM = pHndl->pAIM;
@@ -111,12 +116,21 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
     while (true) {
         uint64_t head_idx = atomic_load(&pHndl->thread_ctx_head_idx);
 
-        pCCtx = &pHndl->thread_contexts[head_idx];
-        uint64_t next_idx = pCCtx->restricted.next;
+        if ((head_idx & 0xFFFFFFFF) == 0xFFFFFFFF) {
+            log_warn("Max Workers Reached.");
+            struct aurora_command_ctx nop_ctx = {0};
+            nop_ctx.pInstance = pInstance;
+            nop_ctx.flags = -1;
+            nop_ctx.pAIM = pHndl->pAIM;
+            (void) acr_cmd_nop(&nop_ctx);
+        }
+
+        pCCtx = &pHndl->thread_contexts[head_idx & 0xFFFFFFFF];
+        uint64_t next_idx = pCCtx->__restricted.next;
 
         if (atomic_compare_exchange_strong(&pHndl->thread_ctx_head_idx,
                                            &head_idx, next_idx)) {
-            pCCtx->restricted.next = head_idx;
+            pCCtx->__restricted.next = head_idx;
             break;
         }
     }
@@ -133,6 +147,7 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     pCCtx->pInstance = pInstance;
     pCCtx->flags = flags;
+    pCCtx->__restricted.pHndl = pHndl;
 
     // Todo: Make this multi threaded
     pthread_attr_t thread_attr;
@@ -140,9 +155,9 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 
     int pthread_status = 0;
-    // pthread_create(&pCCtx->restricted.thread_manager,
-    //                                 &thread_attr, cmd_function, pCCtx);
-    cmd_function(pCCtx);
+    pthread_create(&pCCtx->__restricted.thread_manager, &thread_attr,
+                   cmd_function, pCCtx);
+    // cmd_function(pCCtx);
     if (pthread_status != 0) {
         log_error("Failed to start CMD=%d", pthread_status);
         if (aim_enqueue(pHndl->pAIM, pCCtx->pInstance)) {
@@ -157,23 +172,33 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
 int _acr_ctx_release(struct aurora_command_ctx *pCtx) {
 
-    // uint64_t current_head = atomic_load(pCtx->restricted.pThread_ctx_idx);
-    // // Placed here by acr_run
-    // uint64_t this_idx = pCtx->restricted.next;
-    // while (true) {
-    //
-    //     pCtx->restricted.next = (uint32_t) (current_head & 0xFFFFFFFF);
-    //
-    //     uint32_t new_tag = (uint32_t) (current_head >> 32) + 1;
-    //     uint64_t new_head = ((uint64_t) new_tag << 32) | this_idx;
-    //
-    //     if (atomic_compare_exchange_strong(pCtx->restricted.pThread_ctx_idx,
-    //                                        &current_head, new_head)) {
-    //         break;
-    //     }
-    // }
-    //
-    // // 5. Decrement refcount after the object is safely back in the pool
-    // atomic_fetch_sub(pCtx->restricted.pRefcount, 1);
-    // return 0;
+    if (!pCtx) {
+        log_error("NULL Parameter");
+        return -1;
+    }
+    if (!pCtx->__restricted.pHndl) {
+        log_trace("NULL Parameter");
+        return 1;
+    }
+    uint64_t current_head =
+        atomic_load(&pCtx->__restricted.pHndl->thread_ctx_head_idx);
+    // Placed here by acr_run
+    uint64_t this_idx = pCtx->__restricted.next;
+    while (true) {
+
+        pCtx->__restricted.next = (uint32_t) (current_head & 0xFFFFFFFF);
+
+        uint32_t new_tag = (uint32_t) (current_head >> 32) + 1;
+        uint64_t new_head = ((uint64_t) new_tag << 32) | this_idx;
+
+        if (atomic_compare_exchange_strong(
+                &pCtx->__restricted.pHndl->thread_ctx_head_idx, &current_head,
+                new_head)) {
+            break;
+        }
+    }
+
+    // 5. Decrement refcount after the object is safely back in the pool
+    atomic_fetch_sub(&pCtx->__restricted.pHndl->refcount, 1);
+    return 0;
 }

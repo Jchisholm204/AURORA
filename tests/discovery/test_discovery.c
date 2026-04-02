@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < MEM_SIZE; i++) {
         buf[i] = 0;
     }
+    AUL_Mem_unprotect(7);
 
     s = AUL_Checkpoint(2, "TestCkpt0000002");
     printf("Finished Checkpoint status=%d\n", s);

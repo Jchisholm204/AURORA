@@ -28,9 +28,8 @@ struct aurora_command_ctx {
     struct {
         pthread_t thread_manager;
         uint64_t next;
-        _Atomic(uint64_t) *pThread_ctx_idx;
-        atomic_int  *pRefcount;
-    } restricted;
+        struct aurora_command_runner_hndl *pHndl;
+    } __restricted;
 };
 #endif
 
