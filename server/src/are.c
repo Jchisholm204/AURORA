@@ -12,13 +12,18 @@
 #include "are.h"
 
 #include "acl.h"
-#include "acr.h"
+#include "acr/acr.h"
 #include "aim.h"
 #include "log.h"
 
 #include <unistd.h>
 
+#ifndef AIM_MAX_WORKERS
 #define AIM_MAX_WORKERS 64
+#endif
+#ifndef ACR_MAX_WORKERS
+#define ACR_MAX_WORKERS 16
+#endif
 
 int are_main(int argc, char **argv) {
 
@@ -30,8 +35,8 @@ int are_main(int argc, char **argv) {
     acr_hndl *pACR = NULL;
 
     pAIM = aim_init(AIM_MAX_WORKERS);
-    pACL = acl_init(pAIM);
-    pACR = acr_init(pAIM);
+    pACR = acr_init(pAIM, ACR_MAX_WORKERS);
+    pACL = acl_init(pAIM, pACR);
 
     aci_keepalive(true);
 
@@ -45,18 +50,35 @@ int are_main(int argc, char **argv) {
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
         if (acn_err == eACN_ERR_FATAL) {
+            usleep(5000);
             log_info(
                 "ACN Returned Fatal Error.. "
                 "Assuming client disconnected and closing the connection.");
-            acr_run(pACR, pInstance, eACR_shutdowndisconnect);
+            eACR_error acr_status =
+                acr_run(pACR, pInstance, 0, acr_cmd_connection_down);
+            if (acr_status != eACR_OK) {
+                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            }
         } else if (acn_err == eACN_ERR_UCS) {
             log_error("UCS Error");
+            acr_run(pACR, pInstance, 0, acr_cmd_nop);
         } else if (pending & eACN_restore) {
-            acr_run(pACR, pInstance, eACR_restore);
+            eACR_error acr_status =
+                acr_run(pACR, pInstance, 0, acr_cmd_restart);
+            if (acr_status != eACR_OK) {
+                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            }
         } else if (pending & eACN_checkpoint) {
-            acr_run(pACR, pInstance, eACR_checkpoint);
+            eACR_error acr_status =
+                acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
+            if (acr_status != eACR_OK) {
+                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            }
         } else {
-            acr_run(pACR, pInstance, eACR_nop);
+            eACR_error acr_status = acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            if (acr_status != eACR_OK) {
+                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            }
         }
     }
 
