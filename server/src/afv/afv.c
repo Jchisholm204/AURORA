@@ -41,7 +41,7 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
     }
 
     if (!pHndl->pMetadata) {
-        log_info("Unable to find metadata for %d of %d in group %d at path:",
+        log_info("Unable to find metadata for %d of %d in group %d at path: %s",
                  rank, group_size, group_id, persistent_path);
     }
 
@@ -95,7 +95,8 @@ char *afv_get_filename(afv_hndl *pHndl, int version, char *checkpoint_name) {
 
     size_t filename_len =
         snprintf(NULL, 0, format_string, pHndl->persistent_path,
-                 checkpoint_name, version);
+                 checkpoint_name, version) +
+        2;
     char *filename = malloc(filename_len);
     if (!filename) {
         log_error("Bad Alloc??");

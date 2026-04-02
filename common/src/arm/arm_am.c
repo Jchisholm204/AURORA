@@ -30,6 +30,7 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
     // Unused, SHould be NULL
     (void) pParam;
 
+    acn_tick(pHndl->pACN, eACN_memory);
 
     if (!data) {
         log_error("UCS Error");
@@ -118,6 +119,8 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
     (void) data;
     (void) data_len;
     (void) pParam;
+
+    acn_tick(pHndl->pACN, eACN_memory);
 
     if (header_len != sizeof(amr_hndl)) {
         log_error("UCS Error");

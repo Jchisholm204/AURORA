@@ -172,7 +172,7 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     free(ads_data_rx);
 
     // Setup the ARM (Region Manager)
-    _aul_ctx.pARM = arm_create_instance(_aul_ctx.pACI);
+    _aul_ctx.pARM = arm_create_instance(_aul_ctx.pACI, _aul_ctx.pACN);
 
     if (!_aul_ctx.pARM) {
         log_fatal("Failed to create ARM");

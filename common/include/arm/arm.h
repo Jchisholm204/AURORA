@@ -20,6 +20,7 @@
 #endif
 
 #include "aci/aci.h"
+#include "acn/acn.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -71,6 +72,8 @@ struct aurora_region_manager_hndl
 {
     // ACI Handle
     aci_hndl *pACI;
+    // ACN Handle
+    acn_hndl *pACN;
     struct aurora_region_list {
         struct aurora_memory_region_hndl *data;
         size_t size;
@@ -106,7 +109,7 @@ typedef enum aurora_region_manager_error_e eARM_error;
  * @param pACI The Connection Instance to attach to
  * @return
  */
-extern arm_hndl *arm_create_instance(aci_hndl *pACI);
+extern arm_hndl *arm_create_instance(aci_hndl *pACI, acn_hndl *pACN);
 
 /**
  * @brief Destroy an ARM instance

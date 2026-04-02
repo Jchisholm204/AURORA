@@ -203,8 +203,8 @@ void *_acl_connection_accept(void *arg) {
         return NULL;
     }
 
-    // ARM must be created after ACI
-    pCli->pARM = arm_create_instance(pCli->pACI);
+    // ARM must be created after ACI/ACN
+    pCli->pARM = arm_create_instance(pCli->pACI, pCli->pACN);
 
     if (!pCli->pARM) {
         log_error("Instance Failure");

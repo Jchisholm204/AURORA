@@ -17,18 +17,23 @@
 #include "log.h"
 #include "string.h"
 
-arm_hndl *arm_create_instance(aci_hndl *pACI) {
+arm_hndl *arm_create_instance(aci_hndl *pACI, acn_hndl *pACN) {
     if (!pACI) {
-        log_error("ACI was NULL. Failed to create ARM.");
+        log_error("NULL Parameter");
+        return NULL;
+    }
+    if (!pACN) {
+        log_error("NULL Parameter");
         return NULL;
     }
     arm_hndl *pHndl = malloc(sizeof(arm_hndl));
     if (!pHndl) {
-        log_error("Failed to create ARM Handle.");
+        log_error("Bad Alloc??");
         return NULL;
     }
 
     pHndl->pACI = pACI;
+    pHndl->pACN = pACN;
     _arl_init(&pHndl->local_rgns);
     _arl_init(&pHndl->remote_rgns);
 
