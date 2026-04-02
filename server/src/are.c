@@ -31,7 +31,7 @@ int are_main(int argc, char **argv) {
 
     pAIM = aim_init(AIM_MAX_WORKERS);
     pACL = acl_init(pAIM);
-    pACR = acr_init(pAIM);
+    pACR = acr_init(pAIM, 1);
 
     aci_keepalive(true);
 
@@ -48,15 +48,15 @@ int are_main(int argc, char **argv) {
             log_info(
                 "ACN Returned Fatal Error.. "
                 "Assuming client disconnected and closing the connection.");
-            acr_run(pACR, pInstance, acr_cmd_connection_down);
+            acr_run(pACR, pInstance, 0, acr_cmd_connection_down);
         } else if (acn_err == eACN_ERR_UCS) {
             log_error("UCS Error");
         } else if (pending & eACN_restore) {
-            acr_run(pACR, pInstance, acr_cmd_restart);
+            acr_run(pACR, pInstance, 0, acr_cmd_restart);
         } else if (pending & eACN_checkpoint) {
-            acr_run(pACR, pInstance, acr_cmd_checkpoint);
+            acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
         } else {
-            acr_run(pACR, pInstance, acr_cmd_nop);
+            acr_run(pACR, pInstance, 0, acr_cmd_nop);
         }
     }
 

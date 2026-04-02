@@ -163,7 +163,7 @@ aim_entry_t *aim_dequeue(aim_hndl *pHndl) {
     }
     size_t pos =
         atomic_load_explicit(&pHndl->queue.dequeue_pos, memory_order_relaxed);
-    size_t worker_idx;
+    size_t worker_idx = 0;
 
     for (;;) {
         size_t seq = atomic_load_explicit(
@@ -194,8 +194,7 @@ aim_entry_t *aim_dequeue(aim_hndl *pHndl) {
 
     if (pHndl->workers[worker_idx].references > 0) {
         return &pHndl->workers[worker_idx];
-    }
-    else{
+    } else {
         return NULL;
     }
 }

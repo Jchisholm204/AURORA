@@ -24,6 +24,7 @@ void *acr_cmd_nop(void *arg) {
     // Do the command stuff
 
     // NOP
+    // log_trace("NOP");
 
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
