@@ -179,12 +179,12 @@ void *_acr_checkpoint(void *arg) {
         pMetadata->region_ids[i] = arm_regions[i].id;
         const amr_hndl *pAMR = &arm_regions[i];
         uint64_t test_data[4] = {0x0000, 0x1111, 0x2222, 0x3333};
-        // eARM_error arm_status =
-        //     arm_read(pInstance->pARM, pAMR, pAMR->pShadow_memory, test_data,
-        //              pAMR->rgn_size);
-        // if (arm_status != eARM_OK) {
-        //     log_error("ARM Err %d", arm_status);
-        // }
+        eARM_error arm_status =
+            arm_read(pInstance->pARM, pAMR, pAMR->pShadow_memory, test_data,
+                     pAMR->rgn_size);
+        if (arm_status != eARM_OK) {
+            log_error("ARM Err %d", arm_status);
+        }
         for (int i = 0; i < 4; i++)
             log_trace("TD %d 0x%lx", i, test_data[i]);
     }

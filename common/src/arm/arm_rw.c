@@ -103,7 +103,7 @@ eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
             if (aci_status != 0) {
                 return eARM_ERR_FATAL;
             }
-        } while (1);
+        } while (ucs_status == UCS_INPROGRESS);
         ucp_request_free(ucs_pStatus);
     }
 

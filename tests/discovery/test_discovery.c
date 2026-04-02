@@ -42,8 +42,6 @@ int main(int argc, char **argv) {
     for (int i = 0; i < MEM_SIZE; i++) {
         buf[i] = 0;
     }
-    AUL_Mem_unprotect(3);
-    s = AUL_Checkpoint(1, "TestCkpt0000001");
 
     printf("Starting Restore\n");
     // *nowarn*
