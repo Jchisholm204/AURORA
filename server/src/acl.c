@@ -13,6 +13,7 @@
 #include "acl.h"
 
 #include "log.h"
+#include "operating_configuration.h"
 
 struct acl_connection_context {
     aim_hndl *pAIM;
@@ -155,6 +156,28 @@ void *_acl_connection_accept(void *arg) {
         return NULL;
     }
 
+    opconf_t *pConfig = ads_data_rx->config.data;
+
+    if (!pConfig || ads_data_rx->config.size == sizeof(opconf_t)) {
+        log_error("No/Invalid Configuration??");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        pConfig = NULL;
+        aim_remove_entry(pCtx->pAIM, pCli);
+        free(pCtx);
+        return NULL;
+    }
+
+    else {
+        pConfig->chkpt_opts.persistent_path =
+            (char *) ((uint8_t *) pConfig) + sizeof(opconf_t);
+
+        log_debug("rank=%d", pConfig->rank);
+        log_debug("group_id=%d", pConfig->group.id);
+        log_debug("group_size=%d", pConfig->group.size);
+        log_debug("path=%s", pConfig->chkpt_opts.persistent_path);
+    }
+
     int aci_status = 0;
     aci_status =
         aci_connect_instance(pCli->pACI, &ads_data_tx.comm, &ads_data_rx->comm);
@@ -163,6 +186,7 @@ void *_acl_connection_accept(void *arg) {
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
+        aoc_free((opconf_t **) &ads_data_rx->config.data);
         free(pCtx);
         return NULL;
     }
@@ -174,46 +198,45 @@ void *_acl_connection_accept(void *arg) {
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
+        aoc_free((opconf_t **) &ads_data_rx->config.data);
         free(pCtx);
         return NULL;
     }
 
-    // ARM must be created after ACI
-    pCli->pARM = arm_create_instance(pCli->pACI);
+    // ARM must be created after ACI/ACN
+    pCli->pARM = arm_create_instance(pCli->pACI, pCli->pACN);
 
     if (!pCli->pARM) {
         log_error("Instance Failure");
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
+        aoc_free((opconf_t **) &ads_data_rx->config.data);
         free(pCtx);
         return NULL;
     }
 
-    pCli->pConfig = ads_data_rx->config.data;
+    pCli->pAFV = afv_create_instance(pConfig->rank, pConfig->group.id,
+                                     pConfig->group.size,
+                                     pConfig->chkpt_opts.persistent_path,
+                                     pConfig->chkpt_opts.use_error_correction);
 
-    if (!pCli->pConfig || ads_data_rx->config.size == sizeof(opconf_t)) {
-        log_error("No/Invalid Configuration??");
+    if (!pCli->pAFV) {
+        log_error("Instance Failure");
+        arm_destroy_instance(&pCli->pARM);
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
-        pCli->pConfig = NULL;
         aim_remove_entry(pCtx->pAIM, pCli);
+        aoc_free((opconf_t **) &ads_data_rx->config.data);
         free(pCtx);
         return NULL;
-    }
-
-    else {
-        pCli->pConfig->chkpt_opts.persistent_path =
-            (char *) ((uint8_t *) pCli->pConfig) + sizeof(opconf_t);
-
-        log_debug("rank=%d", pCli->pConfig->rank);
-        log_debug("group_id=%d", pCli->pConfig->group.id);
-        log_debug("group_size=%d", pCli->pConfig->group.size);
-        log_debug("path=%s", pCli->pConfig->chkpt_opts.persistent_path);
     }
 
     aim_enqueue(pCtx->pAIM, pCli);
 
+    // Free the configuration chunk
+    aoc_free((opconf_t **) &ads_data_rx->config.data);
+    // Free this workers context
     free(pCtx);
 
     log_trace("New connection accepted.");
