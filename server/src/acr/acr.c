@@ -173,12 +173,14 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 int _acr_ctx_release(struct aurora_command_ctx *pCtx) {
 
     if (!pCtx) {
-        log_error("NULL Parameter");
+        log_warn("NULL Parameter");
         return -1;
     }
+
+    // If the handle is null, this context was not part of the pool
     if (!pCtx->__restricted.pHndl) {
-        log_trace("NULL Parameter");
-        return 1;
+        log_trace("Released NULL");
+        return 0;
     }
     uint64_t current_head =
         atomic_load(&pCtx->__restricted.pHndl->thread_ctx_head_idx);
@@ -201,4 +203,19 @@ int _acr_ctx_release(struct aurora_command_ctx *pCtx) {
     // 5. Decrement refcount after the object is safely back in the pool
     atomic_fetch_sub(&pCtx->__restricted.pHndl->refcount, 1);
     return 0;
+}
+
+int _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count) {
+    int release = 0;
+    int attempts = 0;
+    do {
+        attempts++;
+        release = _acr_ctx_release(pCtx);
+    } while (release != 0 && attempts < count);
+    if (release != 0) {
+        log_error("Failed to release");
+    } else {
+        log_trace("Released after %d / %d attempts", attempts, count);
+    }
+    return release;
 }

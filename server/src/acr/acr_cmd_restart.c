@@ -68,19 +68,12 @@ void *acr_cmd_restart(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
+
+    // Release the thread context
+    (void) _acr_ctx_release_retry(pCtx, 2);
+
     log_debug("Restore Finished -> %d: %.*s (%d)", restore_version,
               ACN_NAME_LEN, restore_name, 0);
-    int release = 0;
-    int attempts = 0;
-    do {
-        attempts++;
-        release = _acr_ctx_release(pCtx);
-    } while (release != 0 && attempts < 10);
-    if (release != 0) {
-        log_warn("Failed to release");
-    }
-    else{
-        log_trace("Released");
-    }
+
     return NULL;
 }

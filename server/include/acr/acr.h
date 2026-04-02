@@ -63,6 +63,7 @@ extern void *acr_cmd_connection_down(void *);
 #ifdef ACR_INTERNAL
 
 extern int _acr_ctx_release(struct aurora_command_ctx *pCtx);
+extern int _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count);
 
 #endif
 

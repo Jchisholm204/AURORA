@@ -33,17 +33,9 @@ void *acr_cmd_nop(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
-    int release = 0;
-    int attempts = 0;
-    do {
-        attempts++;
-        release = _acr_ctx_release(pCtx);
-    } while (release != 0 && attempts < 10);
-    if (release != 0) {
-        log_warn("Failed to release");
-    }
-    else{
-        log_trace("Released");
-    }
+
+    // Release the thread context
+    (void) _acr_ctx_release_retry(pCtx, 2);
+
     return NULL;
 }
