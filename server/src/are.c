@@ -18,7 +18,12 @@
 
 #include <unistd.h>
 
+#ifndef AIM_MAX_WORKERS
 #define AIM_MAX_WORKERS 64
+#endif
+#ifndef ACR_MAX_WORKERS
+#define ACR_MAX_WORKERS 16
+#endif
 
 int are_main(int argc, char **argv) {
 
@@ -30,7 +35,7 @@ int are_main(int argc, char **argv) {
     acr_hndl *pACR = NULL;
 
     pAIM = aim_init(AIM_MAX_WORKERS);
-    pACR = acr_init(pAIM, 2);
+    pACR = acr_init(pAIM, ACR_MAX_WORKERS);
     pACL = acl_init(pAIM, pACR);
 
     aci_keepalive(true);
@@ -45,6 +50,7 @@ int are_main(int argc, char **argv) {
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
         if (acn_err == eACN_ERR_FATAL) {
+            usleep(5000);
             log_info(
                 "ACN Returned Fatal Error.. "
                 "Assuming client disconnected and closing the connection.");
