@@ -37,6 +37,7 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
     }
     pHndl->pAIM = pAIM;
     pHndl->refcount = 0;
+    pHndl->max_workers = max_workers;
 
     // Setup Thread Pool
     atomic_init(&pHndl->thread_ctx_head_idx, 0);
@@ -46,6 +47,8 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
     for (size_t i = 0; i < max_workers; i++) {
         pHndl->thread_contexts[i].__restricted.next = i + 1;
         pHndl->thread_contexts[i].__restricted.pHndl = pHndl;
+        pHndl->thread_contexts[i].pInstance = NULL;
+        pHndl->thread_contexts[i].pAIM = pHndl->pAIM;
     }
     pHndl->thread_contexts[max_workers - 1].__restricted.next = 0xFFFFFFFF;
     pHndl->thread_contexts[max_workers - 1].__restricted.pHndl = NULL;
@@ -53,7 +56,7 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
     return pHndl;
 }
 
-int acr_finalize(acr_hndl **ppHndl) {
+eACR_error acr_finalize(acr_hndl **ppHndl) {
     if (!ppHndl) {
         return -1;
     }
@@ -77,15 +80,15 @@ int acr_finalize(acr_hndl **ppHndl) {
     return 0;
 }
 
-int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
-            ACR_cmd_fn cmd_function) {
+eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
+                   ACR_cmd_fn cmd_function) {
     if (!pHndl) {
         log_error("NULL Parameter");
-        return -1;
+        return eACR_ERR_NULL;
     }
     if (!cmd_function) {
         log_error("NULL Parameter");
-        cmd_function = acr_cmd_nop;
+        return eACR_ERR_NULL;
     }
 
     // Early end for NOPs
@@ -96,41 +99,34 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
         nop_ctx.pAIM = pHndl->pAIM;
         log_debug("NOP flags=%d instance=0x%lx", flags, pInstance);
         (void) acr_cmd_nop(&nop_ctx);
-        return 0;
+        return eACR_OK;
     }
 
-    int refcount = atomic_fetch_add(&pHndl->refcount, 1);
+    size_t refcount = atomic_fetch_add(&pHndl->refcount, 1);
 
-    if (refcount == MAX_WORKERS) {
+    if (refcount == pHndl->max_workers) {
         pHndl->refcount--; // Atomic
         log_warn("Max Workers Reached.");
-        struct aurora_command_ctx nop_ctx = {0};
-        nop_ctx.pInstance = pInstance;
-        nop_ctx.flags = -1;
-        nop_ctx.pAIM = pHndl->pAIM;
-        (void) acr_cmd_nop(&nop_ctx);
-        return 0;
+        return eACR_ERR_NO_WORKERS;
     }
 
     struct aurora_command_ctx *pCCtx = NULL;
+    uint64_t head_val = atomic_load(&pHndl->thread_ctx_head_idx);
     while (true) {
-        uint64_t head_idx = atomic_load(&pHndl->thread_ctx_head_idx);
-
-        if ((head_idx & 0xFFFFFFFF) == 0xFFFFFFFF) {
+        uint32_t idx = head_val & 0xFFFFFFFF;
+        if (idx >= pHndl->max_workers) {
             log_warn("Max Workers Reached.");
-            struct aurora_command_ctx nop_ctx = {0};
-            nop_ctx.pInstance = pInstance;
-            nop_ctx.flags = -1;
-            nop_ctx.pAIM = pHndl->pAIM;
-            (void) acr_cmd_nop(&nop_ctx);
+            return eACR_ERR_NO_WORKERS;
         }
 
-        pCCtx = &pHndl->thread_contexts[head_idx & 0xFFFFFFFF];
-        uint64_t next_idx = pCCtx->__restricted.next;
+        pCCtx = &pHndl->thread_contexts[idx];
+        uint32_t next_idx = pCCtx->__restricted.next;
+        uint32_t new_tag = (uint32_t) (head_val >> 32) + 1;
+        uint64_t new_head = ((uint64_t) new_tag << 32) | next_idx;
 
         if (atomic_compare_exchange_strong(&pHndl->thread_ctx_head_idx,
-                                           &head_idx, next_idx)) {
-            pCCtx->__restricted.next = head_idx;
+                                           &head_val, new_head)) {
+            pCCtx->__restricted.next = idx;
             break;
         }
     }
@@ -140,9 +136,8 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     // MUST check, set and reset this every time
     if (pCCtx->pInstance) {
-        if (aim_enqueue(pHndl->pAIM, pCCtx->pInstance)) {
-            log_fatal("The server made an avoidable mistake");
-        }
+        log_fatal("The server made an avoidable mistake");
+        aim_enqueue(pHndl->pAIM, pCCtx->pInstance);
     }
 
     pCCtx->pInstance = pInstance;
@@ -154,33 +149,29 @@ int acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
     pthread_attr_init(&thread_attr);
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
 
-    int pthread_status = 0;
-    pthread_create(&pCCtx->__restricted.thread_manager, &thread_attr,
-                   cmd_function, pCCtx);
-    // cmd_function(pCCtx);
+    int pthread_status = pthread_create(&pCCtx->__restricted.thread_manager,
+                                        &thread_attr, cmd_function, pCCtx);
+
     if (pthread_status != 0) {
         log_error("Failed to start CMD=%d", pthread_status);
-        if (aim_enqueue(pHndl->pAIM, pCCtx->pInstance)) {
-            log_fatal("The server made an avoidable mistake");
-        }
-        pHndl->refcount--; // Atomic
-        return 0;
+        (void) _acr_ctx_release_retry(pCCtx, 2);
+        return eACR_ERR_THREAD;
     }
 
-    return 0;
+    return eACR_OK;
 }
 
-int _acr_ctx_release(struct aurora_command_ctx *pCtx) {
+eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx) {
 
     if (!pCtx) {
         log_warn("NULL Parameter");
-        return -1;
+        return eACR_ERR_NULL;
     }
 
     // If the handle is null, this context was not part of the pool
     if (!pCtx->__restricted.pHndl) {
         log_trace("Released NULL");
-        return 0;
+        return eACR_OK;
     }
     uint64_t current_head =
         atomic_load(&pCtx->__restricted.pHndl->thread_ctx_head_idx);
@@ -202,20 +193,20 @@ int _acr_ctx_release(struct aurora_command_ctx *pCtx) {
 
     // 5. Decrement refcount after the object is safely back in the pool
     atomic_fetch_sub(&pCtx->__restricted.pHndl->refcount, 1);
-    return 0;
+    return eACR_OK;
 }
 
-int _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count) {
-    int release = 0;
+eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count) {
+    eACR_error acr_status = 0;
     int attempts = 0;
     do {
         attempts++;
-        release = _acr_ctx_release(pCtx);
-    } while (release != 0 && attempts < count);
-    if (release != 0) {
-        log_error("Failed to release");
+        acr_status = _acr_ctx_release(pCtx);
+    } while (acr_status != eACR_OK && attempts < count);
+    if (acr_status != 0) {
+        log_error("Failed to release after %d / %d attempts", attempts, count);
     } else {
         log_trace("Released after %d / %d attempts", attempts, count);
     }
-    return release;
+    return acr_status;
 }
