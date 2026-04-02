@@ -50,8 +50,8 @@ void *acr_cmd_checkpoint(void *arg) {
         return NULL;
     }
 
-    log_info("Rank %d checkpointing %d rngs to %s", pMetadata_old->rank,
-             arm_n_regions, afv_get_filename(pInstance->pAFV, version, name));
+    // log_info("Rank %d checkpointing %d rngs to %s", pMetadata_old->rank,
+    //          arm_n_regions, afv_get_filename(pInstance->pAFV, version, name));
 
     // Complete the checkpoint
     for (size_t i = 0; i < arm_n_regions; i++) {

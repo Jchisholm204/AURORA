@@ -80,49 +80,8 @@ void afv_destroy_instance(afv_hndl **ppHndl) {
     *ppHndl = NULL;
 }
 
-char *afv_get_filename(afv_hndl *pHndl, int version, char *checkpoint_name) {
-
-    if (!pHndl) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-    if (!checkpoint_name) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-
-    static const char *format_string = "%s/%s-%d.abak";
-
-    size_t filename_len =
-        snprintf(NULL, 0, format_string, pHndl->persistent_path,
-                 checkpoint_name, version) +
-        2;
-    char *filename = malloc(filename_len);
-    if (!filename) {
-        log_error("Bad Alloc??");
-        return NULL;
-    }
-
-    snprintf(filename, filename_len, format_string, pHndl->persistent_path,
-             checkpoint_name, version);
-
-    return filename;
-}
-
-int afv_update_metadata(afv_hndl *pHndl, afv_metadata_t *const pMetadata) {
-    if (!pHndl) {
-        log_error("NULL Parameter");
-        return -1;
-    }
-    if (!pMetadata) {
-        log_error("NULL Parameter");
-        return -1;
-    }
-    log_trace("Metadata Version Update %d -> %d", pHndl->pMetadata->version,
-              pMetadata->version);
-    afv_destroy_metadata(&pHndl->pMetadata);
-    pHndl->pMetadata = pMetadata;
-    return 0;
+const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
+                                                 int64_t version, char *name) {
 }
 
 const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl) {
@@ -131,4 +90,10 @@ const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl) {
         return NULL;
     }
     return pHndl->pMetadata;
+}
+
+int afv_write_metadata(afv_hndl *pHndl, afv_metadata_t *const pMetadata) {
+}
+
+uint64_t afv_get_rank(afv_hndl *pHndl) {
 }
