@@ -37,5 +37,8 @@ void *acr_cmd_connection_down(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
+
+    // Release the thread context
+    (void) _acr_ctx_release_retry(pCtx, 2);
     return NULL;
 }

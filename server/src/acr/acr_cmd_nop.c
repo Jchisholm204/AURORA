@@ -24,6 +24,7 @@ void *acr_cmd_nop(void *arg) {
     // Do the command stuff
 
     // NOP
+    // log_trace("NOP");
 
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
@@ -32,5 +33,9 @@ void *acr_cmd_nop(void *arg) {
     }
     // Handler cleanup
     pCtx->pInstance = NULL;
+
+    // Release the thread context
+    (void) _acr_ctx_release_retry(pCtx, 2);
+
     return NULL;
 }
