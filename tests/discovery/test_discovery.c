@@ -36,13 +36,15 @@ int main(int argc, char **argv) {
 
     printf("Starting Checkpoint\n");
     // *nowarn*
-    int s = AUL_Checkpoint(1, "TestCkpt0000000");
+    int s = AUL_Checkpoint(1, "TestCkpt0000001");
     printf("Finished Checkpoint status=%d\n", s);
 
     for (int i = 0; i < MEM_SIZE; i++) {
         buf[i] = 0;
     }
-    AUL_Mem_unprotect(3);
+
+    s = AUL_Checkpoint(2, "TestCkpt0000002");
+    printf("Finished Checkpoint status=%d\n", s);
 
     printf("Starting Restore\n");
     // *nowarn*
