@@ -12,7 +12,7 @@
 #include "are.h"
 
 #include "acl.h"
-#include "acr.h"
+#include "acr/acr.h"
 #include "aim.h"
 #include "log.h"
 
@@ -48,15 +48,15 @@ int are_main(int argc, char **argv) {
             log_info(
                 "ACN Returned Fatal Error.. "
                 "Assuming client disconnected and closing the connection.");
-            acr_run(pACR, pInstance, eACR_shutdowndisconnect);
+            acr_run(pACR, pInstance, acr_cmd_connection_down);
         } else if (acn_err == eACN_ERR_UCS) {
             log_error("UCS Error");
         } else if (pending & eACN_restore) {
-            acr_run(pACR, pInstance, eACR_restore);
+            acr_run(pACR, pInstance, acr_cmd_restart);
         } else if (pending & eACN_checkpoint) {
-            acr_run(pACR, pInstance, eACR_checkpoint);
+            acr_run(pACR, pInstance, acr_cmd_checkpoint);
         } else {
-            acr_run(pACR, pInstance, eACR_nop);
+            acr_run(pACR, pInstance, acr_cmd_nop);
         }
     }
 
