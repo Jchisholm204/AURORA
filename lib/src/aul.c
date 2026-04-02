@@ -227,6 +227,12 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 int AUL_Mem_unprotect(const uint64_t mem_id) {
     // Advance the client side memory tick (memory ops pending)
     int acn_status = 0;
+    acn_status = acn_await(_aul_ctx.pACN, eACN_checkpoint);
+    if (acn_status != 0) {
+        log_error("ACN Error");
+        return acn_status;
+    }
+
     acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
     if (acn_status != 0) {
         log_error("ACN Error");

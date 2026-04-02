@@ -13,9 +13,11 @@
 #include "acr.h"
 
 #include "acn/acn.h"
+#include "afv/afv.h"
 #include "aim.h"
 #include "log.h"
 
+#include <memory.h>
 #include <stdatomic.h>
 #include <unistd.h>
 
@@ -142,17 +144,49 @@ void *_acr_checkpoint(void *arg) {
     struct aurora_command_ctx *pCtx = arg;
     aim_entry_t *pInstance = pCtx->pInstance;
 
-    // Do the command stuff
+    int acn_status = 0;
+    acn_status = acn_await(pInstance->pACN, eACN_memory);
+    if (acn_status != 0) {
+        log_error("ACN Error");
+    }
 
+    // Setup the checkpoint
     char name[ACN_NAME_LEN];
     int64_t version;
     acn_get(pInstance->pACN, eACN_version, (uint64_t *) &version);
     acn_get_name(pCtx->pInstance->pACN, name);
+    size_t arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
+    const amr_hndl *arm_regions = arm_get_remote_regions(pInstance->pARM);
+    const afv_metadata_t *pMetadata_old = afv_get_metadata(pInstance->pAFV);
+
+    // Setup Metadata
+    afv_metadata_t *pMetadata =
+        afv_metadata_ptr_init(malloc(afv_metadata_size(arm_n_regions)));
+    if (!pMetadata) {
+        log_error("Bad Alloc?");
+        if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
+            log_fatal("Could Not Enqueue! A thread lost a connection");
+        }
+        return NULL;
+    }
+
+    log_info("Rank %d checkpointing %d rngs", pMetadata_old->rank,
+             arm_n_regions);
+
+    // Complete the checkpoint
+    for (size_t i = 0; i < arm_n_regions; i++) {
+        log_trace("rgn: %d -> rgnid: %d", i, arm_regions[i].id);
+        pMetadata->region_ids[i] = arm_regions[i].id;
+    }
+
+    // Finalize the Checkpoint
+    pMetadata->rank = pMetadata_old->rank;
+    pMetadata->version = version;
+    memcpy(pMetadata->chkpt_name, name, ACN_NAME_LEN);
 
     log_debug("checkpoint: %d %.*s", version, ACN_NAME_LEN, name);
 
     // NOP
-#warning "bad"
     acn_tick(pInstance->pACN, eACN_checkpoint);
 
     // Deal with AIM

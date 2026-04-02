@@ -20,6 +20,7 @@ struct aurora_file_versioning_handle
     uint64_t rank;
     int64_t group_id;
     char *persistent_path;
+    bool use_error_correction;
     afv_metadata_t *pMetadata;
 }
 #endif
@@ -33,10 +34,14 @@ extern afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
 
 extern void afv_destroy_instance(afv_hndl **ppHndl);
 
-extern afv_metadata_t *afv_get_latest(afv_hndl *pHndl, int64_t group_id,
-                                      uint64_t rank);
+extern char *afv_get_filename(afv_hndl *pHndl, int version,
+                              char *checkpoint_name);
 
-extern int afv_set_latest(afv_hndl *pHndl, int64_t group_id, uint64_t rank,
-                          afv_metadata_t *pMetadata);
+extern int afv_update_metadata(afv_hndl *pHndl,
+                               afv_metadata_t *const pMetadata);
+
+extern const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl);
+
+extern uint64_t afv_get_rank(afv_hndl *pHndl);
 
 #endif
