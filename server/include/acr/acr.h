@@ -62,6 +62,7 @@ extern eACR_error acr_finalize(acr_hndl **ppHndl);
 extern eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
                           ACR_cmd_fn cmd_function);
 
+// Always ONLY invoke these using the ACR Runner
 extern void *acr_cmd_nop(void *);
 extern void *acr_cmd_checkpoint(void *);
 extern void *acr_cmd_restart(void *);

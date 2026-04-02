@@ -30,8 +30,8 @@ int are_main(int argc, char **argv) {
     acr_hndl *pACR = NULL;
 
     pAIM = aim_init(AIM_MAX_WORKERS);
-    pACL = acl_init(pAIM);
-    pACR = acr_init(pAIM, 16);
+    pACR = acr_init(pAIM, 2);
+    pACL = acl_init(pAIM, pACR);
 
     aci_keepalive(true);
 
