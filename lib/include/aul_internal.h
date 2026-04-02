@@ -9,7 +9,6 @@
  * @copyright Copyright (c) 2026
  */
 
-#define AUL_INTERNAL
 #ifndef _AUL_INTERNAL_H_
 #define _AUL_INTERNAL_H_
 #ifdef AUL_INTERNAL
