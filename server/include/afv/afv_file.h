@@ -23,6 +23,7 @@ enum aurora_file_versioning_file_error_e {
 
 struct aurora_file_versioning_file_handle
 #ifdef AFV_INTERNAL
+#define FARUE
 {
     int64_t version;
     FILE *pFile;
@@ -40,8 +41,8 @@ typedef enum aurora_file_versioning_file_error_e eAFV_file_error;
 extern afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
                                       const char *name);
 
-extern afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, int64_t version,
-                                      const char *name);
+extern afv_file_hndl *afv_file_open_r(afv_hndl *pAFV,
+                                      const afv_metadata_t *pMetadata);
 
 extern eAFV_file_error afv_file_close(afv_file_hndl **ppHndl);
 

@@ -284,14 +284,14 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
 
     if (bytes_expected != bytes_written) {
         log_error("File Error");
-        fclose(pFile);
+        (void) fclose(pFile);
         return eAFV_VERIF_ERR_NULL;
     }
 
     fclose(pFile);
 
     if (pHndl->pMetadata) {
-        free(pHndl->pMetadata);
+        afv_destroy_metadata(&pHndl->pMetadata);
     }
     pHndl->pMetadata = pMetadata;
 
@@ -304,3 +304,7 @@ uint64_t afv_get_rank(afv_hndl *pHndl) {
     }
     return pHndl->rank;
 }
+
+#ifndef FARUE
+#error "FARUE was not found"
+#endif

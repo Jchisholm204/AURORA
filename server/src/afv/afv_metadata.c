@@ -99,7 +99,7 @@ afv_metadata_t *afv_metadata_ptr_init(void *block_ptr) {
     return pMetadata;
 }
 
-eAFV_verif afv_metadata_verify(afv_metadata_t *pMetadata) {
+eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata) {
     if (!pMetadata) {
         log_trace("Err");
         return eAFV_VERIF_ERR_NULL;

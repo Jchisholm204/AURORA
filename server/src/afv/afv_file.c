@@ -11,11 +11,12 @@
 
 #define AFV_INTERNAL
 #include "afv/afv_file.h"
-#define FARUE 3
+
 #include "afv/afv.h"
 #include "log.h"
 
 #include <malloc.h>
+#include <memory.h>
 
 afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
                                const char *name) {
@@ -42,18 +43,15 @@ afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
 
     pHndl->version = version;
     pHndl->rw_ptr = 0;
-    snprintf(pHndl->fname, AFV_CKPT_NAME_LEN, "%s", name);
     pHndl->use_error_correction = pAFV->use_error_correction;
     pHndl->mode_w = true;
-
-    char filename[AFV_FNAME_LEN];
-    snprintf(filename, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvdat",
+    snprintf(pHndl->fname, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvdat",
              pAFV->persistent_path, AFV_CKPT_NAME_LEN, name, version,
              pAFV->rank, pAFV->group_id);
 
-    log_trace("Opening: %s", filename);
+    log_trace("Opening: %s", pHndl->fname);
 
-    pHndl->pFile = fopen(filename, "w");
+    pHndl->pFile = fopen(pHndl->fname, "w");
 
     if (!pHndl->pFile) {
         log_error("File Error");
@@ -64,14 +62,21 @@ afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
     return pHndl;
 }
 
-afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, int64_t version,
-                               const char *name) {
+afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, const afv_metadata_t *pMetadata) {
     if (!pAFV) {
         log_error("NULL Parameter");
         return NULL;
     }
-    if (version < 0) {
+
+    if (!pMetadata) {
         log_error("NULL Parameter");
+        return NULL;
+    }
+
+    eAFV_verif afv_verif_status = afv_metadata_verify(pMetadata);
+
+    if (afv_verif_status != eAFV_VERIF_OK) {
+        log_error("Verification Error 0x%lx", afv_verif_status);
         return NULL;
     }
 
@@ -81,12 +86,24 @@ afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, int64_t version,
         return NULL;
     }
 
-    // Load configuration for the requested file
+    // Setup this handle with the configuration from the metadata
+    pHndl->version = pMetadata->version;
+    pHndl->rw_ptr = 0;
+    pHndl->use_error_correction = pMetadata->ops.with_ec;
+    pHndl->mode_w = false;
+    snprintf(pHndl->fname, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvdat",
+             pAFV->persistent_path, AFV_CKPT_NAME_LEN, pMetadata->chkpt_name,
+             pMetadata->version, pMetadata->rank, pAFV->group_id);
 
-    // Setup this handle with the configuration
+    log_trace("Opening: %s", pHndl->fname);
 
-    pHndl->use_error_correction = pAFV->use_error_correction;
-    pHndl->pAFV = pAFV;
+    pHndl->pFile = fopen(pHndl->fname, "r");
+
+    if (!pHndl->pFile) {
+        log_error("File Error");
+        free(pHndl);
+        return NULL;
+    }
 
     return pHndl;
 }

@@ -99,6 +99,6 @@ extern void afv_destroy_metadata(afv_metadata_t **ppHndl);
 extern size_t afv_metadata_ptr_size(void *);
 extern afv_metadata_t *afv_metadata_ptr_init(void *);
 
-extern eAFV_verif afv_metadata_verify(afv_metadata_t *pMetadata);
+extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
 
 #endif
