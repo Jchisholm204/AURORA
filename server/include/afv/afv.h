@@ -44,7 +44,7 @@ extern void afv_destroy_instance(afv_hndl **ppHndl);
  */
 extern const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
                                                         int64_t version,
-                                                        char *name);
+                                                        const char *name);
 
 /**
  * @brief Gets the internally cached metadata pointer

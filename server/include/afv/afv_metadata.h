@@ -37,6 +37,7 @@ struct aurora_file_versioning_metadata {
 #ifdef AFV_INTERNAL
         struct {
             size_t metadata_size;
+            size_t metadata_key;
         };
 #endif
         uint64_t __reserved[AFV_RESERVED_SIZE];

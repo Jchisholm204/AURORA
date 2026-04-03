@@ -22,6 +22,7 @@ struct aurora_file_versioning_file_handle
 #ifdef AFV_INTERNAL
 {
     char fname[AFV_FNAME_LEN];
+    int64_t version;
     bool use_error_correction;
     afv_hndl *pAFV;
     FILE *pFile;
@@ -33,7 +34,7 @@ struct aurora_file_versioning_file_handle
 typedef struct aurora_file_versioning_file_handle afv_file_hndl;
 
 extern afv_file_hndl *afv_file_open(afv_hndl *pAFV, int64_t version,
-                                    char *name);
+                                    const char *name);
 
 extern int afv_file_close(afv_file_hndl **ppHndl);
 
