@@ -154,8 +154,9 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     if (version < 0) {
         version = _afv_get_latest_version(pHndl, name, filename);
     } else {
-        snprintf(filename, AFV_FNAME_LEN, "%s/%s-%lu-%lu-%lu.afvmeta", name,
-                 pHndl->persistent_path, version, pHndl->rank, pHndl->group_id);
+        snprintf(filename, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvmeta",
+                 pHndl->persistent_path, AFV_CKPT_NAME_LEN, name, version,
+                 pHndl->rank, pHndl->group_id);
     }
 
     log_trace("Lookup: %s", filename);
