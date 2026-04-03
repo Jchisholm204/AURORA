@@ -231,7 +231,16 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
         log_error("NULL Parameter");
         return eAFV_VERIF_ERR_NULL;
     }
+
+    uint64_t group_id = 0;
+    if (pHndl->group_id > 0) {
+        group_id = pHndl->group_id;
+    }
+
     char filename[AFV_FNAME_LEN];
+    snprintf(filename, AFV_FNAME_LEN, "%s/%s-%lu-%lu-%lu.afvmeta",
+             pHndl->persistent_path, pMetadata->chkpt_name, pMetadata->version,
+             pHndl->rank, group_id);
 
     // Verify Metadata
 
