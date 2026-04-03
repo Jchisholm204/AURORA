@@ -211,6 +211,8 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     eAFV_verif verif_status = afv_metadata_verify(pMetadata);
     if (verif_status != eAFV_VERIF_OK) {
         log_warn("Verification Failed=0x%lx", verif_status);
+        free(pMetadata);
+        return NULL;
     }
 
     log_trace("Loaded Latest Metadata: %s %d", pMetadata->chkpt_name,

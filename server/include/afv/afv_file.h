@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 
-#define AFV_FNAME_LEN 256
+#define AFV_FNAME_LEN 512
 
 enum aurora_file_versioning_file_error_e {
     eAFV_FILE_OK,
