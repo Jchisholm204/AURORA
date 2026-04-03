@@ -21,7 +21,7 @@
 #endif
 
 #ifndef AFV_RESERVED_SIZE
-#define AFV_RESERVED_SIZE 2
+#define AFV_RESERVED_SIZE 4
 #endif
 
 #ifndef AFV_RESERVED_BYTES
@@ -34,7 +34,10 @@
 
 #ifdef AFV_INTERNAL
 #ifndef AFV_METADATA_VERIF_KEY
-#define AFV_METADATA_VERIF_KEY ((uint64_t) 0x73C4D8823495423AULL)
+#define _AFV_VERSION_ ((int32_t) 1)
+#define AFV_METADATA_VERIF_KEY                                                 \
+    ((uint64_t) ((uint64_t) (-_AFV_VERSION_) << 32) | _AFV_VERSION_)
+// #define AFV_METADATA_VERIF_KEY ((uint64_t) 0xFFFFFFFE00000001ULL)
 #endif
 #endif
 
@@ -54,12 +57,23 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_RGN_NAMES = BIT(7),
 };
 
+struct __attribute__((packed)) aurora_file_versioning_metadata_ops {
+    union {
+        uint64_t __reserved;
+        struct {
+            uint64_t version_tag : 4;
+            uint64_t with_ec : 1;
+        };
+    };
+};
+
 struct aurora_file_versioning_metadata {
     union {
 #ifdef AFV_INTERNAL
         struct {
             size_t metadata_size;
             size_t metadata_key;
+            struct aurora_file_versioning_metadata_ops ops;
         };
 #endif
         uint64_t __reserved[AFV_RESERVED_SIZE];
