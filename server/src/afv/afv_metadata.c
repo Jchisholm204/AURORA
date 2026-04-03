@@ -40,12 +40,10 @@ afv_metadata_t *afv_create_metadata(size_t n_regions) {
 
 size_t afv_metadata_size(size_t n_regions) {
     size_t struct_size = sizeof(afv_metadata_t);
-    size_t name_size = sizeof(char[AFV_CKPT_NAME_LEN]);
     size_t rgn_ids_size = sizeof(uint64_t) * n_regions;
     size_t rgn_sizes_size = sizeof(size_t) * n_regions;
     size_t rgn_names_size = sizeof(char[AFV_RGN_NAME_LEN]) * n_regions;
-    return struct_size + name_size + rgn_ids_size + rgn_sizes_size +
-           rgn_names_size;
+    return struct_size + rgn_ids_size + rgn_sizes_size + rgn_names_size;
 }
 
 void afv_destroy_metadata(afv_metadata_t **ppHndl) {
@@ -79,7 +77,6 @@ afv_metadata_t *afv_metadata_ptr_init(void *block_ptr) {
 
     // Sizes
     size_t struct_size = sizeof(afv_metadata_t);
-    size_t name_size = sizeof(char[AFV_CKPT_NAME_LEN]);
     size_t rgn_ids_size = sizeof(uint64_t) * pMetadata->n_regions;
     size_t rgn_sizes_size = sizeof(size_t) * pMetadata->n_regions;
     size_t rgn_names_size =
@@ -87,17 +84,16 @@ afv_metadata_t *afv_metadata_ptr_init(void *block_ptr) {
 
     // Offsets
     size_t struct_offset = 0;
-    size_t name_offset = struct_offset + struct_size;
-    size_t rgn_ids_offset = name_offset + name_size;
+    size_t rgn_ids_offset = struct_offset + struct_size;
     size_t rgn_sizes_offset = rgn_ids_offset + rgn_ids_size;
     size_t rgn_names_offset = rgn_sizes_offset + rgn_sizes_size;
     // End of Struct
     (void) rgn_names_size;
 
     // Setup pointer offsets
-    pMetadata->chkpt_name = (void *) ((uint8_t *) block_ptr + name_offset);
     pMetadata->region_ids = (void *) ((uint8_t *) block_ptr + rgn_ids_offset);
-    pMetadata->region_sizes = (void *) ((uint8_t *) block_ptr + rgn_sizes_size);
+    pMetadata->region_sizes =
+        (void *) ((uint8_t *) block_ptr + rgn_sizes_offset);
     pMetadata->region_names =
         (void *) ((uint8_t *) block_ptr + rgn_names_offset);
     return pMetadata;

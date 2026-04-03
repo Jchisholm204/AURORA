@@ -119,9 +119,6 @@ int64_t _afv_get_latest_version(afv_hndl *pHndl, const char *name,
             sscanf(pEntry->d_name, "%[^-]-%lu-%lu-%lu.afvmeta", parsed_name,
                    &parsed_ver, &parsed_rank, &parsed_gid);
 
-        if (pFound_name)
-            memcpy(pFound_name, parsed_name, AFV_FNAME_LEN);
-
         bool found = true;
         found &= (matched == 4);
         found &= (name == NULL || strcmp(name, parsed_name) == 0);
@@ -132,7 +129,8 @@ int64_t _afv_get_latest_version(afv_hndl *pHndl, const char *name,
         if (found && (int64_t) parsed_ver > latest_version) {
             latest_version = (int64_t) parsed_ver;
             if (pFound_name)
-                memcpy(pFound_name, parsed_name, AFV_FNAME_LEN);
+                snprintf(pFound_name, AFV_FNAME_LEN, "%s/%s",
+                         pHndl->persistent_path, pEntry->d_name);
         }
     }
     pEntry = NULL;
@@ -156,8 +154,8 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     if (version < 0) {
         version = _afv_get_latest_version(pHndl, name, filename);
     } else {
-        snprintf(filename, AFV_FNAME_LEN, "%s-%lu-%lu-%lu.afvmeta", name,
-                 version, pHndl->rank, pHndl->group_id);
+        snprintf(filename, AFV_FNAME_LEN, "%s/%s-%lu-%lu-%lu.afvmeta", name,
+                 pHndl->persistent_path, version, pHndl->rank, pHndl->group_id);
     }
 
     log_trace("Lookup: %s", filename);
@@ -175,11 +173,11 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
 
     uint64_t metadata_reserved[AFV_RESERVED_SIZE];
 
-    ulong read_bytes =
-        fread(metadata_reserved, AFV_RESERVED_SIZE, sizeof(uint64_t), pFile);
+    ulong read_bytes = fread(metadata_reserved, 1,
+                             AFV_RESERVED_SIZE * sizeof(uint64_t), pFile);
 
     if (read_bytes != (AFV_RESERVED_SIZE * sizeof(uint64_t))) {
-        log_error("File Error");
+        log_error("File Error %d", read_bytes);
         (void) fclose(pFile);
         return NULL;
     }
@@ -213,6 +211,14 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     if (verif_status != eAFV_VERIF_OK) {
         log_warn("Verification Failed=0x%lx", verif_status);
     }
+
+    log_trace("Loaded Latest Metadata: %s %d", pMetadata->chkpt_name,
+              pMetadata->version);
+    for (size_t i = 0; i < pMetadata->n_regions; i++) {
+        log_trace(" -> %d) %s (%d) size=%d", i, pMetadata->region_names[i],
+                  pMetadata->region_ids[i], pMetadata->region_sizes[i]);
+    }
+
     return pMetadata;
 }
 
@@ -232,15 +238,27 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
         return eAFV_VERIF_ERR_NULL;
     }
 
+    if (!pMetadata) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+
+    log_trace("Wrote Latest Metadata: %s %d", pMetadata->chkpt_name,
+              pMetadata->version);
+    for (size_t i = 0; i < pMetadata->n_regions; i++) {
+        log_trace(" -> %d) %s (%d) size=%d", i, pMetadata->region_names[i],
+                  pMetadata->region_ids[i], pMetadata->region_sizes[i]);
+    }
+
     uint64_t group_id = 0;
     if (pHndl->group_id > 0) {
         group_id = pHndl->group_id;
     }
 
     char filename[AFV_FNAME_LEN];
-    snprintf(filename, AFV_FNAME_LEN, "%s/%s-%lu-%lu-%lu.afvmeta",
-             pHndl->persistent_path, pMetadata->chkpt_name, pMetadata->version,
-             pHndl->rank, group_id);
+    snprintf(filename, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvmeta",
+             pHndl->persistent_path, AFV_CKPT_NAME_LEN, pMetadata->chkpt_name,
+             pMetadata->version, pHndl->rank, group_id);
 
     // Verify Metadata
 
@@ -275,8 +293,6 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
         free(pHndl->pMetadata);
     }
     pHndl->pMetadata = pMetadata;
-
-    log_trace("Wrote Metadata: %s", filename);
 
     return eAFV_VERIF_OK;
 }

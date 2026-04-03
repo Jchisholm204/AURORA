@@ -16,6 +16,11 @@
 
 #include <memory.h>
 
+// Leave modules seperate while ensuring nothing faults
+#if ARM_NAME_LEN != AFV_RGN_NAME_LEN
+#error "ARM Name Length Must Match AFV RNG Name Length"
+#endif
+
 void *acr_cmd_checkpoint(void *arg) {
     if (!arg) {
         log_fatal("Command Argument was NULL");
@@ -49,15 +54,15 @@ void *acr_cmd_checkpoint(void *arg) {
         return NULL;
     }
 
-    // log_info("Rank %d checkpointing %d rngs to %s", pMetadata_old->rank,
-    //          arm_n_regions, afv_get_filename(pInstance->pAFV, version,
-    //          name));
-
     // Complete the checkpoint
     for (size_t i = 0; i < arm_n_regions; i++) {
-        log_trace("rgn: %d -> rgnid: %d", i, arm_regions[i].id);
-        pMetadata->region_ids[i] = arm_regions[i].id;
         const amr_hndl *pAMR = &arm_regions[i];
+
+        pMetadata->region_ids[i] = pAMR->id;
+        pMetadata->region_sizes[i] = pAMR->rgn_size;
+        memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
+        log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
+
         uint64_t test_data[4] = {0x0000, 0x1111, 0x2222, 0x3333};
         eARM_error arm_status =
             arm_read(pInstance->pARM, pAMR, pAMR->pShadow_memory, test_data,

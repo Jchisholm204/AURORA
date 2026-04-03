@@ -66,7 +66,7 @@ struct aurora_file_versioning_metadata {
     };
     uint64_t rank;
     int64_t version;
-    char *chkpt_name;
+    char chkpt_name[AFV_CKPT_NAME_LEN];
     size_t n_regions;
     uint64_t *region_ids;
     size_t *region_sizes;
