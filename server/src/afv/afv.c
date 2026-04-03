@@ -2,9 +2,9 @@
  * @file afv.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief File Versioning System
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-04-01
+ * @modified Last Modified: 2026-04-02
  *
  * @copyright Copyright (c) 2026
  */

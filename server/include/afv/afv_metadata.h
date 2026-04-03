@@ -2,9 +2,9 @@
  * @file afv_metadata.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief Metadata included in all AURORA Checkpoint Files
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-04-01
+ * @modified Last Modified: 2026-04-02
  *
  * @copyright Copyright (c) 2026
  */

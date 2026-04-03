@@ -2,7 +2,7 @@
  * @file acr_cmd_checkpoint
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief Checkpoint Command for AURORA Command Runner
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-04-02
  * @modified Last Modified: 2026-04-02
  *
