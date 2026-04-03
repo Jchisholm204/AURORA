@@ -11,39 +11,48 @@
 
 #ifndef _AFV_FILE_H_
 #define _AFV_FILE_H_
-#define AFV_INTERNAL
 #include "afv.h"
 
 #include <stdio.h>
 
 #define AFV_FNAME_LEN 256
 
+enum aurora_file_versioning_file_error_e {
+    eAFV_FILE_OK,
+};
+
 struct aurora_file_versioning_file_handle
 #ifdef AFV_INTERNAL
 {
-    char fname[AFV_FNAME_LEN];
     int64_t version;
-    bool use_error_correction;
-    afv_hndl *pAFV;
     FILE *pFile;
     size_t rw_ptr;
+    char fname[AFV_FNAME_LEN];
+    bool use_error_correction;
+    bool mode_w;
 }
 #endif
 ;
 
 typedef struct aurora_file_versioning_file_handle afv_file_hndl;
+typedef enum aurora_file_versioning_file_error_e eAFV_file_error;
 
-extern afv_file_hndl *afv_file_open(afv_hndl *pAFV, int64_t version,
-                                    const char *name);
+extern afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
+                                      const char *name);
 
-extern int afv_file_close(afv_file_hndl **ppHndl);
+extern afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, int64_t version,
+                                      const char *name);
 
-extern int afv_file_seek(afv_file_hndl *pHndl, size_t seekptr);
+extern eAFV_file_error afv_file_close(afv_file_hndl **ppHndl);
 
-extern int afv_file_jump(afv_file_hndl *pHndl, int64_t jsize);
+extern eAFV_file_error afv_file_seek(afv_file_hndl *pHndl, size_t seekptr);
 
-extern int afv_file_write(afv_file_hndl *pHndl, void *data, size_t size);
+extern eAFV_file_error afv_file_jump(afv_file_hndl *pHndl, int64_t jsize);
 
-extern int afv_file_read(afv_file_hndl *pHndl, void *data, size_t size);
+extern eAFV_file_error afv_file_write(afv_file_hndl *pHndl, void *data,
+                                      size_t size);
+
+extern eAFV_file_error afv_file_read(afv_file_hndl *pHndl, void *data,
+                                     size_t size);
 
 #endif
