@@ -17,50 +17,25 @@
 #include <malloc.h>
 #include <memory.h>
 
-const afv_metadata_t *afv_create_metadata(
-    uint64_t rank, int64_t version, char chkpt_name[AFV_CKPT_NAME_LEN],
-    size_t n_regions, uint64_t *region_ids,
-    char (*region_names)[AFV_RGN_NAME_LEN]) {
-    if (!chkpt_name) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-    if (!region_ids && (n_regions > 0)) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-    if (!region_names && (n_regions > 0)) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-
-    if (version < 0) {
-        log_error("Version Must be Positive");
-    }
+afv_metadata_t *afv_create_metadata(size_t n_regions) {
 
     size_t metadata_size = afv_metadata_size(n_regions);
 
     log_debug("Metadata size=%d", metadata_size);
 
-    afv_metadata_t *pMetadata = afv_metadata_ptr_init(malloc(metadata_size));
+    afv_metadata_t *pMetadata = malloc(metadata_size);
     if (!pMetadata) {
         log_error("Bad Alloc??");
     }
 
     pMetadata->metadata_size = metadata_size;
+    pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;
 
-    pMetadata->rank = rank;
-    pMetadata->version = version;
-    (void) memcpy(pMetadata->chkpt_name, chkpt_name, AFV_CKPT_NAME_LEN);
+    pMetadata->rank = 0;
+    pMetadata->version = 0;
     pMetadata->n_regions = n_regions;
-    if (n_regions > 0) {
-        (void) memccpy(pMetadata->region_ids, region_ids, n_regions,
-                       sizeof(uint64_t));
-        (void) memccpy(pMetadata->region_names, region_names, n_regions,
-                       sizeof(char[AFV_RGN_NAME_LEN]));
-    }
 
-    return pMetadata;
+    return afv_metadata_ptr_init(pMetadata);
 }
 
 size_t afv_metadata_size(size_t n_regions) {
@@ -126,4 +101,31 @@ afv_metadata_t *afv_metadata_ptr_init(void *block_ptr) {
     pMetadata->region_names =
         (void *) ((uint8_t *) block_ptr + rgn_names_offset);
     return pMetadata;
+}
+
+eAFV_verif afv_metadata_verify(afv_metadata_t *pMetadata) {
+    if (!pMetadata) {
+        log_trace("Err");
+        return eAFV_VERIF_ERR_NULL;
+    }
+    eAFV_verif status = eAFV_VERIF_OK;
+
+    if (pMetadata->metadata_key != AFV_METADATA_VERIF_KEY) {
+        log_trace("Err");
+        status |= eAFV_VERIF_ERR_KEY;
+    }
+
+    if (pMetadata->metadata_size != afv_metadata_size(pMetadata->n_regions)) {
+        log_trace("Err");
+        status |= eAFV_VERIF_ERR_SIZE;
+    }
+
+    if (pMetadata->version < 0) {
+        log_trace("Err");
+        status |= eAFV_VERIF_ERR_VERSION;
+    }
+
+#warning "TODO: Implement other verifiers"
+
+    return status;
 }

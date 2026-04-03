@@ -28,9 +28,31 @@
 #define AFV_RESERVED_BYTES (AFV_RESERVED_SIZE * sizeof(uint64_t))
 #endif
 
+#ifndef BIT
+#define BIT(x) (1 << x)
+#endif
+
+#ifdef AFV_INTERNAL
+#ifndef AFV_METADATA_VERIF_KEY
+#define AFV_METADATA_VERIF_KEY ((uint64_t) 0x73C4D8823495423AULL)
+#endif
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+enum aurora_file_versioning_metadata_verification_e {
+    eAFV_VERIF_OK = 0,
+    eAFV_VERIF_ERR_NULL = BIT(0),
+    eAFV_VERIF_ERR_KEY = BIT(1),
+    eAFV_VERIF_ERR_SIZE = BIT(2),
+    eAFV_VERIF_ERR_VERSION = BIT(3),
+    eAFV_VERIF_ERR_RGN_SIZE = BIT(4),
+    eAFV_VERIF_ERR_RGN_IDS = BIT(5),
+    eAFV_VERIF_ERR_RGN_SIZES = BIT(6),
+    eAFV_VERIF_ERR_RGN_NAMES = BIT(7),
+};
 
 struct aurora_file_versioning_metadata {
     union {
@@ -52,11 +74,9 @@ struct aurora_file_versioning_metadata {
 };
 
 typedef struct aurora_file_versioning_metadata afv_metadata_t;
+typedef enum aurora_file_versioning_metadata_verification_e eAFV_verif;
 
-extern const afv_metadata_t *afv_create_metadata(
-    uint64_t rank, int64_t version, char chkpt_name[AFV_CKPT_NAME_LEN],
-    size_t n_regions, uint64_t *region_ids,
-    char (*region_names)[AFV_RGN_NAME_LEN]);
+extern afv_metadata_t *afv_create_metadata(size_t n_regions);
 
 extern size_t afv_metadata_size(size_t n_regions);
 
@@ -64,5 +84,7 @@ extern void afv_destroy_metadata(afv_metadata_t **ppHndl);
 
 extern size_t afv_metadata_ptr_size(void *);
 extern afv_metadata_t *afv_metadata_ptr_init(void *);
+
+extern eAFV_verif afv_metadata_verify(afv_metadata_t *pMetadata);
 
 #endif

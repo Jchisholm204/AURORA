@@ -54,7 +54,15 @@ extern const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
  */
 extern const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl);
 
-extern int afv_write_metadata(afv_hndl *pHndl, afv_metadata_t *const pMetadata);
+/**
+ * @brief Writes the metadata out to a file and stores it internally
+ *
+ * @param pHndl 
+ * @param pMetadata 
+ * @return 
+ */
+extern eAFV_verif afv_write_metadata(afv_hndl *pHndl,
+                                     afv_metadata_t *const pMetadata);
 
 extern uint64_t afv_get_rank(afv_hndl *pHndl);
 

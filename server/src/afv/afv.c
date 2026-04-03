@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define METADATA_KEY ((uint64_t) 0x73C4D8823495423AULL)
-
 afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
                               int64_t group_size, char *persistent_path,
                               bool with_ec) {
@@ -37,6 +35,9 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
     }
 
     pHndl->persistent_path = strdup(persistent_path);
+    pHndl->rank = rank;
+    pHndl->group_id = group_id;
+    pHndl->use_error_correction = with_ec;
     pHndl->pMetadata = NULL;
 
     if (!pHndl->persistent_path) {
@@ -45,23 +46,20 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
         return NULL;
     }
 
+    // Need to load metadata from the file
+    pHndl->pMetadata =
+        (afv_metadata_t *) afv_get_metadata_versioned(pHndl, -1, NULL);
+
     if (!pHndl->pMetadata) {
         log_info("Unable to find metadata for %d of %d in group %d at path: %s",
                  rank, group_size, group_id, persistent_path);
+        pHndl->pMetadata = afv_create_metadata(0);
     }
 
-    // Need to load metadata from the file
-    pHndl->pMetadata =
-        (afv_metadata_t *) afv_create_metadata(rank, 0, "______INIT_____", 0,
-                                               NULL, NULL);
     if (!pHndl->pMetadata) {
         log_error("Bad Alloc??");
         return NULL;
     }
-
-    pHndl->rank = rank;
-    pHndl->group_id = group_id;
-    pHndl->use_error_correction = with_ec;
 
     return pHndl;
 }
@@ -121,6 +119,9 @@ int64_t _afv_get_latest_version(afv_hndl *pHndl, const char *name,
             sscanf(pEntry->d_name, "%[^-]-%lu-%lu-%lu.afvmeta", parsed_name,
                    &parsed_ver, &parsed_rank, &parsed_gid);
 
+        if (pFound_name)
+            memcpy(pFound_name, parsed_name, AFV_FNAME_LEN);
+
         bool found = true;
         found &= (matched == 4);
         found &= (name == NULL || strcmp(name, parsed_name) == 0);
@@ -158,6 +159,9 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
         snprintf(filename, AFV_FNAME_LEN, "%s-%lu-%lu-%lu.afvmeta", name,
                  version, pHndl->rank, pHndl->group_id);
     }
+
+    log_trace("Lookup: %s", filename);
+
     if (version < 0) {
         log_error("Metadata not found");
         return NULL;
@@ -165,7 +169,7 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
 
     FILE *pFile = fopen(filename, "r");
     if (!pFile) {
-        log_error("Metadata not found");
+        log_error("File Error");
         return NULL;
     }
 
@@ -175,13 +179,12 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
         fread(metadata_reserved, AFV_RESERVED_SIZE, sizeof(uint64_t), pFile);
 
     if (read_bytes != (AFV_RESERVED_SIZE * sizeof(uint64_t))) {
-        log_error("Metadata not found");
+        log_error("File Error");
         (void) fclose(pFile);
         return NULL;
     }
 
-    uint64_t metadata_size = metadata_reserved[0];
-    uint64_t metadata_key = metadata_reserved[1];
+    uint64_t metadata_size = afv_metadata_ptr_size(metadata_reserved);
 
     afv_metadata_t *pMetadata = malloc(metadata_size);
 
@@ -191,27 +194,25 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
         return NULL;
     }
 
-    if (metadata_key != METADATA_KEY) {
-        log_error("Metadata not found");
-        (void) fclose(pFile);
-        return NULL;
-    }
-
     // Go to beginning of file, read all data out
     (void) fseek(pFile, 0, SEEK_SET);
     read_bytes = fread(pMetadata, 1, metadata_size, pFile);
 
     if (read_bytes != metadata_size) {
-        log_error("Metadata not found");
+        log_error("File Error");
         free(pMetadata);
         (void) fclose(pFile);
         return NULL;
     }
 
-    (void) fclose(pFile);
+    fclose(pFile);
 
     // Setup the metadatas internal pointer structure
     pMetadata = afv_metadata_ptr_init(pMetadata);
+    eAFV_verif verif_status = afv_metadata_verify(pMetadata);
+    if (verif_status != eAFV_VERIF_OK) {
+        log_warn("Verification Failed=0x%lx", verif_status);
+    }
     return pMetadata;
 }
 
@@ -220,11 +221,60 @@ const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl) {
         log_error("NULL Parameter");
         return NULL;
     }
+
     return pHndl->pMetadata;
 }
 
-int afv_write_metadata(afv_hndl *pHndl, afv_metadata_t *const pMetadata) {
+eAFV_verif afv_write_metadata(afv_hndl *pHndl,
+                              afv_metadata_t *const pMetadata) {
+    if (!pHndl) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+    char filename[AFV_FNAME_LEN];
+
+    // Verify Metadata
+
+    eAFV_verif verif_status = afv_metadata_verify(pMetadata);
+    if (verif_status != eAFV_VERIF_OK) {
+        log_error("Verification Failed=0x%lx", verif_status);
+        return verif_status;
+    }
+    if (verif_status & eAFV_VERIF_ERR_KEY) {
+        pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;
+    }
+
+    FILE *pFile = fopen(filename, "w");
+    if (!pFile) {
+        log_error("File Error");
+        return eAFV_VERIF_ERR_NULL;
+    }
+
+    ulong bytes_expected = afv_metadata_ptr_size(pMetadata);
+    ulong bytes_written =
+        fwrite(pMetadata, 1, afv_metadata_ptr_size(pMetadata), pFile);
+
+    if (bytes_expected != bytes_written) {
+        log_error("File Error");
+        fclose(pFile);
+        return eAFV_VERIF_ERR_NULL;
+    }
+
+    fclose(pFile);
+
+    if (pHndl->pMetadata) {
+        free(pHndl->pMetadata);
+    }
+    pHndl->pMetadata = pMetadata;
+
+    log_trace("Wrote Metadata: %s", filename);
+
+    return eAFV_VERIF_OK;
 }
 
 uint64_t afv_get_rank(afv_hndl *pHndl) {
+    if (!pHndl) {
+        return 0;
+    }
+    return pHndl->rank;
 }

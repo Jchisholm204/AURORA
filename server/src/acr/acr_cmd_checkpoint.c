@@ -40,8 +40,7 @@ void *acr_cmd_checkpoint(void *arg) {
     const afv_metadata_t *pMetadata_old = afv_get_metadata(pInstance->pAFV);
 
     // Setup Metadata
-    afv_metadata_t *pMetadata =
-        afv_metadata_ptr_init(malloc(afv_metadata_size(arm_n_regions)));
+    afv_metadata_t *pMetadata = afv_create_metadata(arm_n_regions);
     if (!pMetadata) {
         log_error("Bad Alloc?");
         if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
@@ -51,7 +50,8 @@ void *acr_cmd_checkpoint(void *arg) {
     }
 
     // log_info("Rank %d checkpointing %d rngs to %s", pMetadata_old->rank,
-    //          arm_n_regions, afv_get_filename(pInstance->pAFV, version, name));
+    //          arm_n_regions, afv_get_filename(pInstance->pAFV, version,
+    //          name));
 
     // Complete the checkpoint
     for (size_t i = 0; i < arm_n_regions; i++) {
@@ -72,9 +72,12 @@ void *acr_cmd_checkpoint(void *arg) {
     // Finalize the Checkpoint
     pMetadata->rank = pMetadata_old->rank;
     pMetadata->version = version;
+    pMetadata->n_regions = arm_n_regions;
     memcpy(pMetadata->chkpt_name, name, ACN_NAME_LEN);
 
     log_debug("checkpoint: %d %.*s", version, ACN_NAME_LEN, name);
+
+    afv_write_metadata(pInstance->pAFV, pMetadata);
 
     // NOP
     acn_tick(pInstance->pACN, eACN_checkpoint);
