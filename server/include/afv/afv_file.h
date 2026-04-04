@@ -19,6 +19,8 @@
 
 enum aurora_file_versioning_file_error_e {
     eAFV_FILE_OK,
+    eAFV_FILE_NULL,
+    eAFV_FILE_ERR_RW,
 };
 
 struct aurora_file_versioning_file_handle
@@ -27,7 +29,6 @@ struct aurora_file_versioning_file_handle
 {
     int64_t version;
     FILE *pFile;
-    size_t rw_ptr;
     char fname[AFV_FNAME_LEN];
     bool use_error_correction;
     bool mode_w;

@@ -42,7 +42,6 @@ afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
     // Setup this handle with the configuration from the AFV
 
     pHndl->version = version;
-    pHndl->rw_ptr = 0;
     pHndl->use_error_correction = pAFV->use_error_correction;
     pHndl->mode_w = true;
     snprintf(pHndl->fname, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvdat",
@@ -62,7 +61,8 @@ afv_file_hndl *afv_file_open_w(afv_hndl *pAFV, int64_t version,
     return pHndl;
 }
 
-afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, const afv_metadata_t *pMetadata) {
+afv_file_hndl *afv_file_open_r(afv_hndl *pAFV,
+                               const afv_metadata_t *pMetadata) {
     if (!pAFV) {
         log_error("NULL Parameter");
         return NULL;
@@ -88,7 +88,6 @@ afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, const afv_metadata_t *pMetadata) 
 
     // Setup this handle with the configuration from the metadata
     pHndl->version = pMetadata->version;
-    pHndl->rw_ptr = 0;
     pHndl->use_error_correction = pMetadata->ops.with_ec;
     pHndl->mode_w = false;
     snprintf(pHndl->fname, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvdat",
@@ -109,16 +108,70 @@ afv_file_hndl *afv_file_open_r(afv_hndl *pAFV, const afv_metadata_t *pMetadata) 
 }
 
 eAFV_file_error afv_file_close(afv_file_hndl **ppHndl) {
+    if (!ppHndl) {
+        log_error("NULL Parameter");
+        return eAFV_FILE_NULL;
+    }
+    afv_file_hndl *pHndl = *ppHndl;
+    if (!pHndl) {
+        log_error("NULL Parameter");
+        return eAFV_FILE_NULL;
+    }
+
+    if (pHndl->pFile) {
+        fclose(pHndl->pFile);
+    }
+
+    pHndl->pFile = NULL;
+
+    log_debug("Closed File: %s", pHndl->fname);
+
+    return eAFV_FILE_OK;
 }
 
 eAFV_file_error afv_file_seek(afv_file_hndl *pHndl, size_t seekptr) {
+    if (!pHndl) {
+        log_error("NULL Parameter");
+        return eAFV_FILE_NULL;
+    }
+    fseek(pHndl->pFile, seekptr, SEEK_SET);
+
+    return eAFV_FILE_OK;
 }
 
 eAFV_file_error afv_file_jump(afv_file_hndl *pHndl, int64_t jsize) {
+    if (!pHndl) {
+        log_error("NULL Parameter");
+        return eAFV_FILE_NULL;
+    }
+    fseek(pHndl->pFile, jsize, SEEK_CUR);
+
+    return eAFV_FILE_OK;
 }
 
-eAFV_file_error afv_file_write(afv_file_hndl *pHndl, void *data, size_t size) {
+eAFV_file_error afv_file_write(afv_file_hndl *pHndl, void *restrict data,
+                               size_t size) {
+    if (!pHndl) {
+        log_error("NULL Parameter");
+        return eAFV_FILE_NULL;
+    }
+    size_t bytes_written = fwrite_unlocked(data, 1, size, pHndl->pFile);
+
+    if (bytes_written != size) {
+        return eAFV_FILE_ERR_RW;
+    }
+    return eAFV_FILE_OK;
 }
 
 eAFV_file_error afv_file_read(afv_file_hndl *pHndl, void *data, size_t size) {
+    if (!pHndl) {
+        log_error("NULL Parameter");
+        return eAFV_FILE_NULL;
+    }
+    size_t bytes_read = fread_unlocked(data, 1, size, pHndl->pFile);
+
+    if (bytes_read != size) {
+        return eAFV_FILE_ERR_RW;
+    }
+    return eAFV_FILE_OK;
 }
