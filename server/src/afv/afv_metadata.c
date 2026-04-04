@@ -28,6 +28,8 @@ afv_metadata_t *afv_create_metadata(size_t n_regions) {
         log_error("Bad Alloc??");
     }
 
+    memset(pMetadata, 0, sizeof(afv_metadata_t));
+
     pMetadata->metadata_size = metadata_size;
     pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;
 
