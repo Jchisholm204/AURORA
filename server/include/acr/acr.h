@@ -18,10 +18,18 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <threads.h>
+
+// Command Scratchpad working memory size (500KB)
+#ifndef ACR_CMD_CTX_SCRATCH_SIZE
+#define ACR_CMD_CTX_SCRATCH_SIZE (500ULL * 1024ULL)
+#endif
+
 struct aurora_command_ctx {
     aim_hndl *pAIM;
     aim_entry_t *pInstance;
     int flags;
+    // Command Scratch Size Buffer
+    uint8_t pScratch[ACR_CMD_CTX_SCRATCH_SIZE];
     // Not For Thread Access
     struct {
         pthread_t thread_manager;
@@ -72,7 +80,8 @@ extern void *acr_cmd_connection_down(void *);
 #ifdef ACR_INTERNAL
 
 extern eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx);
-extern eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count);
+extern eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx,
+                                         int count);
 
 #endif
 

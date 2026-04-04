@@ -16,6 +16,11 @@
 
 #include <memory.h>
 
+// Leave modules seperate while ensuring nothing faults
+#if ARM_NAME_LEN != AFV_RGN_NAME_LEN
+#error "ARM Name Length Must Match AFV RNG Name Length"
+#endif
+
 void *acr_cmd_restart(void *arg) {
     if (!arg) {
         log_fatal("Command Argument was NULL");
@@ -24,8 +29,7 @@ void *acr_cmd_restart(void *arg) {
     struct aurora_command_ctx *pCtx = arg;
     aim_entry_t *pInstance = pCtx->pInstance;
 
-    // Do the command stuff
-
+    // Get Restore Version
     int64_t restore_version = 0;
     acn_get(pInstance->pACN, eACN_version, (uint64_t *) &restore_version);
 

@@ -51,5 +51,5 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
         // Trigger for next checkpoint (client side tick)
         acn_tick(_aul_ctx.pACN, eACN_checkpoint);
     }
-    return -1;
+    return 0;
 }
