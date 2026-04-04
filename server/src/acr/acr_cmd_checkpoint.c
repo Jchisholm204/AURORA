@@ -61,7 +61,7 @@ void *acr_cmd_checkpoint(void *arg) {
             log_error("ACN Error 0x%lx", acn_status);
             goto CHECKPOINT_FAIL;
         }
-        acn_get_name(pCtx->pInstance->pACN, pMetadata->chkpt_name);
+        acn_get_name(pInstance->pACN, pMetadata->chkpt_name);
         if (acn_status != eACN_OK) {
             afv_destroy_metadata(&pMetadata);
             log_error("ACN Error 0x%lx", acn_status);

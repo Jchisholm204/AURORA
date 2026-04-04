@@ -16,6 +16,11 @@
 
 #include <memory.h>
 
+// Leave modules seperate while ensuring nothing faults
+#if ARM_NAME_LEN != AFV_RGN_NAME_LEN
+#error "ARM Name Length Must Match AFV RNG Name Length"
+#endif
+
 void *acr_cmd_restart(void *arg) {
     if (!arg) {
         log_fatal("Command Argument was NULL");
