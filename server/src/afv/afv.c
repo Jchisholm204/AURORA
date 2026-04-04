@@ -215,7 +215,7 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
         return NULL;
     }
 
-    log_trace("Loaded Latest Metadata: %s %d", pMetadata->chkpt_name,
+    log_trace("Loaded Metadata: %s %d", pMetadata->chkpt_name,
               pMetadata->version);
     for (size_t i = 0; i < pMetadata->n_regions; i++) {
         log_trace(" -> %d) %s (%d) size=%d", i, pMetadata->region_names[i],

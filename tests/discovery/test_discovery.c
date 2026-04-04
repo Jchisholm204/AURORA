@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
         buf[i] = 0;
     }
 
-    s = AUL_Checkpoint(2, "TestCkpt0000002");
-    printf("Finished Checkpoint status=%d\n", s);
+    // s = AUL_Checkpoint(2, "TestCkpt0000002");
+    // printf("Finished Checkpoint status=%d\n", s);
 
     printf("Starting Restore\n");
     // *nowarn*
-    int v = AUL_Restart(-1, "TestRestore0000");
+    int v = AUL_Restart(1, "TestCkpt0000001");
     printf("Finished Restore latest version=%d\n", v);
 
     for (int i = 0; i < MEM_SIZE; i++) {
