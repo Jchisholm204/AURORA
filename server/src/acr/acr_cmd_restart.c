@@ -24,8 +24,7 @@ void *acr_cmd_restart(void *arg) {
     struct aurora_command_ctx *pCtx = arg;
     aim_entry_t *pInstance = pCtx->pInstance;
 
-    // Do the command stuff
-
+    // Get Restore Version
     int64_t restore_version = 0;
     acn_get(pInstance->pACN, eACN_version, (uint64_t *) &restore_version);
 

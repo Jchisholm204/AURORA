@@ -51,7 +51,7 @@ extern eAFV_file_error afv_file_seek(afv_file_hndl *pHndl, size_t seekptr);
 
 extern eAFV_file_error afv_file_jump(afv_file_hndl *pHndl, int64_t jsize);
 
-extern eAFV_file_error afv_file_write(afv_file_hndl *pHndl, void *data,
+extern eAFV_file_error afv_file_write(afv_file_hndl *pHndl, const void *restrict data,
                                       size_t size);
 
 extern eAFV_file_error afv_file_read(afv_file_hndl *pHndl, void *data,

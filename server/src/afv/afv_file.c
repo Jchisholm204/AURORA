@@ -149,7 +149,7 @@ eAFV_file_error afv_file_jump(afv_file_hndl *pHndl, int64_t jsize) {
     return eAFV_FILE_OK;
 }
 
-eAFV_file_error afv_file_write(afv_file_hndl *pHndl, void *restrict data,
+eAFV_file_error afv_file_write(afv_file_hndl *pHndl, const void *restrict data,
                                size_t size) {
     if (!pHndl) {
         log_error("NULL Parameter");
