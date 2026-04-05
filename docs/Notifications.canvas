@@ -1,0 +1,34 @@
+{
+	"nodes":[
+		{"id":"5028f05d85a30b4b","type":"text","text":"ARE Restore","x":-415,"y":220,"width":250,"height":60},
+		{"id":"05f51349d407e662","type":"text","text":"ARE Checkpoint","x":-840,"y":220,"width":250,"height":60},
+		{"id":"1e0917b68ec25181","type":"text","text":"Version","x":-635,"y":620,"width":250,"height":60},
+		{"id":"c71eee22dab80b58","type":"text","text":"AUL Checkpoint","x":730,"y":-240,"width":250,"height":60},
+		{"id":"3a7c29db0237d022","type":"text","text":"AUL Restore","x":730,"y":-80,"width":250,"height":60},
+		{"id":"d67814f3a73280e6","x":-165,"y":-180,"width":250,"height":60,"type":"text","text":"AUL Protect"},
+		{"id":"8aeec0639b42c7bd","type":"text","text":"ARE main","x":-920,"y":-180,"width":250,"height":60},
+		{"id":"894a99f539d75372","type":"text","text":"Memory","x":-510,"y":-180,"width":250,"height":60},
+		{"id":"58264bc5a7d01061","type":"text","text":"Checkpoint","x":300,"y":-400,"width":250,"height":60},
+		{"id":"9f26641b8bc3ccd7","type":"text","text":"Systick","x":300,"y":20,"width":250,"height":60}
+	],
+	"edges":[
+		{"id":"112cf9509c4c8508","fromNode":"58264bc5a7d01061","fromSide":"left","toNode":"8aeec0639b42c7bd","toSide":"top"},
+		{"id":"aa3ee46b6b865fab","fromNode":"8aeec0639b42c7bd","fromSide":"bottom","toNode":"5028f05d85a30b4b","toSide":"top"},
+		{"id":"04a53fb10c6d74a2","fromNode":"8aeec0639b42c7bd","fromSide":"bottom","toNode":"05f51349d407e662","toSide":"top"},
+		{"id":"865781c19be40676","fromNode":"5028f05d85a30b4b","fromSide":"right","toNode":"1e0917b68ec25181","toSide":"right"},
+		{"id":"d12b63ee3044ea41","fromNode":"c71eee22dab80b58","fromSide":"left","toNode":"58264bc5a7d01061","toSide":"right"},
+		{"id":"d3f5ed6548c57665","fromNode":"3a7c29db0237d022","fromSide":"left","toNode":"58264bc5a7d01061","toSide":"right"},
+		{"id":"662f97102866042f","fromNode":"894a99f539d75372","fromSide":"bottom","toNode":"5028f05d85a30b4b","toSide":"top"},
+		{"id":"8bfc08713d8cad85","fromNode":"894a99f539d75372","fromSide":"bottom","toNode":"05f51349d407e662","toSide":"top"},
+		{"id":"ef3a517d2a6a4b99","fromNode":"d67814f3a73280e6","fromSide":"left","toNode":"894a99f539d75372","toSide":"right"},
+		{"id":"a73d7d6faaefd7fd","fromNode":"5028f05d85a30b4b","fromSide":"right","toNode":"58264bc5a7d01061","toSide":"bottom"},
+		{"id":"eab0922c8fb23324","fromNode":"05f51349d407e662","fromSide":"right","toNode":"58264bc5a7d01061","toSide":"bottom"},
+		{"id":"d4f3b17596c857c9","fromNode":"1e0917b68ec25181","fromSide":"top","toNode":"5028f05d85a30b4b","toSide":"bottom"},
+		{"id":"16ae8cce9bb51ca3","fromNode":"1e0917b68ec25181","fromSide":"top","toNode":"05f51349d407e662","toSide":"bottom"},
+		{"id":"702914e01fd6b45b","fromNode":"05f51349d407e662","fromSide":"left","toNode":"1e0917b68ec25181","toSide":"left"},
+		{"id":"fd274b0800ac2979","fromNode":"3a7c29db0237d022","fromSide":"left","toNode":"9f26641b8bc3ccd7","toSide":"right"},
+		{"id":"bea0c42f6ebf2463","fromNode":"c71eee22dab80b58","fromSide":"left","toNode":"9f26641b8bc3ccd7","toSide":"right"},
+		{"id":"b05fbb25ba68825b","fromNode":"5028f05d85a30b4b","fromSide":"right","toNode":"9f26641b8bc3ccd7","toSide":"left"},
+		{"id":"c1b1c49ff36f1ea7","fromNode":"05f51349d407e662","fromSide":"right","toNode":"9f26641b8bc3ccd7","toSide":"left"}
+	]
+}
