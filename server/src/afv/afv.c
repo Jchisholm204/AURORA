@@ -58,6 +58,7 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
 
     if (!pHndl->pMetadata) {
         log_error("Bad Alloc??");
+        free(pHndl);
         return NULL;
     }
 
