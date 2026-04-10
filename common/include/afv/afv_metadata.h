@@ -101,4 +101,13 @@ extern afv_metadata_t *afv_metadata_ptr_init(void *);
 
 extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
 
+// Let this function be included explicitly through a macro,
+//  or implicitly if the ARM is already defined and present in the file
+#if defined(AFV_METADATA_INC_MATCH) || defined(_ARM_ARM_H_)
+#include "arm/arm.h"
+extern eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
+                                     const amr_hndl *const region_list,
+                                     size_t n_regions, size_t *match_map_list);
+#endif
+
 #endif

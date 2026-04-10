@@ -21,9 +21,12 @@ int main(int argc, char **argv) {
     (void) argv;
 
     aul_configuration_t cfg = AUL_CONFIG_DEFAULT;
-    AUL_Init(&cfg);
+    int ini_s = AUL_Init(&cfg);
 
-    printf("AUL Initialized\n");
+    printf("AUL Initialized %d\n", ini_s);
+
+    int test = AUL_Test(-1, "TestCkpt0000001");
+    printf("Latest = %d (invalid)\n", test);
 
     uint64_t buf[MEM_SIZE] = {0xBEEF, 0xDEAD, 0xC0FF1E, 0xBEEF};
     uint64_t bu2[MEM_SIZE];
@@ -31,8 +34,22 @@ int main(int argc, char **argv) {
 
     AUL_Mem_protect(3, buf, sizeof(buf));
 
+    test = AUL_Test(-1, "TestCkpt0000001");
+    printf("Latest = %d (invalid)\n", test);
+
     AUL_Mem_protect(5, buf, sizeof(buf));
     AUL_Mem_protect(7, buf, sizeof(buf));
+
+    test = AUL_Test(-1, "TestCkpt0000001");
+    printf("Latest = %d (valid)\n", test);
+    test = AUL_Test(2, "TestCkpt0000001");
+    printf("v=2 = %d (invalid)\n", test);
+    test = AUL_Test(-1, "Tggt5krl0j00001");
+    printf("invalid name = %d (invalid)\n", test);
+    test = AUL_Test(2, NULL);
+    printf("null name = %d (invalid)\n", test);
+    test = AUL_Test(-1, NULL);
+    printf("latest null = %d (valid)\n", test);
 
     printf("Starting Checkpoint\n");
     // *nowarn*

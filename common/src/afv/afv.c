@@ -16,6 +16,7 @@
 #include "log.h"
 
 #include <dirent.h>
+#include <errno.h>
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,23 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
         return NULL;
     }
 
+    // Check validity of the path
+    DIR *dir = opendir(pHndl->persistent_path);
+    if (dir) {
+        closedir(dir);
+    } else {
+        if (errno == ENOENT) {
+            log_fatal("Persistent Path Not Found");
+        } else if (errno == EACCES) {
+            log_fatal("Persistent Path Access Denied");
+        } else {
+            log_fatal("Persistent Path Invalid");
+        }
+        free(pHndl->persistent_path);
+        free(pHndl);
+        return NULL;
+    }
+
     // Need to load metadata from the file
     pHndl->pMetadata =
         (afv_metadata_t *) afv_get_metadata_versioned(pHndl, -1, NULL);
@@ -58,6 +76,8 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
 
     if (!pHndl->pMetadata) {
         log_error("Bad Alloc??");
+        free(pHndl->persistent_path);
+        free(pHndl);
         return NULL;
     }
 
@@ -149,7 +169,7 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
         return NULL;
     }
 
-    char filename[AFV_FNAME_LEN];
+    char filename[AFV_FNAME_LEN] = "FILENOTFOUND";
 
     if (version < 0) {
         version = _afv_get_latest_version(pHndl, name, filename);
@@ -162,13 +182,13 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     log_trace("Lookup: %s", filename);
 
     if (version < 0) {
-        log_error("Metadata not found");
+        log_warn("Metadata not found");
         return NULL;
     }
 
     FILE *pFile = fopen(filename, "r");
     if (!pFile) {
-        log_error("File Error");
+        log_warn("File Error");
         return NULL;
     }
 

@@ -25,5 +25,6 @@ struct aurora_user_library_context _aul_ctx = {
     .pACI = NULL,
     .pACN = NULL,
     .pARM = NULL,
+    .pAFV = NULL,
     .pConfig = NULL,
 };
