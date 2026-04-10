@@ -49,7 +49,7 @@ int are_main(int argc, char **argv) {
         eACN_notification pending;
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
-        if (acn_err == eACN_ERR_FATAL) {
+        if (acn_err == eACN_ERR_FATAL || acn_err == eACN_ERR_UCS) {
             usleep(5000);
             log_info("ACN Returned Fatal Error.. Closing Connection");
             eACR_error acr_status =

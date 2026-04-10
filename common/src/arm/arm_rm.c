@@ -139,7 +139,13 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR) {
         return eARM_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(pStatus)) {
         do {
-            (void) aci_poll(pHndl->pACI);
+            ucs_status_t aci_status = aci_poll(pHndl->pACI);
+            if (aci_status != UCS_OK) {
+                log_error("UCS Error %s",
+                          ucs_status_string(UCS_PTR_STATUS(pStatus)));
+                (void) arm_remove(pHndl, pInst_AMR);
+                return eARM_ERR_UCS;
+            }
             ucs_status = ucp_request_check_status(pStatus);
 
         } while (ucs_status == UCS_INPROGRESS);
