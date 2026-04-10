@@ -51,13 +51,14 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
     DIR *dir = opendir(pHndl->persistent_path);
     if (dir) {
         closedir(dir);
-    } else if (errno == ENOENT) {
-        log_fatal("Persistent Path Not Found");
-        free(pHndl->persistent_path);
-        free(pHndl);
-        return NULL;
-    } else if (errno == EACCES) {
-        log_fatal("Persistent Path Access Denied");
+    } else {
+        if (errno == ENOENT) {
+            log_fatal("Persistent Path Not Found");
+        } else if (errno == EACCES) {
+            log_fatal("Persistent Path Access Denied");
+        } else {
+            log_fatal("Persistent Path Invalid");
+        }
         free(pHndl->persistent_path);
         free(pHndl);
         return NULL;
