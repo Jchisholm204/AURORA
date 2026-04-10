@@ -18,7 +18,7 @@
 #include "limits.h"
 #include "log.h"
 
-int AUL_Test(const int version, const char name[static AUL_NAME_LEN]) {
+int AUL_Test(const int version, const char *name) {
     if (!_aul_ctx.pAFV || !_aul_ctx.pARM) {
         log_fatal("Not Initialized");
         return -1;

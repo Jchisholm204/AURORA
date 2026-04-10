@@ -32,7 +32,7 @@ extern int AUL_Mem_unprotect(const uint64_t mem_id);
 extern int AUL_Checkpoint(const int version,
                           const char name[static AUL_NAME_LEN]);
 
-extern int AUL_Test(const int version, const char name[static AUL_NAME_LEN]);
+extern int AUL_Test(const int version, const char *name);
 
 extern int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]);
 

@@ -181,13 +181,13 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     log_trace("Lookup: %s", filename);
 
     if (version < 0) {
-        log_error("Metadata not found");
+        log_warn("Metadata not found");
         return NULL;
     }
 
     FILE *pFile = fopen(filename, "r");
     if (!pFile) {
-        log_error("File Error");
+        log_warn("File Error");
         return NULL;
     }
 
