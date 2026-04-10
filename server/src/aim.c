@@ -56,6 +56,9 @@ aim_hndl *aim_init(size_t max_workers) {
         atomic_init(&pHndl->workers[i].references, 0);
         pHndl->workers[i].pACI = NULL;
         pHndl->workers[i].pACN = NULL;
+        pHndl->workers[i].pARM = NULL;
+        pHndl->workers[i].pAFV = NULL;
+        pHndl->workers[i].error_counter = 0;
     }
 
     log_trace("AIM initialized %d max workers", max_workers);
@@ -114,6 +117,9 @@ int aim_remove_entry(aim_hndl *pHndl, aim_entry_t *pEntry) {
     }
     pEntry->pACI = NULL;
     pEntry->pACN = NULL;
+    pEntry->pARM = NULL;
+    pEntry->pAFV = NULL;
+    pEntry->error_counter = 0;
     atomic_store(&pEntry->references, 0);
     pHndl->n_workers--;
     return 0;
