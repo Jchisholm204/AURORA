@@ -58,6 +58,22 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     _aul_ctx.pConfig->chkpt_opts.use_error_correction =
         pCFG->use_error_correction;
 
+    _aul_ctx.pAFV =
+        afv_create_instance(_aul_ctx.pConfig->rank, _aul_ctx.pConfig->group.id,
+                            _aul_ctx.pConfig->group.size,
+                            _aul_ctx.pConfig->chkpt_opts.persistent_path,
+                            _aul_ctx.pConfig->chkpt_opts.use_error_correction);
+
+    if (!_aul_ctx.pAFV) {
+        log_error("Configuration Failed");
+        aoc_free(&_aul_ctx.pConfig);
+        if (_aul_ctx.log_file) {
+            fclose(_aul_ctx.log_file);
+            _aul_ctx.log_file = NULL;
+        }
+        return -2;
+    }
+
     ads_exchange_data_t ads_data_tx = {0};
 
     // Pack Configuration Data
@@ -170,5 +186,6 @@ int AUL_Finalize(void) {
     arm_destroy_instance(&_aul_ctx.pARM);
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);
+    afv_destroy_instance(&_aul_ctx.pAFV);
     return 0;
 }

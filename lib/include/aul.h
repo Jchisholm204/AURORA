@@ -21,16 +21,19 @@
 #define AUL_NAME_LEN 16
 #endif
 
-int AUL_Init(const aul_configuration_t *pCFG);
+extern int AUL_Init(const aul_configuration_t *pCFG);
 
-int AUL_Finalize(void);
+extern int AUL_Finalize(void);
 
-int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
-                    const size_t size);
-int AUL_Mem_unprotect(const uint64_t mem_id);
+extern int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
+                           const size_t size);
+extern int AUL_Mem_unprotect(const uint64_t mem_id);
 
-int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]);
+extern int AUL_Checkpoint(const int version,
+                          const char name[static AUL_NAME_LEN]);
 
-int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]);
+extern int AUL_Test(const int version, const char name[static AUL_NAME_LEN]);
+
+extern int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]);
 
 #endif

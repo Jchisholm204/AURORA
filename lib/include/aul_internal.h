@@ -8,13 +8,13 @@
  *
  * @copyright Copyright (c) 2026
  */
-
 #ifndef _AUL_INTERNAL_H_
 #define _AUL_INTERNAL_H_
 #ifdef AUL_INTERNAL
 
 #include "aci/aci.h"
 #include "acn/acn.h"
+#include "afv/afv.h"
 #include "arm/arm.h"
 #include "aul.h"
 #include "aul_configuration.h"
@@ -29,6 +29,7 @@ struct aurora_user_library_context {
     aci_hndl *pACI;
     acn_hndl *pACN;
     arm_hndl *pARM;
+    afv_hndl *pAFV;
     struct aurora_operating_configuration *pConfig;
 };
 

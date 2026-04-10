@@ -16,6 +16,9 @@
 #include "limits.h"
 #include "log.h"
 
+int AUL_Test(const int version, const char name[static AUL_NAME_LEN]) {
+}
+
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for all pending operations to finish
     if (acn_await(_aul_ctx.pACN,

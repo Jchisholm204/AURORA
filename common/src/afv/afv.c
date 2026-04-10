@@ -150,7 +150,7 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
         return NULL;
     }
 
-    char filename[AFV_FNAME_LEN];
+    char filename[AFV_FNAME_LEN] = "FILENOTFOUND";
 
     if (version < 0) {
         version = _afv_get_latest_version(pHndl, name, filename);
