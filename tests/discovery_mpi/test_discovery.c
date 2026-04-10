@@ -72,7 +72,9 @@ int main(int argc, char **argv) {
     if (rank == 0)
         printf("Starting distributed restore...\n");
 
-    int v = AUL_Restart(1, ckpt_name);
+    if (AUL_Restart(1, ckpt_name) != 0) {
+        printf("[Rank %d] Restart failed\n", rank);
+    }
 
     // 8. Verification & Edge Case Handling
     int local_errors = 0;
