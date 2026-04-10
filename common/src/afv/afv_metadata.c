@@ -154,7 +154,7 @@ eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
     eAFV_verif ignore_status = ~eAFV_VERIF_OK;
 
     if (n_regions != pMetadata->n_regions) {
-        log_trace("%ul != %ul regions", n_regions, pMetadata->n_regions);
+        log_trace("%zu != %zu regions", n_regions, pMetadata->n_regions);
         status |= eAFV_VERIF_ERR_SIZE;
         ignore_status &= ~eAFV_VERIF_ERR_SIZE;
 #if defined(USE_EARLY_EXIT)
