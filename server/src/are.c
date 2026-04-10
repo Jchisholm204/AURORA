@@ -60,11 +60,11 @@ int are_main(int argc, char **argv) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_connection_down);
             if (acr_status != eACR_OK) {
-                pInstance->error_counter++;
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
         } else if (acn_err == eACN_ERR_UCS) {
             log_error("UCS Error");
+            pInstance->error_counter++;
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
         } else if (pending & eACN_restore) {
             eACR_error acr_status =
