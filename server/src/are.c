@@ -51,9 +51,7 @@ int are_main(int argc, char **argv) {
 
         if (acn_err == eACN_ERR_FATAL) {
             usleep(5000);
-            log_info(
-                "ACN Returned Fatal Error.. "
-                "Assuming client disconnected and closing the connection.");
+            log_info("ACN Returned Fatal Error.. Closing Connection");
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_connection_down);
             if (acr_status != eACR_OK) {

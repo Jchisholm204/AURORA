@@ -107,7 +107,7 @@ extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
 #include "arm/arm.h"
 extern eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
                                      const amr_hndl *const region_list,
-                                     size_t *match_map_list);
+                                     size_t n_regions, size_t *match_map_list);
 #endif
 
 #endif

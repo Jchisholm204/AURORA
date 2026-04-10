@@ -10,6 +10,7 @@
  */
 
 #define ACR_INTERNAL
+#define AFV_METADATA_INC_MATCH
 #include "acr/acr.h"
 #include "afv/afv.h"
 #include "afv/afv_file.h"
@@ -117,36 +118,16 @@ void *acr_cmd_restart(void *arg) {
         const size_t cli_arm_n_regions =
             arm_get_n_remote_regions(pInstance->pARM);
 
-        if (cli_arm_n_regions != pMetadata->n_regions) {
-            log_error("State %ul != %ul regions");
+        eAFV_verif afv_status = eAFV_VERIF_OK;
+        afv_status = afv_metadata_match(pMetadata, cli_arm_regions,
+                                        cli_arm_n_regions, meta_cli_hash_map);
+
+        if (afv_status != eAFV_VERIF_OK) {
+            log_error("Verification 0x%lx", afv_status);
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
             free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
-
-        // BEGIN CLI Region Loop
-        for (size_t i = 0; i < pMetadata->n_regions; i++) { // BEGIN CRL
-            // BEGIN Metadata Region Loop
-            meta_cli_hash_map[i] = 0xFFFFFFFFFFFFFFFF;
-            for (size_t j = 0; j < cli_arm_n_regions; j++) { // BEGIN MRL
-                const amr_hndl *pAMR = &cli_arm_regions[j];
-                bool match = true;
-                match &= (pMetadata->region_ids[i] == pAMR->id);
-                match &= (pMetadata->region_sizes[i] == pAMR->rgn_size);
-                match &= (!strcmp(pMetadata->region_names[i], pAMR->name));
-                if (match) {
-                    log_trace("Matched: %d -> %d (%d)", i, j, pAMR->id);
-                    meta_cli_hash_map[i] = j;
-                }
-            } // END MRL
-            if (meta_cli_hash_map[i] == 0xFFFFFFFFFFFFFFFF) {
-                log_error("Failed to Match: %d (%d)", i,
-                          pMetadata->region_ids[i]);
-                afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-                free(meta_cli_hash_map);
-                goto RESTART_FAIL;
-            }
-        } // END CLI Region Loop
 
         // POST:
         //  meta_cli_hash_map: [metadata idx] -> [arm idx]
