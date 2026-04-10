@@ -29,6 +29,7 @@ struct aurora_instance_manager_entry {
     acn_hndl *pACN;
     arm_hndl *pARM;
     afv_hndl *pAFV;
+    size_t error_counter;
     union {
 #ifdef AIM_INTERNAL
         struct {

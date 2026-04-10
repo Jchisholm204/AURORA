@@ -18,6 +18,10 @@
 
 #include <unistd.h>
 
+#ifndef ARE_MAX_ERROR_COUNT
+#define ARE_MAX_ERROR_COUNT 16
+#endif
+
 #ifndef AIM_MAX_WORKERS
 #define AIM_MAX_WORKERS 64
 #endif
@@ -49,7 +53,8 @@ int are_main(int argc, char **argv) {
         eACN_notification pending;
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
-        if (acn_err == eACN_ERR_FATAL) {
+        if (acn_err == eACN_ERR_FATAL ||
+            pInstance->error_counter > ARE_MAX_ERROR_COUNT) {
             usleep(5000);
             log_info("ACN Returned Fatal Error.. Closing Connection");
             eACR_error acr_status =
@@ -59,6 +64,7 @@ int are_main(int argc, char **argv) {
             }
         } else if (acn_err == eACN_ERR_UCS) {
             log_error("UCS Error");
+            pInstance->error_counter++;
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
         } else if (pending & eACN_restore) {
             eACR_error acr_status =
