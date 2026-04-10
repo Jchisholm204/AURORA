@@ -97,7 +97,7 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
         nop_ctx.pInstance = pInstance;
         nop_ctx.flags = -1;
         nop_ctx.pAIM = pHndl->pAIM;
-        log_debug("NOP flags=%d instance=0x%lx", flags, pInstance);
+        // log_debug("NOP flags=%d instance=0x%lx", flags, pInstance);
         (void) acr_cmd_nop(&nop_ctx);
         return eACR_OK;
     }
@@ -170,7 +170,7 @@ eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx) {
 
     // If the handle is null, this context was not part of the pool
     if (!pCtx->__restricted.pHndl) {
-        log_trace("Released NULL");
+        // log_trace("Released NULL");
         return eACR_OK;
     }
     uint64_t current_head =
@@ -205,8 +205,9 @@ eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count) {
     } while (acr_status != eACR_OK && attempts < count);
     if (acr_status != 0) {
         log_error("Failed to release after %d / %d attempts", attempts, count);
-    } else {
-        log_trace("Released after %d / %d attempts", attempts, count);
     }
+    // else {
+    //     log_trace("Released after %d / %d attempts", attempts, count);
+    // }
     return acr_status;
 }
