@@ -16,6 +16,7 @@
 #include "log.h"
 
 #include <dirent.h>
+#include <errno.h>
 #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,22 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
         return NULL;
     }
 
+    // Check validity of the path
+    DIR *dir = opendir(pHndl->persistent_path);
+    if (dir) {
+        closedir(dir);
+    } else if (errno == ENOENT) {
+        log_fatal("Persistent Path Not Found");
+        free(pHndl->persistent_path);
+        free(pHndl);
+        return NULL;
+    } else if (errno == EACCES) {
+        log_fatal("Persistent Path Access Denied");
+        free(pHndl->persistent_path);
+        free(pHndl);
+        return NULL;
+    }
+
     // Need to load metadata from the file
     pHndl->pMetadata =
         (afv_metadata_t *) afv_get_metadata_versioned(pHndl, -1, NULL);
@@ -58,6 +75,7 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
 
     if (!pHndl->pMetadata) {
         log_error("Bad Alloc??");
+        free(pHndl->persistent_path);
         free(pHndl);
         return NULL;
     }

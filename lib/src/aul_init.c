@@ -65,7 +65,7 @@ int AUL_Init(const aul_configuration_t *pCFG) {
                             _aul_ctx.pConfig->chkpt_opts.use_error_correction);
 
     if (!_aul_ctx.pAFV) {
-        log_error("Configuration Failed");
+        log_fatal("Configuration Failed");
         aoc_free(&_aul_ctx.pConfig);
         if (_aul_ctx.log_file) {
             fclose(_aul_ctx.log_file);
