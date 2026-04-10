@@ -10,16 +10,44 @@
  */
 
 #define AUL_INTERNAL
+#define AFV_METADATA_INC_MATCH
 
+#include "afv/afv.h"
 #include "aul.h"
 #include "aul_internal.h"
 #include "limits.h"
 #include "log.h"
 
 int AUL_Test(const int version, const char name[static AUL_NAME_LEN]) {
+    if (!_aul_ctx.pAFV || !_aul_ctx.pARM) {
+        log_fatal("Not Initialized");
+        return -1;
+    }
+    const afv_metadata_t *pMetadata =
+        afv_get_metadata_versioned(_aul_ctx.pAFV, version, name);
+    if (!pMetadata) {
+        log_debug("%s-%d Not Loadable", name, version);
+        return -1;
+    }
+
+    size_t n_regions = arm_get_n_local_regions(_aul_ctx.pARM);
+    const amr_hndl *const region_list = arm_get_local_regions(_aul_ctx.pARM);
+
+    eAFV_verif afvv_status =
+        afv_metadata_match(pMetadata, region_list, n_regions, NULL);
+    if (afvv_status != eAFV_VERIF_OK) {
+        log_debug("%s-%d Not Loadable", name, version);
+        afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+        return -afvv_status;
+    }
+    afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+    return 0;
 }
 
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
+    if (!_aul_ctx.pACI) {
+        log_fatal("Not Initialized");
+    }
     // Wait for all pending operations to finish
     if (acn_await(_aul_ctx.pACN,
                   eACN_systick | eACN_checkpoint | eACN_restore) != 0) {
