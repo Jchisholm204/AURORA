@@ -1,4 +1,4 @@
-set(LIB_TARG aurora_user)
+set(LIB_TARG aul)
 
 file(GLOB_RECURSE LIB_SOURCES FOLLOW_SYMLINKS 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c
