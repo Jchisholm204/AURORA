@@ -1,16 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(AURORA)
-enable_language(C CXX)
+
+# Language Options
+enable_language(C)
 set(CMAKE_C_STANDARD 11)
+# Ensure ISO C
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
-
-set(CMAKE_CXX_STANDARD 17) 
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF) # Better portability
-
-option(BUILD_TESTING "Enable Compilation of Test Files" ON)
 
 # Add additional include directories for standard libraries
 include_directories(SYSTEM ${CMAKE_C_COMPILER_INCLUDE_DIRS})
@@ -28,11 +25,14 @@ set(GENERIC_COMPILE_OPTIONS
     -pedantic
     # Include Debug Symbols
     -g
-    -fopenmp
     -march=native
     # Color Logs
     -DLOG_USE_COLOR
+    # Optimization
+    -O1
 )
+
+option(BUILD_TESTING "Enable Compilation of Test Files" ON)
 
 # Append to this list
 include_directories(
@@ -50,6 +50,24 @@ link_directories(
     /usr/lib/
     /usr/lib64/openmpi/lib
 )
+
+# Libraries
+
+find_package(ucx 
+    CONFIG 
+    QUIET
+    REQUIRED
+)
+if(NOT UCX_FOUND)
+    find_path(UCX_INCLUDE_DIR NAMES ucp/api/ucp.h
+        HINTS $ENV{UCX_HOME} $ENV{HPC_SDK_PATH}
+        PATH_SUFFIXES include
+    )
+    find_library(UCX_LIB NAMES ucp
+        HINTS $ENV{UCX_HOME} $ENV{HPC_SDK_PATH}
+        PATH_SUFFIXES lib lib64
+    )
+endif()
 
 set(COMMON_LIBRARIES
     m
