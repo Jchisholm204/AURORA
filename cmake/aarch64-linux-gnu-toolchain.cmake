@@ -3,7 +3,7 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
-set(TOOLCHAIN_PREFIX aarch64-linux-gnu-)
+set(TOOLCHAIN_PREFIX aarch64-none-linux-gnu-)
 ## CFLAGS
 set(CMAKE_CFLAGS
     # "-fdata-sections -ffunction-sections -Wl,--gc-sections")
