@@ -38,9 +38,17 @@ else()
     add_library(${CMAKE_PROJECT_NAME}::ucp INTERFACE IMPORTED GLOBAL)
     add_library(${CMAKE_PROJECT_NAME}::ucs INTERFACE IMPORTED GLOBAL)
     add_library(${CMAKE_PROJECT_NAME}::uct INTERFACE IMPORTED GLOBAL)
+    add_library(${CMAKE_PROJECT_NAME}::ucx INTERFACE IMPORTED GLOBAL)
     target_link_libraries(${CMAKE_PROJECT_NAME}::ucp INTERFACE ucx::ucp)
     target_link_libraries(${CMAKE_PROJECT_NAME}::ucs INTERFACE ucx::ucs)
     target_link_libraries(${CMAKE_PROJECT_NAME}::uct INTERFACE ucx::uct)
+
+    target_link_libraries(${CMAKE_PROJECT_NAME}::ucx INTERFACE 
+        ucx::uct
+        ucx::ucp
+        ucx::ucs
+        ucx::ucm
+    )
 
     set(UCX_FOUND TRUE CACHE INTERNAL "UCX Found")
 endif()
