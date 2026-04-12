@@ -40,6 +40,7 @@ else()
         ucx::uct
         ucx::ucp
         ucx::ucs
+        ${UCX_UCM_LIB_INTERNAL}
     )
 
     set(UCX_FOUND TRUE CACHE INTERNAL TRUE)
