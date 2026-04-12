@@ -15,8 +15,6 @@ target_compile_options(${TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
 target_link_libraries(${TARG} PRIVATE
     ${COMMON_LIBRARIES}
-    ${CMAKE_PROJECT_NAME}::ucp
-    ${CMAKE_PROJECT_NAME}::ucs
-    ${CMAKE_PROJECT_NAME}::uct
+    ${CMAKE_PROJECT_NAME}::ucx
     aurora_common 
 )

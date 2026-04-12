@@ -15,7 +15,7 @@ if(NOT ucx_FOUND)
     find_library(Z_LIB NAMES z)
 
     if(UCX_INCLUDE_DIR AND UCX_UCP_LIB)
-        add_library(${CMAKE_PROJECT_NAME}::ucx INTERFACE IMPORTED)
+        add_library(${CMAKE_PROJECT_NAME}::ucx INTERFACE IMPORTED GLOBAL)
         target_include_directories(${CMAKE_PROJECT_NAME}::ucx INTERFACE 
             ${UCX_INCLUDE_DIR}
         )
@@ -35,20 +35,12 @@ if(NOT ucx_FOUND)
     endif()
 else()
     message(STATUS "Found UCX")
-    add_library(${CMAKE_PROJECT_NAME}::ucp INTERFACE IMPORTED GLOBAL)
-    add_library(${CMAKE_PROJECT_NAME}::ucs INTERFACE IMPORTED GLOBAL)
-    add_library(${CMAKE_PROJECT_NAME}::uct INTERFACE IMPORTED GLOBAL)
     add_library(${CMAKE_PROJECT_NAME}::ucx INTERFACE IMPORTED GLOBAL)
-    target_link_libraries(${CMAKE_PROJECT_NAME}::ucp INTERFACE ucx::ucp)
-    target_link_libraries(${CMAKE_PROJECT_NAME}::ucs INTERFACE ucx::ucs)
-    target_link_libraries(${CMAKE_PROJECT_NAME}::uct INTERFACE ucx::uct)
-
     target_link_libraries(${CMAKE_PROJECT_NAME}::ucx INTERFACE 
         ucx::uct
         ucx::ucp
         ucx::ucs
-        ucx::ucm
     )
 
-    set(UCX_FOUND TRUE CACHE INTERNAL "UCX Found")
+    set(UCX_FOUND TRUE CACHE INTERNAL TRUE)
 endif()

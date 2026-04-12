@@ -24,7 +24,5 @@ target_compile_options(${LIB_TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
 target_link_libraries(${LIB_TARG} PRIVATE 
     ${COMMON_LIBRARIES}
-    ${CMAKE_PROJECT_NAME}::ucp
-    ${CMAKE_PROJECT_NAME}::ucs
-    ${CMAKE_PROJECT_NAME}::uct
+    ${CMAKE_PROJECT_NAME}::ucx
 )
