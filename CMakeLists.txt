@@ -25,7 +25,6 @@ set(GENERIC_COMPILE_OPTIONS
     -pedantic
     # Include Debug Symbols
     -g
-    -march=native
     # Color Logs
     -DLOG_USE_COLOR
     # Optimization
