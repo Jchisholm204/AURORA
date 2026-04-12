@@ -38,7 +38,7 @@ static char *find_host_bf(void) {
         return NULL;
     }
 
-    const int versions[] = {1, 2, 3};
+    const int versions[] = {3, 2, 1};
     for (size_t i = 0; i < sizeof(versions) / sizeof(int); i++) {
         int version = versions[i];
         (void) snprintf(target_name, sizeof(target_name), "romebf%da%s",
