@@ -7,11 +7,14 @@ file(GLOB_RECURSE SERVER_SOURCES FOLLOW_SYMLINKS
 
 add_executable(${TARG} 
     ${SERVER_SOURCES}
-    $<TARGET_OBJECTS:aurora_common>
 )
 
 target_include_directories(${TARG} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_options(${TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
-target_link_libraries(${TARG} PRIVATE aurora_common ${COMMON_LIBRARIES})
+target_link_libraries(${TARG} PRIVATE
+    ${COMMON_LIBRARIES}
+    ${CMAKE_PROJECT_NAME}::ucx
+    aurora_common 
+)

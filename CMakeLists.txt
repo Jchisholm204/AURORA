@@ -1,16 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(AURORA)
-enable_language(C CXX)
+
+# Language Options
+enable_language(C)
 set(CMAKE_C_STANDARD 11)
+# Ensure ISO C
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
-
-set(CMAKE_CXX_STANDARD 17) 
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF) # Better portability
-
-option(BUILD_TESTING "Enable Compilation of Test Files" ON)
 
 # Add additional include directories for standard libraries
 include_directories(SYSTEM ${CMAKE_C_COMPILER_INCLUDE_DIRS})
@@ -28,36 +25,21 @@ set(GENERIC_COMPILE_OPTIONS
     -pedantic
     # Include Debug Symbols
     -g
-    -fopenmp
-    -march=native
     # Color Logs
     -DLOG_USE_COLOR
+    # Optimization
+    -O2
 )
 
-# Append to this list
-include_directories(
-    # Needed for linking protobuf-c on alliancecan systems
-    ~/.local/include
-    # Include Directories for MPI on RHEL Systems
-    /usr/include/openmpi-x86_64
-)
+option(BUILD_TESTING "Enable Compilation of Test Files" ON)
 
-# Append to this list
-link_directories(
-    # Needed for linking protobuf-c on alliancecan systems
-    ~/.local/lib
-    # Library Directories for MPI on RHEL Systems
-    /usr/lib/
-    /usr/lib64/openmpi/lib
-)
+# Libraries
+include(${CMAKE_SOURCE_DIR}/cmake/FindUCX.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/FindMPI.cmake)
 
 set(COMMON_LIBRARIES
     m
     pthread
-    gfortran
-    ucp
-    uct
-    ucs
 )
 
 add_subdirectory(common)
