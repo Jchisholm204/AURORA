@@ -40,7 +40,7 @@ else()
         ucx::uct
         ucx::ucp
         ucx::ucs
-        ucm
+        ucx::ucm
     )
 
     set(UCX_FOUND TRUE CACHE INTERNAL TRUE)
