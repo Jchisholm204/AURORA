@@ -35,7 +35,6 @@ set(GENERIC_COMPILE_OPTIONS
 option(BUILD_TESTING "Enable Compilation of Test Files" ON)
 
 # Libraries
-
 include(${CMAKE_SOURCE_DIR}/cmake/FindUCX.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/FindMPI.cmake)
 
