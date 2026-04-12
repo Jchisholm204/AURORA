@@ -13,8 +13,8 @@ function setup_env() {
     module purge
 
     module load cmake
-    module use ~/.modules/modfiles
-    module load gcc-arm
+    # module use ~/.modules/modfiles
+    # module load gcc-arm
 
     export MODULEPATH="/global/software/rocky-9.$ARCH/modfiles/langs:/global/software/rocky-9.$ARCH/modfiles/tools:/global/software/rocky-9.$ARCH/modfiles/apps:/etc/modulefiles:/usr/share/modulefiles"
 
