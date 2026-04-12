@@ -34,6 +34,11 @@ if(NOT "$ENV{UCX_HOME}" STREQUAL "")
     message(STATUS "Toolchain: Using UCX_HOME from environment: $ENV{UCX_HOME}")
 endif()
 
+if(NOT "$ENV{HPCX_UCX_DIR}" STREQUAL "")
+    list(APPEND CMAKE_PREFIX_PATH $ENV{HPCX_UCX_DIR})
+    message(STATUS "Toolchain: Using UCX_HOME from environment: $ENV{HPCX_UCX_DIR}")
+endif()
+
 if(NOT "$ENV{HPC_SDK_PATH}" STREQUAL "")
     list(APPEND CMAKE_PREFIX_PATH $ENV{HPC_SDK_PATH})
 endif()
