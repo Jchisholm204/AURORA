@@ -13,7 +13,7 @@ if(NOT MPI_FOUND)
     )
 
     if(MPI_INCLUDE_DIR AND MPI_LIB)
-        add_library(${CMAKE_PROJECT_NAME}::mpi INTERFACE IMPORTED)
+        add_library(${CMAKE_PROJECT_NAME}::mpi INTERFACE IMPORTED GLOBAL)
         target_include_directories(${CMAKE_PROJECT_NAME}::mpi
             INTERFACE ${MPI_INCLUDE_DIR})
         target_link_libraries(${CMAKE_PROJECT_NAME}::mpi
