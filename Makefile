@@ -30,16 +30,3 @@ format: $(addsuffix .format, ${SRCS})
 
 clean:
 	rm -rf $(BUILD_DIR)
-
-run: build
-	./${BUILD_DIR}/server/ucx_server & ${BUILD_DIR}/client/ucx_client
-
-mpirun: build
-	mpirun ./${BUILD_DIR}/${PROJ_NAME}
-
-valgrind: build
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --error-limit=no --log-file=valgrindout.txt ./build/${PROJ_NAME}
-
-cachegrind: build
-	valgrind --tool=callgrind --callgrind-out-file=callgrind.out --dump-instr=yes ./build/tests/test_discovery
-
