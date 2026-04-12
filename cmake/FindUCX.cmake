@@ -34,13 +34,12 @@ if(NOT ucx_FOUND)
         message(WARNING "Failed to find UCX")
     endif()
 else()
-    message(STATUS "Found UCX")
+    message(STATUS "Found UCX though CMake")
     add_library(${CMAKE_PROJECT_NAME}::ucx INTERFACE IMPORTED GLOBAL)
     target_link_libraries(${CMAKE_PROJECT_NAME}::ucx INTERFACE 
         ucx::uct
         ucx::ucp
         ucx::ucs
-        ucx::ucm
     )
 
     set(UCX_FOUND TRUE CACHE INTERNAL TRUE)
