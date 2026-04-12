@@ -49,7 +49,7 @@ function launch_bf() {
     local PWD=$(pwd)
 
     echo "Launching $EXECUTABLE on $BF_HOSTNAME from $PWD with args ${@:3}"
-    ssh -n "$BF_HOSTNAME" "cd $PWD && $EXECUTABLE ${@:3}" & 
+    ssh -n "$BF_HOSTNAME" "cd ${(q)PWD} && ${(q)EXECUTABLE} ${(@q)@:3}" &
     export BF_SSH_PID=$!
     echo "Launched on PID: $BF_SSH_PID"
     return 0
