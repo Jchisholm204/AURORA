@@ -5,12 +5,9 @@ set(CMAKE_SYSTEM_PROCESSOR aarch64)
 
 set(TOOLCHAIN_PREFIX aarch64-none-linux-gnu-)
 ## CFLAGS
-set(CMAKE_CFLAGS
-    # "-fdata-sections -ffunction-sections -Wl,--gc-sections")
-    ""
-)
+set(CMAKE_CFLAGS "")
 
-set(CMAKE_LDFLAGS "")
+set(CMAKE_LDFLAGS "-rpath")
 
 set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}gcc ${CMAKE_CFLAGS} ${CMAKE_LDFLAGS})
 set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}g++ ${CMAKE_CFLAGS} ${CMAKE_LDFLAGS})
