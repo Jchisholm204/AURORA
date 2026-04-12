@@ -29,7 +29,7 @@ function run_callgrind() {
              --log-file="${LOG_FILE}_valgrind.out" \
              --tool=callgrind \
              --dump-instr=yes \
-             --callgrind-out-file="${LOG_FILE}_callgrind.out"
+             --callgrind-out-file="${LOG_FILE}_callgrind.out" \
              $EXECUTABLE
 }
 
