@@ -72,18 +72,12 @@ void *acr_cmd_restart(void *arg) {
 
         pMetadata = afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
                                                cli_req_name);
-
-        // if (!pMetadata) {
-        //     log_warn("Bad Alloc??");
-        //     pMetadata =
-        //         afv_get_metadata_versioned(pInstance->pAFV, -1,
-        //         cli_req_name);
-        // }
-        // if (!pMetadata) {
-        //     log_warn("Bad Alloc??");
-        //     pMetadata = afv_get_metadata_versioned(pInstance->pAFV, -1,
-        //     NULL);
-        // }
+        if (!pMetadata) {
+            pMetadata =
+                afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
+                                           cli_req_name);
+            log_warn("Bad Alloc??");
+        }
         if (!pMetadata) {
             log_error("Bad Alloc??");
             goto RESTART_FAIL;
@@ -245,24 +239,25 @@ void *acr_cmd_restart(void *arg) {
     } // END Restore
 
     { // BEGIN Notify Client of Completion
-        int acn_status = 0;
+        eACN_error acn_status = eACN_OK;
         acn_status = acn_set(pInstance->pACN, eACN_version, pMetadata->version);
-        if (acn_status != 0) {
-            log_warn("ACN Abnormal %d", acn_status);
+        if (acn_status != eACN_OK) {
+            log_warn("ACN Abnormal 0x%x", acn_status);
         }
         acn_status = acn_set_name(pInstance->pACN, pMetadata->chkpt_name);
-        if (acn_status != 0) {
-            log_warn("ACN Abnormal %d", acn_status);
+        if (acn_status != eACN_OK) {
+            log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-        log_trace("Set Version");
+        log_debug("Set Version");
 
         acn_status = acn_tick(pInstance->pACN, eACN_restore);
-        if (acn_status != 0) {
-            log_warn("ACN Abnormal %d", acn_status);
+        if (acn_status != eACN_OK) {
+            log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-        log_trace("Ticked Restore");
+        log_debug("Completion %d: %s %d", pMetadata->rank,
+                  pMetadata->chkpt_name, pMetadata->version);
     } // END Notify Client of Completion
 
 RESTART_FAIL:
