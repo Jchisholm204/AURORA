@@ -34,11 +34,9 @@ void *acr_cmd_checkpoint(void *arg) {
 
     { // BEGIN Wait for outstanding memory operations to complete
         eACN_error acn_status = eACN_OK;
-        acn_status = acn_await(pInstance->pACN, eACN_memory);
-        if (acn_status == eACN_ERR_TIMEOUT) {
-            // Silent Fail for timeouts
-            goto CHECKPOINT_FAIL;
-        }
+        do {
+            acn_status = acn_await(pInstance->pACN, eACN_memory);
+        } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error");
             goto CHECKPOINT_FAIL;
@@ -118,7 +116,7 @@ void *acr_cmd_checkpoint(void *arg) {
             pMetadata->region_sizes[i] = rgn_size;
             memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
 
-            log_debug("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
+            log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
                 const size_t bytes_read = pAMR->rgn_size - rgn_size;
@@ -128,6 +126,12 @@ void *acr_cmd_checkpoint(void *arg) {
                              cpy_rgn_size);
                 if (arm_status != eARM_OK) {
                     log_error("ARM Err %d", arm_status);
+                    // Hard Fail
+                    if (arm_status == eARM_ERR_FATAL) {
+                        (void) afv_file_close(&pCkpt_file);
+                        afv_destroy_metadata(&pMetadata);
+                        goto CHECKPOINT_FAIL;
+                    }
                     // Retry
                     continue;
                 }
@@ -142,25 +146,30 @@ void *acr_cmd_checkpoint(void *arg) {
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
-            { // BEGIN  Write Final Block
-                const size_t bytes_read = pAMR->rgn_size - rgn_size;
-                eARM_error arm_status =
-                    arm_read(pInstance->pARM, pAMR,
-                             pAMR->pShadow_memory + bytes_read, pRgn_A,
-                             rgn_size);
-                if (arm_status != eARM_OK) {
-                    log_error("ARM Err %d", arm_status);
-                    // Retry
-                    continue;
+        CHECKPOINT_FINAL_WRITE: { // BEGIN  Write Final Block
+            const size_t bytes_read = pAMR->rgn_size - rgn_size;
+            eARM_error arm_status =
+                arm_read(pInstance->pARM, pAMR,
+                         pAMR->pShadow_memory + bytes_read, pRgn_A, rgn_size);
+            if (arm_status != eARM_OK) {
+                log_error("ARM Err %d", arm_status);
+                // Hard Fail
+                if (arm_status == eARM_ERR_FATAL) {
+                    (void) afv_file_close(&pCkpt_file);
+                    afv_destroy_metadata(&pMetadata);
+                    goto CHECKPOINT_FAIL;
                 }
-                eAFV_file_error write_status = eAFV_FILE_OK;
-                write_status = afv_file_write(pCkpt_file, pRgn_A, rgn_size);
-                if (write_status != eAFV_FILE_OK) {
-                    log_error("FS Error: 0x%x", write_status);
-                    // Retry
-                    continue;
-                }
-            } // END Write Final Block
+                // Retry
+                goto CHECKPOINT_FINAL_WRITE;
+            }
+            eAFV_file_error write_status = eAFV_FILE_OK;
+            write_status = afv_file_write(pCkpt_file, pRgn_A, rgn_size);
+            if (write_status != eAFV_FILE_OK) {
+                log_error("FS Error: 0x%x", write_status);
+                // Retry
+                goto CHECKPOINT_FINAL_WRITE;
+            }
+        } // END Write Final Block
 
         } // END Region Loop
 
@@ -174,8 +183,11 @@ void *acr_cmd_checkpoint(void *arg) {
 
     } // END Checkpoint
 
-    log_debug("checkpoint: %d %.*s", pMetadata->version, ACN_NAME_LEN,
-              pMetadata->chkpt_name);
+    // log_info("checkpoint: %d %.*s", pMetadata->version, ACN_NAME_LEN,
+    //          pMetadata->chkpt_name);
+
+    log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
+             pMetadata->chkpt_name, pMetadata->version);
 
     eAFV_verif metadata_status = eAFV_VERIF_OK;
     metadata_status = afv_write_metadata(pInstance->pAFV, pMetadata);

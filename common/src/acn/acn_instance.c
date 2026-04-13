@@ -140,7 +140,7 @@ eACN_error acn_connect_instance(acn_hndl *pHndl, aurora_blob_t *local_info,
     free(local_info->data);
     local_info->data = NULL;
 
-    log_debug("ACN Connected");
+    log_trace("ACN Connected");
 
     return eACN_OK;
 }

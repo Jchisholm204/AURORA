@@ -79,7 +79,7 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
         return eARM_ERR_NULL;
     }
 
-    log_debug("Destroying Instance");
+    log_trace("Destroying Instance");
 
     // Clean up the memory regions
 
