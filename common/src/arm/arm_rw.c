@@ -14,10 +14,14 @@
 #include "arm/arm.h"
 #include "log.h"
 
+#include <assert.h>
+
 ucp_rkey_h _arm_get_rkey(const amr_hndl *pAMR, uint64_t addr, size_t size) {
     if (!pAMR) {
         return NULL;
     }
+    assert(pAMR->shadow_remote_key != NULL);
+    assert(pAMR->active_remote_key != NULL);
     uint64_t shadow_min_addr = pAMR->pShadow_memory;
     uint64_t shadow_max_addr = pAMR->pShadow_memory + pAMR->rgn_size;
     uint64_t active_min_addr = pAMR->pActive_memory;

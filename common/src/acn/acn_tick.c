@@ -21,6 +21,8 @@
 #define CHECK_NOTIF(notif)                                                     \
     (__builtin_clzll(notif) < __builtin_clzll(eACN_Nnotifications))
 
+#define ACN_POLL_TIMEOUT_COUNT 60
+
 eACN_error _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
         return eACN_ERR_NULL;
@@ -30,24 +32,33 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
     ucs_status_t ucs_status = UCS_INPROGRESS;
 
     // Operation lock the request pointer (one pending at a time)
-    if (pHndl->ucs_pRequest != NULL) {
-        return eACN_ERR_INPROGRESS;
+    // All operations are the same -> reuse old operation if present
+    // assert(pHndl->ucs_pRequest == NULL, Initialization)
+    // -> Only send new requests when one is not presently active
+    if (pHndl->ucs_pRequest == NULL) {
+        pHndl->ucs_pRequest =
+            aci_get(pHndl->pACI, &pHndl->temp_memory,
+                    sizeof(pHndl->temp_memory), (uint64_t) pHndl->pRemote,
+                    pHndl->remote_rkey, &rparam);
     }
-    pHndl->ucs_pRequest =
-        aci_get(pHndl->pACI, &pHndl->temp_memory, sizeof(pHndl->temp_memory),
-                (uint64_t) pHndl->pRemote, pHndl->remote_rkey, &rparam);
 
     if (UCS_PTR_IS_ERR(pHndl->ucs_pRequest)) {
         log_error("Remote Read Error: %s",
                   ucs_status_string(UCS_PTR_STATUS(pHndl->ucs_pRequest)));
+        pHndl->ucs_pRequest = NULL;
         return eACN_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(pHndl->ucs_pRequest)) {
+        size_t poll_count = 0;
         while (ucs_status == UCS_INPROGRESS) {
             ucs_status = ucp_request_check_status(pHndl->ucs_pRequest);
             int aci_status = 0;
             aci_status = aci_poll(pHndl->pACI);
             if (aci_status != 0) {
                 return eACN_ERR_FATAL;
+            }
+            poll_count++;
+            if (poll_count > ACN_POLL_TIMEOUT_COUNT) {
+                return eACN_ERR_TIMEOUT;
             }
         }
         ucp_request_free(pHndl->ucs_pRequest);
@@ -78,13 +89,13 @@ int acn_tick(acn_hndl *pHndl, eACN_notification notifs) {
     return 0;
 }
 
-int acn_await(acn_hndl *pHndl, eACN_notification notifs) {
+eACN_error acn_await(acn_hndl *pHndl, eACN_notification notifs) {
     if (!pHndl || CHECK_NOTIF(notifs)) {
-        return -1;
+        return eACN_ERR_NULL;
     }
     for (size_t i = 0; notifs != 0;) {
         // Load the latest memory chunk
-        int mem_err;
+        eACN_error mem_err;
         if ((mem_err = _acn_loadmem(pHndl)) != eACN_OK) {
             return mem_err;
         }
@@ -100,7 +111,7 @@ int acn_await(acn_hndl *pHndl, eACN_notification notifs) {
         // Don't flood the PCIe bus
         (void) usleep(1000);
     }
-    return 0;
+    return eACN_OK;
 }
 
 int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {

@@ -33,9 +33,13 @@ void *acr_cmd_checkpoint(void *arg) {
     aim_entry_t *pInstance = pCtx->pInstance;
 
     { // BEGIN Wait for outstanding memory operations to complete
-        int acn_status = 0;
+        eACN_error acn_status = eACN_OK;
         acn_status = acn_await(pInstance->pACN, eACN_memory);
-        if (acn_status != 0) {
+        if (acn_status == eACN_ERR_TIMEOUT) {
+            // Silent Fail for timeouts
+            goto CHECKPOINT_FAIL;
+        }
+        if (acn_status != eACN_OK) {
             log_error("ACN Error");
             goto CHECKPOINT_FAIL;
         }

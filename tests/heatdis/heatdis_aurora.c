@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    static char prog_name[AUL_NAME_LEN] = "heatdis";
+    const char prog_name[AUL_NAME_LEN] = "heatdis";
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);

@@ -43,6 +43,7 @@ enum aurora_completion_notifier_error_e {
     eACN_ERR_INPROGRESS,
     eACN_ERR_UCS,
     eACN_ERR_FATAL,
+    eACN_ERR_TIMEOUT,
     eACN_N_ERR,
 };
 
@@ -96,7 +97,7 @@ extern eACN_error acn_destroy_instance(acn_hndl **ppHndl);
 
 extern int acn_tick(acn_hndl *pHndl, eACN_notification notifs);
 
-extern int acn_await(acn_hndl *pHndl, eACN_notification notifs);
+extern eACN_error acn_await(acn_hndl *pHndl, eACN_notification notifs);
 
 extern int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs);
 
