@@ -128,6 +128,12 @@ void *acr_cmd_checkpoint(void *arg) {
                              cpy_rgn_size);
                 if (arm_status != eARM_OK) {
                     log_error("ARM Err %d", arm_status);
+                    // Hard Fail
+                    if (arm_status == eARM_ERR_FATAL) {
+                        (void) afv_file_close(&pCkpt_file);
+                        afv_destroy_metadata(&pMetadata);
+                        goto CHECKPOINT_FAIL;
+                    }
                     // Retry
                     continue;
                 }
@@ -142,25 +148,30 @@ void *acr_cmd_checkpoint(void *arg) {
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
-            { // BEGIN  Write Final Block
-                const size_t bytes_read = pAMR->rgn_size - rgn_size;
-                eARM_error arm_status =
-                    arm_read(pInstance->pARM, pAMR,
-                             pAMR->pShadow_memory + bytes_read, pRgn_A,
-                             rgn_size);
-                if (arm_status != eARM_OK) {
-                    log_error("ARM Err %d", arm_status);
-                    // Retry
-                    continue;
+        CHECKPOINT_FINAL_WRITE: { // BEGIN  Write Final Block
+            const size_t bytes_read = pAMR->rgn_size - rgn_size;
+            eARM_error arm_status =
+                arm_read(pInstance->pARM, pAMR,
+                         pAMR->pShadow_memory + bytes_read, pRgn_A, rgn_size);
+            if (arm_status != eARM_OK) {
+                log_error("ARM Err %d", arm_status);
+                // Hard Fail
+                if (arm_status == eARM_ERR_FATAL) {
+                    (void) afv_file_close(&pCkpt_file);
+                    afv_destroy_metadata(&pMetadata);
+                    goto CHECKPOINT_FAIL;
                 }
-                eAFV_file_error write_status = eAFV_FILE_OK;
-                write_status = afv_file_write(pCkpt_file, pRgn_A, rgn_size);
-                if (write_status != eAFV_FILE_OK) {
-                    log_error("FS Error: 0x%x", write_status);
-                    // Retry
-                    continue;
-                }
-            } // END Write Final Block
+                // Retry
+                goto CHECKPOINT_FINAL_WRITE;
+            }
+            eAFV_file_error write_status = eAFV_FILE_OK;
+            write_status = afv_file_write(pCkpt_file, pRgn_A, rgn_size);
+            if (write_status != eAFV_FILE_OK) {
+                log_error("FS Error: 0x%x", write_status);
+                // Retry
+                goto CHECKPOINT_FINAL_WRITE;
+            }
+        } // END Write Final Block
 
         } // END Region Loop
 

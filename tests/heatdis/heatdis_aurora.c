@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
     wtime = MPI_Wtime();
     // Use -1 for latest version found
     int v = AUL_Test(400, prog_name);
+    printf("Proc %d restarting to v %d\n", rank, v);
     MPI_Barrier(MPI_COMM_WORLD);
     if (v > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
                v);
-        MPI_Barrier(MPI_COMM_WORLD);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
         int v_restored = AUL_Restart(v, prog_name);
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
             exit(2);
         }
         MPI_Barrier(MPI_COMM_WORLD);
-        printf("Done Restoring.");
+        printf("Done Restoring. %d\n", rank);
     } else
         i = 0;
     while (i < ITER_TIMES) {
@@ -167,11 +167,11 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
         printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
 
-    MPI_Barrier(MPI_COMM_WORLD);
 
     // Waits for checkpoint to finish
     // Deregisters the RMA regions
     AUL_Mem_unprotect(0);
+    MPI_Barrier(MPI_COMM_WORLD);
     AUL_Mem_unprotect(1);
     AUL_Mem_unprotect(2);
     free(h);
