@@ -21,7 +21,7 @@
 #define CHECK_NOTIF(notif)                                                     \
     (__builtin_clzll(notif) < __builtin_clzll(eACN_Nnotifications))
 
-#define ACN_POLL_TIMEOUT_COUNT 60
+#define ACN_POLL_TIMEOUT_COUNT 600
 
 eACN_error _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
@@ -166,7 +166,11 @@ eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
 
 eACN_error acn_set_name(acn_hndl *pHndl, const char name[static ACN_NAME_LEN]) {
     if (!pHndl) {
-        log_error("Cannot set ACN Name! ACN handle was NULL");
+        log_error("NULL Parameter");
+        return eACN_ERR_NULL;
+    }
+    if(!pHndl->pLocal){
+        log_fatal("NULL Parameter");
         return eACN_ERR_NULL;
     }
     memcpy((char *) &pHndl->pLocal->name, name, ACN_NAME_LEN);

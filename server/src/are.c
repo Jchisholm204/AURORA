@@ -66,19 +66,22 @@ int are_main(int argc, char **argv) {
             log_error("UCS Error");
             pInstance->error_counter++;
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
-        } else if (pending & eACN_restore) {
-            eACR_error acr_status =
-                acr_run(pACR, pInstance, 0, acr_cmd_restart);
-            if (acr_status != eACR_OK) {
-                acr_run(pACR, pInstance, 0, acr_cmd_nop);
-            }
-        } else if (pending & eACN_checkpoint) {
+        } 
+        else if (pending & eACN_checkpoint) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
             if (acr_status != eACR_OK) {
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
-        } else {
+        }
+        else if (pending & eACN_restore) {
+            eACR_error acr_status =
+                acr_run(pACR, pInstance, 0, acr_cmd_restart);
+            if (acr_status != eACR_OK) {
+                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            }
+        } 
+        else {
             eACR_error acr_status = acr_run(pACR, pInstance, 0, acr_cmd_nop);
             if (acr_status != eACR_OK) {
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);

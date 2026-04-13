@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
     (void) argv;
 
     aul_configuration_t cfg = AUL_CONFIG_DEFAULT;
+    cfg.connection_mode = eAULCModeHost;
     int ini_s = AUL_Init(&cfg);
 
     printf("AUL Initialized %d\n", ini_s);
@@ -74,6 +75,9 @@ int main(int argc, char **argv) {
         }
     }
 
+    AUL_Mem_unprotect(3);
+    AUL_Mem_unprotect(5);
+    AUL_Mem_unprotect(7);
     AUL_Finalize();
 
     printf("AUL Finalized\n");

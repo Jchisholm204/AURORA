@@ -106,6 +106,10 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
     }
 
     log_debug("Added new remote region. %d %s", pInst_AMR->id, pInst_AMR->name);
+    log_debug("0x%lx 0x%lx", pInst_AMR->pActive_memory,
+              pInst_AMR->pShadow_memory);
+    log_debug("0x%lx 0x%lx", pInst_AMR->active_remote_key,
+              pInst_AMR->shadow_remote_key);
 
     return UCS_OK;
 }

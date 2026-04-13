@@ -28,7 +28,7 @@ set(GENERIC_COMPILE_OPTIONS
     # Color Logs
     -DLOG_USE_COLOR
     # Optimization
-    -O2
+    -O0
 )
 
 option(BUILD_TESTING "Enable Compilation of Test Files" ON)

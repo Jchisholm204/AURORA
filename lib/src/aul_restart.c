@@ -40,8 +40,9 @@ int AUL_Test(const int version, const char *name) {
         afv_destroy_metadata((afv_metadata_t **) &pMetadata);
         return -afvv_status;
     }
+    int64_t vfound = pMetadata->version;
     afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-    return 0;
+    return vfound;
 }
 
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
@@ -49,10 +50,13 @@ int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
         log_fatal("Not Initialized");
     }
     // Wait for all pending operations to finish
-    if (acn_await(_aul_ctx.pACN,
-                  eACN_systick | eACN_checkpoint | eACN_restore) != 0) {
-        // Connection Failure
-        log_fatal("Server disconnected");
+    eACN_error acn_status = eACN_OK;
+    do {
+        acn_status = acn_await(_aul_ctx.pACN,
+                               eACN_systick | eACN_checkpoint | eACN_restore);
+    } while (acn_status == eACN_ERR_TIMEOUT);
+    if (acn_status != eACN_OK) {
+        log_fatal("ACN Error: %d", acn_status);
         return INT_MIN;
     }
 
@@ -62,18 +66,24 @@ int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
     acn_tick(_aul_ctx.pACN, eACN_restore);
 
     // Wait for restore
+    do {
+        acn_status = acn_await(_aul_ctx.pACN, eACN_restore);
+    } while (acn_status == eACN_ERR_TIMEOUT);
 
-    if (acn_await(_aul_ctx.pACN, eACN_restore) != 0) {
-        // Connection Failure
-        log_fatal("Server disconnected");
+    if (acn_status != eACN_OK) {
+        log_fatal("ACN Error: %d", acn_status);
         return INT_MIN;
     }
 
     // Check the restored version
     int64_t vplaced = 0;
-    if (acn_get(_aul_ctx.pACN, eACN_version, (uint64_t *) &vplaced) != 0) {
-        // Server failure
-        log_fatal("Server disconnected");
+    do {
+        acn_status =
+            acn_get(_aul_ctx.pACN, eACN_version, (uint64_t *) &vplaced);
+    } while (acn_status == eACN_ERR_TIMEOUT);
+
+    if (acn_status != eACN_OK) {
+        log_fatal("ACN Error: %d", acn_status);
         return INT_MIN;
     }
     return vplaced;

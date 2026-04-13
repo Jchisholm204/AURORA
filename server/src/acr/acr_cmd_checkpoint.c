@@ -58,14 +58,18 @@ void *acr_cmd_checkpoint(void *arg) {
         }
 
         eACN_error acn_status = eACN_OK;
-        acn_status = acn_get(pInstance->pACN, eACN_version,
-                             (uint64_t *) &pMetadata->version);
+        do {
+            acn_status = acn_get(pInstance->pACN, eACN_version,
+                                 (uint64_t *) &pMetadata->version);
+        } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             afv_destroy_metadata(&pMetadata);
             log_error("ACN Error 0x%lx", acn_status);
             goto CHECKPOINT_FAIL;
         }
-        acn_get_name(pInstance->pACN, pMetadata->chkpt_name);
+        do {
+            acn_status = acn_get_name(pInstance->pACN, pMetadata->chkpt_name);
+        } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             afv_destroy_metadata(&pMetadata);
             log_error("ACN Error 0x%lx", acn_status);

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
     This sample application is based on the heat distribution code
@@ -83,7 +84,9 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    const char prog_name[AUL_NAME_LEN] = "heatdis";
+    const char prog_name[AUL_NAME_LEN];
+    memset(prog_name, 0, sizeof(prog_name));
+    strcpy(prog_name, "heatdis");
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);

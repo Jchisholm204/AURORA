@@ -50,7 +50,11 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
         }
 
         // Setup the checkpoint name and version
+        log_debug("Name: %s", name);
         acn_set_name(_aul_ctx.pACN, name);
+        char new_name[255];
+        acn_get_name(_aul_ctx.pACN, new_name);
+        log_debug("Mame: %s", new_name);
         acn_set(_aul_ctx.pACN, eACN_version, version);
         // Trigger for next checkpoint (client side tick)
         acn_tick(_aul_ctx.pACN, eACN_checkpoint);

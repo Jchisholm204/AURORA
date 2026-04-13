@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+// #include <mpich-x86_64/mpi.h>
 #include <mpi.h>
 
 #define PRECISION   0.00001
