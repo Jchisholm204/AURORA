@@ -32,16 +32,20 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
     ucs_status_t ucs_status = UCS_INPROGRESS;
 
     // Operation lock the request pointer (one pending at a time)
-    if (pHndl->ucs_pRequest != NULL) {
-        return eACN_ERR_INPROGRESS;
+    // All operations are the same -> reuse old operation if present
+    // assert(pHndl->ucs_pRequest == NULL, Initialization)
+    // -> Only send new requests when one is not presently active
+    if (pHndl->ucs_pRequest == NULL) {
+        pHndl->ucs_pRequest =
+            aci_get(pHndl->pACI, &pHndl->temp_memory,
+                    sizeof(pHndl->temp_memory), (uint64_t) pHndl->pRemote,
+                    pHndl->remote_rkey, &rparam);
     }
-    pHndl->ucs_pRequest =
-        aci_get(pHndl->pACI, &pHndl->temp_memory, sizeof(pHndl->temp_memory),
-                (uint64_t) pHndl->pRemote, pHndl->remote_rkey, &rparam);
 
     if (UCS_PTR_IS_ERR(pHndl->ucs_pRequest)) {
         log_error("Remote Read Error: %s",
                   ucs_status_string(UCS_PTR_STATUS(pHndl->ucs_pRequest)));
+        pHndl->ucs_pRequest = NULL;
         return eACN_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(pHndl->ucs_pRequest)) {
         size_t poll_count = 0;
