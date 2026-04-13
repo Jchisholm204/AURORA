@@ -67,6 +67,9 @@ int are_main(int argc, char **argv) {
             pInstance->error_counter++;
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
         } 
+        else if (acn_err == eACN_ERR_TIMEOUT) {
+            acr_run(pACR, pInstance, 0, acr_cmd_nop);
+        } 
         else if (pending & eACN_checkpoint) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
