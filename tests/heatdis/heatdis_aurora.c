@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
     }
 
     const char prog_name[AUL_NAME_LEN];
-    memset(prog_name, 0, sizeof(prog_name));
-    strcpy(prog_name, "heatdis");
+    memset((char *) prog_name, 0, sizeof(prog_name));
+    strcpy((char *) prog_name, "heatdis");
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
@@ -129,17 +129,28 @@ int main(int argc, char *argv[]) {
 
     wtime = MPI_Wtime();
     // Use -1 for latest version found
-    int v = AUL_Test(400, prog_name);
-    printf("Proc %d restarting to v %d\n", rank, v);
+    int version_local = AUL_Test(-1, prog_name);
+    printf("Proc %d latest verion = %d (-1 not found)\n", rank, version_local);
+    int version_global = 0;
+    (void) MPI_Allreduce(&version_local, &version_global, 1, MPI_INT, MPI_MIN,
+                         MPI_COMM_WORLD);
+    if (version_local != version_global) {
+        version_local = AUL_Test(version_global, prog_name);
+    }
+    if (version_local != version_global) {
+        printf("%d Error restarting from checkpoint %d! Aborting...\n", rank,
+               version_global);
+        exit(2);
+    }
     MPI_Barrier(MPI_COMM_WORLD);
-    if (v > 0) {
+    if (version_local > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
-               v);
+               version_local);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
-        int v_restored = AUL_Restart(v, prog_name);
-        if (v_restored != v) {
+        int v_restored = AUL_Restart(version_local, prog_name);
+        if (v_restored != version_local) {
             printf("%d Error restarting from checkpoint %d! Aborting...\n",
                    rank, v_restored);
             exit(2);
@@ -166,7 +177,6 @@ int main(int argc, char *argv[]) {
     }
     if (rank == 0)
         printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
-
 
     // Waits for checkpoint to finish
     // Deregisters the RMA regions

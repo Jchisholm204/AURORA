@@ -143,8 +143,9 @@ eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
         return eAFV_VERIF_ERR_NULL;
     }
     if (!match_map_list) {
-        log_warn("NULL Parameter");
-        // return eAFV_VERIF_ERR_NULL;
+        // May be NULL if not being checked
+        // Log this to prevent easily fixable errors
+        log_debug("NULL Parameter");
     }
 
     log_trace("Attempting to match metadata (md_rgns=%d)",
