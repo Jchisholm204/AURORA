@@ -75,15 +75,15 @@ void *acr_cmd_restart(void *arg) {
         pMetadata = afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
                                                cli_req_name);
 
-        if (!pMetadata) {
-            log_warn("Bad Alloc??");
-            pMetadata =
-                afv_get_metadata_versioned(pInstance->pAFV, -1, cli_req_name);
-        }
-        if (!pMetadata) {
-            log_warn("Bad Alloc??");
-            pMetadata = afv_get_metadata_versioned(pInstance->pAFV, -1, NULL);
-        }
+        // if (!pMetadata) {
+        //     log_warn("Bad Alloc??");
+        //     pMetadata =
+        //         afv_get_metadata_versioned(pInstance->pAFV, -1, cli_req_name);
+        // }
+        // if (!pMetadata) {
+        //     log_warn("Bad Alloc??");
+        //     pMetadata = afv_get_metadata_versioned(pInstance->pAFV, -1, NULL);
+        // }
         if (!pMetadata) {
             log_error("Bad Alloc??");
             goto RESTART_FAIL;
