@@ -101,7 +101,7 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
     ucp_worker_release_address(pHndl->ucp_worker, local_info->data);
     free(remote_info->data);
 
-    log_debug("ACI connected");
+    log_trace("ACI connected");
 
     return 0;
 }
@@ -110,6 +110,8 @@ int aci_disconnect_instance(aci_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
+
+    log_trace("Disconnecting Instance");
 
     ucs_status_ptr_t ucs_pStatus = NULL;
     // Request a close if the ep is open
@@ -154,8 +156,8 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
     if ((*ppHndl)->ucp_ep) {
         // May segfault if the instance was not yet disconnected by higher level
         // software.. That is the users fault
-        log_warn("USAGE: ACI Disconnect must be called prior to destroy "
-                  "instance... Attempting to clean up for the user...");
+        log_debug("USAGE: ACI Disconnect must be called prior");
+        log_debug("Attempting to clean up for the user...");
         (void) aci_disconnect_instance(*ppHndl);
     }
 

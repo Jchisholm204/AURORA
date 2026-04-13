@@ -116,7 +116,7 @@ void *acr_cmd_checkpoint(void *arg) {
             pMetadata->region_sizes[i] = rgn_size;
             memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
 
-            log_debug("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
+            log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
                 const size_t bytes_read = pAMR->rgn_size - rgn_size;
@@ -183,8 +183,11 @@ void *acr_cmd_checkpoint(void *arg) {
 
     } // END Checkpoint
 
-    log_debug("checkpoint: %d %.*s", pMetadata->version, ACN_NAME_LEN,
-              pMetadata->chkpt_name);
+    // log_info("checkpoint: %d %.*s", pMetadata->version, ACN_NAME_LEN,
+    //          pMetadata->chkpt_name);
+
+    log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
+             pMetadata->chkpt_name, pMetadata->version);
 
     eAFV_verif metadata_status = eAFV_VERIF_OK;
     metadata_status = afv_write_metadata(pInstance->pAFV, pMetadata);

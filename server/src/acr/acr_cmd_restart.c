@@ -172,7 +172,7 @@ void *acr_cmd_restart(void *arg) {
             pMetadata->region_sizes[i] = rgn_size;
             memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
 
-            log_debug("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
+            log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
                 eAFV_file_error write_status = eAFV_FILE_OK;
@@ -249,15 +249,15 @@ void *acr_cmd_restart(void *arg) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-        log_debug("Set Version");
+        log_trace("Set Version");
 
         acn_status = acn_tick(pInstance->pACN, eACN_restore);
         if (acn_status != eACN_OK) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-        log_debug("Completion %d: %s %d", pMetadata->rank,
-                  pMetadata->chkpt_name, pMetadata->version);
+    log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
+             pMetadata->chkpt_name, pMetadata->version);
     } // END Notify Client of Completion
 
 RESTART_FAIL:
