@@ -168,10 +168,10 @@ void *acr_cmd_restart(void *arg) {
         for (size_t i = 0; i < pMetadata->n_regions; i++) { // BEGIN Region Loop
 
             // Index into the ARM through the hash map
-            const size_t cli_amr_index = meta_cli_hash_map[i];
+            size_t cli_amr_index = meta_cli_hash_map[i];
             const amr_hndl *pAMR = &arm_regions[cli_amr_index];
             size_t rgn_size = pAMR->rgn_size;
-            const size_t rgn_id = pAMR->id;
+            size_t rgn_id = pAMR->id;
 
             // Setup Region Metadata
             pMetadata->region_ids[i] = rgn_id;

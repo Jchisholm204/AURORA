@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 
     wtime = MPI_Wtime();
     // Use -1 for latest version found
-    int v = AUL_Test(-1, prog_name);
+    int v = AUL_Test(400, prog_name);
     if (v > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
@@ -140,6 +140,7 @@ int main(int argc, char *argv[]) {
             printf("Error restarting from checkpoint! Aborting...\n");
             exit(2);
         }
+        printf("Done Restoring.");
     } else
         i = 0;
     while (i < ITER_TIMES) {
@@ -160,6 +161,8 @@ int main(int argc, char *argv[]) {
     }
     if (rank == 0)
         printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     // Waits for checkpoint to finish
     // Deregisters the RMA regions
