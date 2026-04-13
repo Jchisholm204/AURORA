@@ -130,16 +130,21 @@ int main(int argc, char *argv[]) {
     wtime = MPI_Wtime();
     // Use -1 for latest version found
     int v = AUL_Test(400, prog_name);
+    MPI_Barrier(MPI_COMM_WORLD);
     if (v > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
                v);
+        MPI_Barrier(MPI_COMM_WORLD);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
-        if (AUL_Restart(v, prog_name) != v) {
-            printf("Error restarting from checkpoint! Aborting...\n");
+        int v_restored = AUL_Restart(v, prog_name);
+        if (v_restored != v) {
+            printf("%d Error restarting from checkpoint %d! Aborting...\n",
+                   rank, v_restored);
             exit(2);
         }
+        MPI_Barrier(MPI_COMM_WORLD);
         printf("Done Restoring.");
     } else
         i = 0;
