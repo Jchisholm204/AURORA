@@ -136,6 +136,11 @@ void *acr_cmd_connection_up(void *arg) {
     // Free the configuration chunk
     aoc_free((opconf_t **) &ads_data_rx->config.data);
 
+    if (ads_data_rx) {
+        free(ads_data_rx);
+        ads_data_rx = NULL;
+    }
+
     log_trace("New connection accepted.");
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCli) != 0) {
