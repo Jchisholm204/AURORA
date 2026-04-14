@@ -21,7 +21,7 @@
 #define CHECK_NOTIF(notif)                                                     \
     (__builtin_clzll(notif) < __builtin_clzll(eACN_Nnotifications))
 
-#define ACN_POLL_TIMEOUT_COUNT 40
+#define ACN_POLL_TIMEOUT_COUNT 10
 
 eACN_error _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
@@ -60,6 +60,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
             if (poll_count > ACN_POLL_TIMEOUT_COUNT) {
                 return eACN_ERR_TIMEOUT;
             }
+            usleep(100);
         }
         ucp_request_free(pHndl->ucs_pRequest);
         pHndl->ucs_pRequest = NULL;
@@ -69,6 +70,9 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
         log_error("Failed remote read: %s", ucs_status_string(ucs_status));
         return eACN_ERR_UCS;
     }
+
+    __atomic_thread_fence(__ATOMIC_ACQUIRE);
+
     return eACN_OK;
 }
 
@@ -169,7 +173,7 @@ eACN_error acn_set_name(acn_hndl *pHndl, const char name[static ACN_NAME_LEN]) {
         log_error("NULL Parameter");
         return eACN_ERR_NULL;
     }
-    if(!pHndl->pLocal){
+    if (!pHndl->pLocal) {
         log_fatal("NULL Parameter");
         return eACN_ERR_NULL;
     }

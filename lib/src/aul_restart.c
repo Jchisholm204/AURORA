@@ -70,7 +70,7 @@ int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]) {
     // Wait for restore
     do {
         acn_status = acn_await(_aul_ctx.pACN, eACN_restore);
-        usleep(1000);
+        usleep(10000);
     } while (acn_status == eACN_ERR_TIMEOUT);
 
     if (acn_status != eACN_OK) {
