@@ -17,7 +17,6 @@
 #include <limits.h>
 #include <string.h>
 #include <unistd.h>
-#include <immintrin.h>
 
 #define CHECK_NOTIF(notif)                                                     \
     (__builtin_clzll(notif) < __builtin_clzll(eACN_Nnotifications))
@@ -51,7 +50,6 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
     } else if (UCS_PTR_IS_PTR(pHndl->ucs_pRequest)) {
         size_t poll_count = 0;
         while (ucs_status == UCS_INPROGRESS) {
-            _mm_pause();
             ucs_status = ucp_request_check_status(pHndl->ucs_pRequest);
             int aci_status = 0;
             aci_status = aci_poll(pHndl->pACI);
@@ -110,7 +108,6 @@ eACN_error acn_await(acn_hndl *pHndl, eACN_notification notifs) {
             notifs &= ~BIT(i);
         }
 
-        _mm_pause();
         // Don't flood the PCIe bus
         (void) usleep(1000);
     }
