@@ -127,6 +127,7 @@ void *acr_cmd_checkpoint(void *arg) {
                 eAFV_file_error write_status = eAFV_FILE_OK;
                 size_t retry_count = 0;
                 do {
+                    usleep(1000);
                     retry_count++;
                     if (write_status != eAFV_FILE_OK) {
                         log_error("FS Error: 0x%x", write_status);
@@ -166,6 +167,7 @@ void *acr_cmd_checkpoint(void *arg) {
             eAFV_file_error write_status = eAFV_FILE_OK;
             size_t retry_count = 0;
             do {
+                usleep(1000);
                 retry_count++;
                 if (write_status != eAFV_FILE_OK) {
                     log_error("FS Error: 0x%x", write_status);

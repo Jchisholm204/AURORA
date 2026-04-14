@@ -193,6 +193,7 @@ void *acr_cmd_restart(void *arg) {
                 eARM_error arm_status = eARM_OK;
                 size_t retry_count = 0;
                 do {
+                    usleep(1000);
                     retry_count++;
                     eAFV_file_error write_status = eAFV_FILE_OK;
                     write_status =
@@ -211,7 +212,6 @@ void *acr_cmd_restart(void *arg) {
                         // Retry
                         continue;
                     }
-                    usleep(1000);
                 } while (arm_status != eARM_OK &&
                          retry_count <= ACR_RW_MAX_RETRIES);
                 if (retry_count > ACR_RW_MAX_RETRIES) {
@@ -222,13 +222,13 @@ void *acr_cmd_restart(void *arg) {
                     goto RESTART_FAIL;
                 }
                 // Successfull Write
-                usleep(1000);
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
             eARM_error arm_status = eARM_OK;
             size_t retry_count = 0;
             do { // BEGIN  Write Final Block
+                usleep(1000);
                 retry_count++;
                 eAFV_file_error write_status = eAFV_FILE_OK;
                 write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
