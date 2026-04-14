@@ -72,8 +72,7 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
         do {
             int aci_status = 0;
             aci_status = aci_wait(pHndl->pACI);
-            if (aci_status != UCS_OK && aci_status != UCS_INPROGRESS &&
-                aci_status != UCS_ERR_IO_ERROR) {
+            if (aci_status != UCS_OK && aci_status != UCS_INPROGRESS) {
                 log_fatal("UCS_ERROR: %d", aci_status);
                 ucp_request_free(ucs_pStatus);
                 return eARM_ERR_FATAL;
