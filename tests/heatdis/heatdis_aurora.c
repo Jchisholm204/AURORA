@@ -137,20 +137,21 @@ int main(int argc, char *argv[]) {
     if (version_local != version_global) {
         version_local = AUL_Test(version_global, prog_name);
     }
+    (void) MPI_Allreduce(&version_local, &version_global, 1, MPI_INT, MPI_MIN,
+                         MPI_COMM_WORLD);
     if (version_local != version_global) {
-        printf("%d Error restarting from checkpoint %d! Aborting...\n", rank,
+        printf("%d Error restarting from checkpoint %d!\n", rank,
                version_global);
-        exit(2);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    if (version_local > 0) {
+    if (version_global > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
-               version_local);
+               version_global);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
-        int v_restored = AUL_Restart(version_local, prog_name);
-        if (v_restored != version_local) {
+        int v_restored = AUL_Restart(version_global, prog_name);
+        if (v_restored != version_global) {
             printf("%d Error restarting from checkpoint %d! Aborting...\n",
                    rank, v_restored);
             exit(2);
