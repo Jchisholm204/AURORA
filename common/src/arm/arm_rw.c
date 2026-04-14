@@ -70,14 +70,13 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
         return eARM_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(ucs_pStatus)) {
         do {
-            usleep(100);
-            ucs_status = ucp_request_check_status(ucs_pStatus);
             int aci_status = 0;
             aci_status = aci_wait(pHndl->pACI);
             if (aci_status != 0) {
+                ucp_request_free(ucs_pStatus);
                 return eARM_ERR_FATAL;
             }
-            usleep(100);
+            ucs_status = ucp_request_check_status(ucs_pStatus);
         } while (ucs_status == UCS_INPROGRESS);
         ucp_request_free(ucs_pStatus);
     }
