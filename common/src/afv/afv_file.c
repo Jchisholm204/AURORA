@@ -126,6 +126,9 @@ eAFV_file_error afv_file_close(afv_file_hndl **ppHndl) {
 
     log_debug("Closed File: %s", pHndl->fname);
 
+    free(pHndl);
+    *ppHndl = NULL;
+
     return eAFV_FILE_OK;
 }
 

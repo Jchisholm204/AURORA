@@ -121,7 +121,6 @@ void *acr_cmd_restart(void *arg) {
         if (!cli_arm_regions) {
             log_error("ARM Error");
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
 
@@ -135,7 +134,6 @@ void *acr_cmd_restart(void *arg) {
         if (afv_status != eAFV_VERIF_OK) {
             log_error("Verification 0x%lx", afv_status);
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
 
@@ -270,12 +268,8 @@ void *acr_cmd_restart(void *arg) {
         if (file_close_status != eAFV_FILE_OK) {
             log_error("FS Error: 0x%x", file_close_status);
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
-
-        free(meta_cli_hash_map);
-        meta_cli_hash_map = NULL;
 
     } // END Restore
 
@@ -302,6 +296,10 @@ void *acr_cmd_restart(void *arg) {
     } // END Notify Client of Completion
 
 RESTART_FAIL:
+    if (meta_cli_hash_map) {
+        free(meta_cli_hash_map);
+        meta_cli_hash_map = NULL;
+    }
 
     afv_destroy_metadata((afv_metadata_t **) &pMetadata);
 
