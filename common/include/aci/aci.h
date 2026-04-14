@@ -70,6 +70,7 @@ extern int aci_destroy_instance(aci_hndl **ppHndl);
  * 0)
  */
 extern int aci_poll(aci_hndl *pHndl);
+extern int aci_wait(aci_hndl *pHndl);
 
 extern void aci_keepalive(bool enable);
 

@@ -189,6 +189,14 @@ int aci_poll(aci_hndl *pHndl) {
     return pHndl->status;
 }
 
+int aci_wait(aci_hndl *pHndl) {
+    if (!pHndl) {
+        return -1;
+    }
+    pHndl->status = ucp_worker_wait(pHndl->ucp_worker);
+    return pHndl->status;
+}
+
 void aci_keepalive(bool enable) {
     if (enable) {
         _aci_init_context();
