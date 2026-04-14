@@ -72,7 +72,7 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
         do {
             ucs_status = ucp_request_check_status(ucs_pStatus);
             int aci_status = 0;
-            aci_status = aci_poll(pHndl->pACI);
+            aci_status = aci_wait(pHndl->pACI);
             if (aci_status != 0) {
                 return eARM_ERR_FATAL;
             }
