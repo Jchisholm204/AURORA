@@ -190,28 +190,25 @@ void *acr_cmd_restart(void *arg) {
             log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
+                eAFV_file_error write_status = eAFV_FILE_OK;
+                write_status = afv_file_read(pCkpt_file, pRgn_A, cpy_rgn_size);
+                if (write_status != eAFV_FILE_OK) {
+                    log_error("FS Error: 0x%x", write_status);
+                    // Retry
+                    continue;
+                }
                 eARM_error arm_status = eARM_OK;
                 size_t retry_count = 0;
                 do {
-                    usleep(1000);
                     retry_count++;
-                    eAFV_file_error write_status = eAFV_FILE_OK;
-                    write_status =
-                        afv_file_read(pCkpt_file, pRgn_A, cpy_rgn_size);
-                    if (write_status != eAFV_FILE_OK) {
-                        log_error("FS Error: 0x%x", write_status);
-                        // Retry
-                        continue;
+                    if (arm_status != eARM_OK) {
+                        log_error("ARM Err %d", arm_status);
+                        usleep(100);
                     }
                     const size_t bytes_read = pAMR->rgn_size - rgn_size;
                     arm_status = arm_write(pInstance->pARM, pAMR,
                                            pAMR->pActive_memory + bytes_read,
                                            pRgn_A, cpy_rgn_size);
-                    if (arm_status != eARM_OK) {
-                        log_error("ARM Err %d", arm_status);
-                        // Retry
-                        continue;
-                    }
                 } while (arm_status != eARM_OK &&
                          retry_count <= ACR_RW_MAX_RETRIES);
                 if (retry_count > ACR_RW_MAX_RETRIES) {
@@ -225,21 +222,17 @@ void *acr_cmd_restart(void *arg) {
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
+            // BEGIN  Write Final Block
+            eAFV_file_error write_status = eAFV_FILE_OK;
+            write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
+            if (write_status != eAFV_FILE_OK) {
+                log_error("FS Error: 0x%x", write_status);
+                continue;
+            }
             eARM_error arm_status = eARM_OK;
             size_t retry_count = 0;
-            do { // BEGIN  Write Final Block
-                usleep(1000);
+            do {
                 retry_count++;
-                eAFV_file_error write_status = eAFV_FILE_OK;
-                write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
-                if (write_status != eAFV_FILE_OK) {
-                    log_error("FS Error: 0x%x", write_status);
-                    continue;
-                }
-                const size_t bytes_read = pAMR->rgn_size - rgn_size;
-                arm_status = arm_write(pInstance->pARM, pAMR,
-                                       pAMR->pActive_memory + bytes_read,
-                                       pRgn_A, rgn_size);
                 if (arm_status != eARM_OK) {
                     log_error("ARM Err %d", arm_status);
                     // Hard Fail
@@ -248,9 +241,12 @@ void *acr_cmd_restart(void *arg) {
                         afv_destroy_metadata((afv_metadata_t **) &pMetadata);
                         goto RESTART_FAIL;
                     }
-                    // Retry
-                    continue;
+                    usleep(100);
                 }
+                const size_t bytes_read = pAMR->rgn_size - rgn_size;
+                arm_status = arm_write(pInstance->pARM, pAMR,
+                                       pAMR->pActive_memory + bytes_read,
+                                       pRgn_A, rgn_size);
                 // END Write Final Block
             } while (arm_status != eARM_OK &&
                      retry_count <= ACR_RW_MAX_RETRIES);

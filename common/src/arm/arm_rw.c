@@ -75,11 +75,15 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
             if (aci_status != UCS_OK && aci_status != UCS_INPROGRESS) {
                 log_fatal("UCS_ERROR: %d", aci_status);
                 ucp_request_free(ucs_pStatus);
-                return eARM_ERR_FATAL;
+                return eARM_ERR_UCS;
             }
             ucs_status = ucp_request_check_status(ucs_pStatus);
         } while (ucs_status == UCS_INPROGRESS);
+    }
+
+    if (ucs_pStatus) {
         ucp_request_free(ucs_pStatus);
+        ucs_pStatus = NULL;
     }
 
     if (ucs_status != UCS_OK) {
