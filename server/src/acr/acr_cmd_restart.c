@@ -141,12 +141,18 @@ void *acr_cmd_restart(void *arg) {
 
     { // BEGIN Restore
         // Setup checkpoint file
+        // Call can fail due to FS lock errors
         afv_file_hndl *pCkpt_file = afv_file_open_r(pInstance->pAFV, pMetadata);
-
         if (!pCkpt_file) {
-            afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            log_error("Bad Alloc??");
-            goto RESTART_FAIL;
+            log_warn("Bad Alloc??");
+            // Retry the FS lock
+            pCkpt_file = afv_file_open_r(pInstance->pAFV, pMetadata);
+            if (!pCkpt_file) {
+                // Repeated Failure indicates hard failure
+                afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                log_error("Bad Alloc??");
+                goto RESTART_FAIL;
+            }
         }
 
         // Read Only Pointer
@@ -180,52 +186,75 @@ void *acr_cmd_restart(void *arg) {
             log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
-                eAFV_file_error write_status = eAFV_FILE_OK;
-                write_status = afv_file_read(pCkpt_file, pRgn_A, cpy_rgn_size);
-                if (write_status != eAFV_FILE_OK) {
-                    log_error("FS Error: 0x%x", write_status);
-                    // Retry
-                    continue;
-                }
-                const size_t bytes_read = pAMR->rgn_size - rgn_size;
-                eARM_error arm_status =
-                    arm_write(pInstance->pARM, pAMR,
-                              pAMR->pActive_memory + bytes_read, pRgn_A,
-                              cpy_rgn_size);
-                if (arm_status != eARM_OK) {
-                    log_error("ARM Err %d", arm_status);
-                    // Retry
-                    continue;
+                eARM_error arm_status = eARM_OK;
+                size_t retry_count = 0;
+                do {
+                    retry_count++;
+                    eAFV_file_error write_status = eAFV_FILE_OK;
+                    write_status =
+                        afv_file_read(pCkpt_file, pRgn_A, cpy_rgn_size);
+                    if (write_status != eAFV_FILE_OK) {
+                        log_error("FS Error: 0x%x", write_status);
+                        // Retry
+                        continue;
+                    }
+                    const size_t bytes_read = pAMR->rgn_size - rgn_size;
+                    arm_status = arm_write(pInstance->pARM, pAMR,
+                                           pAMR->pActive_memory + bytes_read,
+                                           pRgn_A, cpy_rgn_size);
+                    if (arm_status != eARM_OK) {
+                        log_error("ARM Err %d", arm_status);
+                        // Retry
+                        continue;
+                    }
+                } while (arm_status != eARM_OK &&
+                         retry_count <= ACR_RW_MAX_RETRIES);
+                if (retry_count > ACR_RW_MAX_RETRIES) {
+                    log_fatal("Retry Count %d exceeded %d", retry_count,
+                              ACR_RW_MAX_RETRIES);
+                    (void) afv_file_close(&pCkpt_file);
+                    afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                    goto RESTART_FAIL;
                 }
                 // Successfull Write
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
-        RESTART_FINAL_WRITE: { // BEGIN  Write Final Block
-            eAFV_file_error write_status = eAFV_FILE_OK;
-            write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
-            if (write_status != eAFV_FILE_OK) {
-                log_error("FS Error: 0x%x", write_status);
+            eARM_error arm_status = eARM_OK;
+            size_t retry_count = 0;
+            do { // BEGIN  Write Final Block
+                retry_count++;
+                eAFV_file_error write_status = eAFV_FILE_OK;
+                write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
+                if (write_status != eAFV_FILE_OK) {
+                    log_error("FS Error: 0x%x", write_status);
+                    continue;
+                }
+                const size_t bytes_read = pAMR->rgn_size - rgn_size;
+                arm_status = arm_write(pInstance->pARM, pAMR,
+                                       pAMR->pActive_memory + bytes_read,
+                                       pRgn_A, rgn_size);
+                if (arm_status != eARM_OK) {
+                    log_error("ARM Err %d", arm_status);
+                    // Hard Fail
+                    if (arm_status == eARM_ERR_FATAL) {
+                        (void) afv_file_close(&pCkpt_file);
+                        afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                        goto RESTART_FAIL;
+                    }
+                    // Retry
+                    continue;
+                }
+                // END Write Final Block
+            } while (arm_status != eARM_OK &&
+                     retry_count <= ACR_RW_MAX_RETRIES);
+            if (retry_count > ACR_RW_MAX_RETRIES) {
+                log_fatal("Retry Count %d exceeded %d", retry_count,
+                          ACR_RW_MAX_RETRIES);
                 (void) afv_file_close(&pCkpt_file);
                 afv_destroy_metadata((afv_metadata_t **) &pMetadata);
                 goto RESTART_FAIL;
             }
-            const size_t bytes_read = pAMR->rgn_size - rgn_size;
-            eARM_error arm_status =
-                arm_write(pInstance->pARM, pAMR,
-                          pAMR->pActive_memory + bytes_read, pRgn_A, rgn_size);
-            if (arm_status != eARM_OK) {
-                log_error("ARM Err %d", arm_status);
-                // Hard Fail
-                if (arm_status == eARM_ERR_FATAL) {
-                    (void) afv_file_close(&pCkpt_file);
-                    afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-                    goto RESTART_FAIL;
-                }
-                // Retry
-                goto RESTART_FINAL_WRITE;
-            }
-        } // END Write Final Block
 
         } // END Region Loop
 
