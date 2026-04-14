@@ -165,6 +165,7 @@ void *acr_cmd_restart(void *arg) {
             arm_get_remote_regions(pInstance->pARM);
         if (!arm_regions) {
             log_error("ARM Error");
+            (void) afv_file_close(&pCkpt_file);
             goto RESTART_FAIL;
         }
 
