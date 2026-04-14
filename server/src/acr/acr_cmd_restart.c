@@ -38,6 +38,7 @@ void *acr_cmd_restart(void *arg) {
     struct aurora_command_ctx *pCtx = arg;
     aim_entry_t *pInstance = pCtx->pInstance;
     const afv_metadata_t *pMetadata = NULL;
+    size_t *meta_cli_hash_map = NULL;
 
     { // BEGIN Wait for outstanding memory operations to complete
         eACN_error acn_status = eACN_OK;
@@ -97,7 +98,7 @@ void *acr_cmd_restart(void *arg) {
 
     } // END setup metadata
 
-    size_t *meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
+    meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
     if (!meta_cli_hash_map) {
         log_warn("Bad Alloc??");
         meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);

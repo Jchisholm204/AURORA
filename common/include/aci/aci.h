@@ -28,6 +28,7 @@ struct aurora_connection_instance_hndl
     ucp_worker_h ucp_worker;
     ucp_ep_h ucp_ep;
     ucs_status_t status;
+    _Atomic int worker_in_use;
 }
 #endif
 ;
