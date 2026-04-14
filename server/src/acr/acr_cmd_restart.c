@@ -19,6 +19,7 @@
 #include "log.h"
 
 #include <memory.h>
+#include <unistd.h>
 
 // Leave modules seperate while ensuring nothing faults
 #if ARM_NAME_LEN != AFV_RGN_NAME_LEN
@@ -42,6 +43,7 @@ void *acr_cmd_restart(void *arg) {
         eACN_error acn_status = eACN_OK;
         do {
             acn_status = acn_await(pInstance->pACN, eACN_memory);
+            usleep(1000);
         } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error %d", acn_status);
@@ -56,6 +58,7 @@ void *acr_cmd_restart(void *arg) {
         do {
             acn_status = acn_get(pInstance->pACN, eACN_version,
                                  (uint64_t *) &cli_req_version);
+            usleep(1000);
         } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error 0x%lx", acn_status);
@@ -64,6 +67,7 @@ void *acr_cmd_restart(void *arg) {
         char cli_req_name[AFV_CKPT_NAME_LEN];
         do {
             acn_status = acn_get_name(pInstance->pACN, cli_req_name);
+            usleep(1000);
         } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error 0x%lx", acn_status);
@@ -207,6 +211,7 @@ void *acr_cmd_restart(void *arg) {
                         // Retry
                         continue;
                     }
+                    usleep(1000);
                 } while (arm_status != eARM_OK &&
                          retry_count <= ACR_RW_MAX_RETRIES);
                 if (retry_count > ACR_RW_MAX_RETRIES) {
@@ -217,6 +222,7 @@ void *acr_cmd_restart(void *arg) {
                     goto RESTART_FAIL;
                 }
                 // Successfull Write
+                usleep(1000);
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 

@@ -37,7 +37,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
     // -> Only send new requests when one is not presently active
     if (pHndl->ucs_pRequest == NULL) {
         pHndl->ucs_pRequest =
-            aci_get(pHndl->pACI, &pHndl->temp_memory,
+            aci_get(pHndl->pACI, (void *) &pHndl->temp_memory,
                     sizeof(pHndl->temp_memory), (uint64_t) pHndl->pRemote,
                     pHndl->remote_rkey, &rparam);
     }
