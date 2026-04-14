@@ -70,17 +70,22 @@ void *acr_cmd_restart(void *arg) {
             goto RESTART_FAIL;
         }
 
+        // Can fail due to transient FS errors and/or lock errors
+        // Catch with a NULL retry mechanim
         pMetadata = afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
                                                cli_req_name);
         if (!pMetadata) {
+            // Catch intermitent failure
             pMetadata =
                 afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
                                            cli_req_name);
             log_warn("Bad Alloc??");
-        }
-        if (!pMetadata) {
-            log_error("Bad Alloc??");
-            goto RESTART_FAIL;
+            // Repeated fail indicates hard fault
+            if (!pMetadata) {
+                log_error("Bad Metadata Lookup %s %d", cli_req_name,
+                          cli_req_version);
+                goto RESTART_FAIL;
+            }
         }
 
         log_debug("Restore Triggered -> %d: %.*s (%d)", pMetadata->rank,
@@ -256,8 +261,8 @@ void *acr_cmd_restart(void *arg) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-    log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
-             pMetadata->chkpt_name, pMetadata->version);
+        log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
+                 pMetadata->chkpt_name, pMetadata->version);
     } // END Notify Client of Completion
 
 RESTART_FAIL:
