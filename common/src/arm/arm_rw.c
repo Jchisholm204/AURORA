@@ -70,9 +70,10 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
         return eARM_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(ucs_pStatus)) {
         do {
+            usleep(100);
             ucs_status = ucp_request_check_status(ucs_pStatus);
             int aci_status = 0;
-            aci_status = aci_wait(pHndl->pACI);
+            aci_status = aci_poll(pHndl->pACI);
             if (aci_status != 0) {
                 return eARM_ERR_FATAL;
             }
@@ -85,6 +86,7 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
         log_error("Failed remote read: %s", ucs_status_string(ucs_status));
         return eARM_ERR_UCS;
     }
+    usleep(100);
     return eARM_OK;
 }
 
