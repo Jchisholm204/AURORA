@@ -169,7 +169,8 @@ void *acr_cmd_restart(void *arg) {
         }
 
         // Setup Copy Regions
-        const size_t cpy_rgn_size = (ACR_CMD_CTX_SCRATCH_SIZE >> 1);
+        const size_t cpy_rgn_size = 1024;
+        // (ACR_CMD_CTX_SCRATCH_SIZE);
         uint8_t *const pRgn_A = pCtx->pScratch;
         uint8_t *const pRgn_B = pCtx->pScratch + cpy_rgn_size;
 
