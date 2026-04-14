@@ -193,7 +193,9 @@ int aci_poll(aci_hndl *pHndl) {
     if (atomic_exchange(&pHndl->worker_in_use, 1) == 1) {
         log_fatal("THREAD COLLISION");
     }
+
     (void) ucp_worker_progress(pHndl->ucp_worker);
+
     atomic_store(&pHndl->worker_in_use, 0);
     return pHndl->status;
 }
@@ -205,7 +207,11 @@ int aci_wait(aci_hndl *pHndl) {
     if (atomic_exchange(&pHndl->worker_in_use, 1) == 1) {
         log_fatal("THREAD COLLISION");
     }
-    pHndl->status = ucp_worker_wait(pHndl->ucp_worker);
+
+    if (ucp_worker_progress(pHndl->ucp_worker) == 0) {
+        pHndl->status = ucp_worker_wait(pHndl->ucp_worker);
+    }
+
     atomic_store(&pHndl->worker_in_use, 0);
     return pHndl->status;
 }
