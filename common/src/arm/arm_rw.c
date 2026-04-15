@@ -70,27 +70,20 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
         return eARM_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(ucs_pStatus)) {
         do {
-            int aci_status = 0;
-            aci_status = aci_wait(pHndl->pACI);
-            if (aci_status != UCS_OK && aci_status != UCS_INPROGRESS) {
-                log_fatal("UCS_ERROR: %d", aci_status);
-                ucp_request_free(ucs_pStatus);
-                return eARM_ERR_UCS;
-            }
             ucs_status = ucp_request_check_status(ucs_pStatus);
+            int aci_status = 0;
+            aci_status = aci_poll(pHndl->pACI);
+            if (aci_status != 0) {
+                return eARM_ERR_FATAL;
+            }
         } while (ucs_status == UCS_INPROGRESS);
-    }
-
-    if (ucs_pStatus) {
         ucp_request_free(ucs_pStatus);
-        ucs_pStatus = NULL;
     }
 
     if (ucs_status != UCS_OK) {
         log_error("Failed remote read: %s", ucs_status_string(ucs_status));
         return eARM_ERR_UCS;
     }
-    usleep(100);
     return eARM_OK;
 }
 
