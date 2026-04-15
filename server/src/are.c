@@ -26,7 +26,7 @@
 #define AIM_MAX_WORKERS 64
 #endif
 #ifndef ACR_MAX_WORKERS
-#define ACR_MAX_WORKERS 16
+#define ACR_MAX_WORKERS 4
 #endif
 
 int are_main(int argc, char **argv) {
