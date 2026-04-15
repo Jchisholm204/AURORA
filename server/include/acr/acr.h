@@ -21,7 +21,7 @@
 
 // Command Scratchpad working memory size (500KB)
 #ifndef ACR_CMD_CTX_SCRATCH_SIZE
-#define ACR_CMD_CTX_SCRATCH_SIZE (500ULL * 1024ULL)
+#define ACR_CMD_CTX_SCRATCH_SIZE (5ULL * 1024ULL * 1024ULL)
 #endif
 
 struct aurora_command_ctx {
@@ -78,6 +78,8 @@ extern void *acr_cmd_connection_up(void *);
 extern void *acr_cmd_connection_down(void *);
 
 #ifdef ACR_INTERNAL
+
+#define ACR_RW_MAX_RETRIES 16
 
 extern eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx);
 extern eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx,

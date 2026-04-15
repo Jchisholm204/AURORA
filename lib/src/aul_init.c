@@ -16,6 +16,47 @@
 #include "aul_internal.h"
 #include "log.h"
 
+#include <ctype.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+static char *find_host_bf(void) {
+    static char hostname[256];
+    static char target_name[256];
+    struct hostent *he;
+
+    if (gethostname(hostname, sizeof(hostname)) != 0) {
+        return NULL;
+    }
+
+    char *digits = hostname;
+    while (*digits && !isdigit(*digits)) {
+        digits++;
+    }
+    if (*digits == '\0') {
+        return NULL;
+    }
+
+    const int versions[] = {3, 2, 1};
+    for (size_t i = 0; i < sizeof(versions) / sizeof(int); i++) {
+        int version = versions[i];
+        (void) snprintf(target_name, sizeof(target_name), "romebf%da%s",
+                        version, digits);
+        log_trace("Looking for BF%d @ %s", version, target_name);
+        he = gethostbyname(target_name);
+        if (he) {
+            struct in_addr in_addr;
+            (void) memcpy(&in_addr, he->h_addr_list[0], sizeof(struct in_addr));
+            return inet_ntoa(in_addr);
+        }
+    }
+
+    log_trace("BF hostname not found");
+
+    return NULL;
+}
+
 int AUL_Init(const aul_configuration_t *pCFG) {
     if (!pCFG) {
         log_error("No Configuration Provided");
@@ -114,7 +155,8 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         log_trace("Automatic Connection Enabled");
         /* fallthrough */
     case eAULCModeBF:
-        ads_conf.opt_server_ip = "192.168.100.2";
+        // Find BF through hostname search
+        ads_conf.opt_server_ip = find_host_bf();
         ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
         if (ads_data_rx || pCFG->connection_mode == eAULCModeBF) {
             break;

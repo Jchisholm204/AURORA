@@ -43,6 +43,7 @@ enum aurora_completion_notifier_error_e {
     eACN_ERR_INPROGRESS,
     eACN_ERR_UCS,
     eACN_ERR_FATAL,
+    eACN_ERR_TIMEOUT,
     eACN_N_ERR,
 };
 
@@ -75,7 +76,7 @@ struct aurora_completion_notifier_hndl
     // Local Notification
     ucp_mem_h local_mem_hndl;
     union aurora_completion_notifier_memory *volatile pLocal;
-    union aurora_completion_notifier_memory temp_memory;
+    volatile union aurora_completion_notifier_memory temp_memory;
     // Request Pointer (Single thread access only, Not locked)
     ucs_status_ptr_t ucs_pRequest;
 }
@@ -96,7 +97,7 @@ extern eACN_error acn_destroy_instance(acn_hndl **ppHndl);
 
 extern int acn_tick(acn_hndl *pHndl, eACN_notification notifs);
 
-extern int acn_await(acn_hndl *pHndl, eACN_notification notifs);
+extern eACN_error acn_await(acn_hndl *pHndl, eACN_notification notifs);
 
 extern int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs);
 

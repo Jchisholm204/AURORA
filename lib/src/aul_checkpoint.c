@@ -21,8 +21,12 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
     TIME_REGION("Checkpoint Total") {
         TIME_REGION("Wait for checkpoint") {
             // Wait for previous checkpoint to complete
-            if (acn_await(_aul_ctx.pACN, eACN_checkpoint) != 0) {
-                log_fatal("Server disconnected");
+            eACN_error acn_status = eACN_OK;
+            do {
+                acn_status = acn_await(_aul_ctx.pACN, eACN_checkpoint);
+            } while (acn_status == eACN_ERR_TIMEOUT);
+            if (acn_status != eACN_OK) {
+                log_error("ACN Error: %d", acn_status);
                 return INT_MIN;
             }
         }
@@ -46,6 +50,7 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
         }
 
         // Setup the checkpoint name and version
+        log_debug("Name: %s", name);
         acn_set_name(_aul_ctx.pACN, name);
         acn_set(_aul_ctx.pACN, eACN_version, version);
         // Trigger for next checkpoint (client side tick)

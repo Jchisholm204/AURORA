@@ -30,6 +30,7 @@ aci_hndl *aci_create_instance(aurora_blob_t *conn_info) {
 
     pHndl->ucp_worker = NULL;
     pHndl->ucp_ep = NULL;
+    atomic_store(&pHndl->worker_in_use, 0);
 
     ucs_status_t ucs_status;
 
@@ -101,7 +102,7 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
     ucp_worker_release_address(pHndl->ucp_worker, local_info->data);
     free(remote_info->data);
 
-    log_debug("ACI connected");
+    log_trace("ACI connected");
 
     return 0;
 }
@@ -110,6 +111,8 @@ int aci_disconnect_instance(aci_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
+
+    log_trace("Disconnecting Instance");
 
     ucs_status_ptr_t ucs_pStatus = NULL;
     // Request a close if the ep is open
@@ -150,12 +153,16 @@ int aci_destroy_instance(aci_hndl **ppHndl) {
         return -1;
     }
 
+    if (atomic_exchange(&(*ppHndl)->worker_in_use, 1) == 1) {
+        log_fatal("THREAD COLLISION");
+    }
+
     // Endpoint should be cleared and null by now (err if not)
     if ((*ppHndl)->ucp_ep) {
         // May segfault if the instance was not yet disconnected by higher level
         // software.. That is the users fault
-        log_warn("USAGE: ACI Disconnect must be called prior to destroy "
-                  "instance... Attempting to clean up for the user...");
+        log_debug("USAGE: ACI Disconnect must be called prior");
+        log_debug("Attempting to clean up for the user...");
         (void) aci_disconnect_instance(*ppHndl);
     }
 
@@ -183,7 +190,29 @@ int aci_poll(aci_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
+    if (atomic_exchange(&pHndl->worker_in_use, 1) == 1) {
+        log_fatal("THREAD COLLISION");
+    }
+
     (void) ucp_worker_progress(pHndl->ucp_worker);
+
+    atomic_store(&pHndl->worker_in_use, 0);
+    return pHndl->status;
+}
+
+int aci_wait(aci_hndl *pHndl) {
+    if (!pHndl) {
+        return -1;
+    }
+    if (atomic_exchange(&pHndl->worker_in_use, 1) == 1) {
+        log_fatal("THREAD COLLISION");
+    }
+
+    if (ucp_worker_progress(pHndl->ucp_worker) == 0) {
+        pHndl->status = ucp_worker_wait(pHndl->ucp_worker);
+    }
+
+    atomic_store(&pHndl->worker_in_use, 0);
     return pHndl->status;
 }
 

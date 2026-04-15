@@ -29,7 +29,7 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
     int acn_status = 0;
     acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
     if (acn_status != 0) {
-        log_error("ACN Error");
+        log_error("ACN Error: %d", acn_status);
         return acn_status;
     }
 
@@ -53,16 +53,18 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 
 int AUL_Mem_unprotect(const uint64_t mem_id) {
     // Advance the client side memory tick (memory ops pending)
-    int acn_status = 0;
-    acn_status = acn_await(_aul_ctx.pACN, eACN_checkpoint);
-    if (acn_status != 0) {
-        log_error("ACN Error");
+    eACN_error acn_status = eACN_OK;
+    do {
+        acn_status = acn_await(_aul_ctx.pACN, eACN_checkpoint);
+    } while (acn_status == eACN_ERR_TIMEOUT);
+    if (acn_status != eACN_OK) {
+        log_error("ACN Error: %d", acn_status);
         return acn_status;
     }
 
     acn_status = acn_tick(_aul_ctx.pACN, eACN_memory);
-    if (acn_status != 0) {
-        log_error("ACN Error");
+    if (acn_status != eACN_OK) {
+        log_error("ACN Error: %d", acn_status);
         return acn_status;
     }
 

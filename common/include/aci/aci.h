@@ -28,6 +28,7 @@ struct aurora_connection_instance_hndl
     ucp_worker_h ucp_worker;
     ucp_ep_h ucp_ep;
     ucs_status_t status;
+    _Atomic int worker_in_use;
 }
 #endif
 ;
@@ -70,6 +71,7 @@ extern int aci_destroy_instance(aci_hndl **ppHndl);
  * 0)
  */
 extern int aci_poll(aci_hndl *pHndl);
+extern int aci_wait(aci_hndl *pHndl);
 
 extern void aci_keepalive(bool enable);
 

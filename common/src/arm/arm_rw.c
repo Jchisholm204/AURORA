@@ -14,8 +14,19 @@
 #include "arm/arm.h"
 #include "log.h"
 
+#include <assert.h>
+#include <unistd.h>
+
 ucp_rkey_h _arm_get_rkey(const amr_hndl *pAMR, uint64_t addr, size_t size) {
     if (!pAMR) {
+        return NULL;
+    }
+    if (!pAMR->shadow_remote_key) {
+        log_fatal("NULL Parameter");
+        return NULL;
+    }
+    if (!pAMR->active_remote_key) {
+        log_fatal("NULL Parameter");
         return NULL;
     }
     uint64_t shadow_min_addr = pAMR->pShadow_memory;
@@ -65,7 +76,7 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
             if (aci_status != 0) {
                 return eARM_ERR_FATAL;
             }
-        } while (1);
+        } while (ucs_status == UCS_INPROGRESS);
         ucp_request_free(ucs_pStatus);
     }
 
@@ -81,6 +92,14 @@ eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
     if (!pHndl || !pAMR || !data) {
         log_error("NULL Parameter");
         return eARM_ERR_NULL;
+    }
+    if (!pAMR->shadow_remote_key) {
+        log_fatal("NULL Parameter");
+        return eARM_ERR_FATAL;
+    }
+    if (!pAMR->active_remote_key) {
+        log_fatal("NULL Parameter");
+        return eARM_ERR_FATAL;
     }
     ucp_rkey_h ucp_remote_key = _arm_get_rkey(pAMR, remote_addr, size);
     if (!ucp_remote_key) {

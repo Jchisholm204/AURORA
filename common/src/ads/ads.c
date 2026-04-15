@@ -231,6 +231,9 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
     if (!pConf || !pTxData) {
         return NULL;
     }
+
+    log_trace("Connecting to %s", pConf->opt_server_ip);
+
     char target_ip[64];
     ads_conf_t conf;
     conf = *pConf;

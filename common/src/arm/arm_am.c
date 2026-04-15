@@ -105,7 +105,9 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
         }
     }
 
-    log_debug("Added new remote region. %d %s", pInst_AMR->id, pInst_AMR->name);
+    log_trace("Add: %d %s", pInst_AMR->id, pInst_AMR->name);
+    log_trace("pA=0x%lx pS=0x%lx", pInst_AMR->pActive_memory,
+              pInst_AMR->pShadow_memory);
 
     return UCS_OK;
 }
@@ -133,16 +135,19 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
         return UCS_OK;
     }
 
-    log_trace("Removing id=%d", pRemote_AMR->id);
-
     amr_hndl *pInst_AMR = (amr_hndl *) pRemote_AMR;
     size_t inst_idx = 0;
-    eARM_error arm_status;
+    eARM_error arm_status = eARM_OK;
+
     arm_status = _arm_find(&pHndl->remote_rgns, &pInst_AMR, &inst_idx);
     if (arm_status != eARM_OK || !pInst_AMR) {
         log_error("ARM Error");
         return UCS_OK;
     }
+
+    log_trace("Remove: %d %s", pInst_AMR->id, pInst_AMR->name);
+    log_trace("pA=0x%lx pS=0x%lx", pInst_AMR->pActive_memory,
+              pInst_AMR->pShadow_memory);
 
     if (pInst_AMR->active_remote_key) {
         log_trace("destroy rkey 0x%lx", pInst_AMR->active_remote_key);
@@ -156,8 +161,6 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
     }
 
     (void) _arl_remove(&pHndl->remote_rgns, inst_idx);
-
-    log_trace("Removed remote region");
 
     return UCS_OK;
 }

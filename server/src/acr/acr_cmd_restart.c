@@ -19,6 +19,7 @@
 #include "log.h"
 
 #include <memory.h>
+#include <unistd.h>
 
 // Leave modules seperate while ensuring nothing faults
 #if ARM_NAME_LEN != AFV_RGN_NAME_LEN
@@ -36,50 +37,60 @@ void *acr_cmd_restart(void *arg) {
     }
     struct aurora_command_ctx *pCtx = arg;
     aim_entry_t *pInstance = pCtx->pInstance;
+    const afv_metadata_t *pMetadata = NULL;
+    size_t *meta_cli_hash_map = NULL;
 
     { // BEGIN Wait for outstanding memory operations to complete
-        int acn_status = 0;
-        acn_status = acn_await(pInstance->pACN, eACN_memory);
-        if (acn_status != 0) {
-            log_error("ACN Error");
+        eACN_error acn_status = eACN_OK;
+        do {
+            acn_status = acn_await(pInstance->pACN, eACN_memory);
+            usleep(1000);
+        } while (acn_status == eACN_ERR_TIMEOUT);
+        if (acn_status != eACN_OK) {
+            log_error("ACN Error %d", acn_status);
             goto RESTART_FAIL;
         }
     } // END Wait for outstanding memory operations to complete
-
-    const afv_metadata_t *pMetadata = NULL;
 
     { // BEGIN setup metadata
         eACN_error acn_status = eACN_OK;
 
         int64_t cli_req_version;
-        acn_status = acn_get(pInstance->pACN, eACN_version,
-                             (uint64_t *) &cli_req_version);
+        do {
+            acn_status = acn_get(pInstance->pACN, eACN_version,
+                                 (uint64_t *) &cli_req_version);
+            usleep(1000);
+        } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error 0x%lx", acn_status);
             goto RESTART_FAIL;
         }
         char cli_req_name[AFV_CKPT_NAME_LEN];
-        acn_get_name(pInstance->pACN, cli_req_name);
+        do {
+            acn_status = acn_get_name(pInstance->pACN, cli_req_name);
+            usleep(1000);
+        } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error 0x%lx", acn_status);
             goto RESTART_FAIL;
         }
 
+        // Can fail due to transient FS errors and/or lock errors
+        // Catch with a NULL retry mechanim
         pMetadata = afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
                                                cli_req_name);
-
         if (!pMetadata) {
-            log_warn("Bad Alloc??");
+            // Catch intermitent failure
             pMetadata =
-                afv_get_metadata_versioned(pInstance->pAFV, -1, cli_req_name);
-        }
-        if (!pMetadata) {
+                afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
+                                           cli_req_name);
             log_warn("Bad Alloc??");
-            pMetadata = afv_get_metadata_versioned(pInstance->pAFV, -1, NULL);
-        }
-        if (!pMetadata) {
-            log_error("Bad Alloc??");
-            goto RESTART_FAIL;
+            // Repeated fail indicates hard fault
+            if (!pMetadata) {
+                log_error("Bad Metadata Lookup %s %d", cli_req_name,
+                          cli_req_version);
+                goto RESTART_FAIL;
+            }
         }
 
         log_debug("Restore Triggered -> %d: %.*s (%d)", pMetadata->rank,
@@ -87,7 +98,7 @@ void *acr_cmd_restart(void *arg) {
 
     } // END setup metadata
 
-    size_t *meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
+    meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
     if (!meta_cli_hash_map) {
         log_warn("Bad Alloc??");
         meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
@@ -111,7 +122,6 @@ void *acr_cmd_restart(void *arg) {
         if (!cli_arm_regions) {
             log_error("ARM Error");
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
 
@@ -125,7 +135,6 @@ void *acr_cmd_restart(void *arg) {
         if (afv_status != eAFV_VERIF_OK) {
             log_error("Verification 0x%lx", afv_status);
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
 
@@ -135,12 +144,18 @@ void *acr_cmd_restart(void *arg) {
 
     { // BEGIN Restore
         // Setup checkpoint file
+        // Call can fail due to FS lock errors
         afv_file_hndl *pCkpt_file = afv_file_open_r(pInstance->pAFV, pMetadata);
-
         if (!pCkpt_file) {
-            afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            log_error("Bad Alloc??");
-            goto RESTART_FAIL;
+            log_warn("Bad Alloc??");
+            // Retry the FS lock
+            pCkpt_file = afv_file_open_r(pInstance->pAFV, pMetadata);
+            if (!pCkpt_file) {
+                // Repeated Failure indicates hard failure
+                afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                log_error("Bad Alloc??");
+                goto RESTART_FAIL;
+            }
         }
 
         // Read Only Pointer
@@ -149,11 +164,13 @@ void *acr_cmd_restart(void *arg) {
             arm_get_remote_regions(pInstance->pARM);
         if (!arm_regions) {
             log_error("ARM Error");
+            (void) afv_file_close(&pCkpt_file);
             goto RESTART_FAIL;
         }
 
         // Setup Copy Regions
-        const size_t cpy_rgn_size = (ACR_CMD_CTX_SCRATCH_SIZE >> 1);
+        const size_t cpy_rgn_size = 4096; // Testing - 4KB
+        // (ACR_CMD_CTX_SCRATCH_SIZE);
         uint8_t *const pRgn_A = pCtx->pScratch;
         uint8_t *const pRgn_B = pCtx->pScratch + cpy_rgn_size;
 
@@ -171,49 +188,94 @@ void *acr_cmd_restart(void *arg) {
             pMetadata->region_sizes[i] = rgn_size;
             memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
 
-            log_debug("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
+            log_trace("rgn: %d -> rgnid: %d (%d) (%d)", i, pAMR->id,
+                      pAMR->rgn_size, pMetadata->rank);
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
                 eAFV_file_error write_status = eAFV_FILE_OK;
+                log_trace(
+                    "Copying (%lu) %lu / %lu = %.2f %% (%d)", cpy_rgn_size,
+                    pAMR->rgn_size - rgn_size, pAMR->rgn_size,
+                    (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
+                    pMetadata->rank);
                 write_status = afv_file_read(pCkpt_file, pRgn_A, cpy_rgn_size);
                 if (write_status != eAFV_FILE_OK) {
                     log_error("FS Error: 0x%x", write_status);
                     // Retry
                     continue;
                 }
-                const size_t bytes_read = pAMR->rgn_size - rgn_size;
-                eARM_error arm_status =
-                    arm_write(pInstance->pARM, pAMR,
-                              pAMR->pActive_memory + bytes_read, pRgn_A,
-                              cpy_rgn_size);
-                if (arm_status != eARM_OK) {
-                    log_error("ARM Err %d", arm_status);
-                    // Retry
-                    continue;
+                eARM_error arm_status = eARM_OK;
+                size_t retry_count = 0;
+                do {
+                    retry_count++;
+                    if (arm_status != eARM_OK) {
+                        log_error("ARM Err %d", arm_status);
+                        usleep(100);
+                    }
+                    const size_t bytes_read = pAMR->rgn_size - rgn_size;
+                    arm_status = arm_write(pInstance->pARM, pAMR,
+                                           pAMR->pActive_memory + bytes_read,
+                                           pRgn_A, cpy_rgn_size);
+                } while (arm_status != eARM_OK &&
+                         retry_count <= ACR_RW_MAX_RETRIES);
+                if (retry_count > ACR_RW_MAX_RETRIES) {
+                    log_fatal("Retry Count %d exceeded %d", retry_count,
+                              ACR_RW_MAX_RETRIES);
+                    (void) afv_file_close(&pCkpt_file);
+                    afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                    goto RESTART_FAIL;
                 }
                 // Successfull Write
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
-            { // BEGIN  Write Final Block
-                eAFV_file_error write_status = eAFV_FILE_OK;
-                write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
-                if (write_status != eAFV_FILE_OK) {
-                    log_error("FS Error: 0x%x", write_status);
-                    // Retry
-                    continue;
-                }
-                const size_t bytes_read = pAMR->rgn_size - rgn_size;
-                eARM_error arm_status =
-                    arm_write(pInstance->pARM, pAMR,
-                              pAMR->pActive_memory + bytes_read, pRgn_A,
-                              pAMR->rgn_size);
+            // BEGIN  Write Final Block
+            log_trace("Copying (%lu) %lu / %lu = %.2f %% (%d)", rgn_size,
+                      pAMR->rgn_size - rgn_size, pAMR->rgn_size,
+                      (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
+                      pMetadata->rank);
+            eAFV_file_error write_status = eAFV_FILE_OK;
+            write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
+            if (write_status != eAFV_FILE_OK) {
+                (void) afv_file_close(&pCkpt_file);
+                afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                goto RESTART_FAIL;
+            }
+            eARM_error arm_status = eARM_OK;
+            size_t retry_count = 0;
+            do {
+                retry_count++;
                 if (arm_status != eARM_OK) {
                     log_error("ARM Err %d", arm_status);
-                    // Retry
-                    continue;
+                    // Hard Fail
+                    if (arm_status == eARM_ERR_FATAL) {
+                        (void) afv_file_close(&pCkpt_file);
+                        afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                        goto RESTART_FAIL;
+                    }
+                    usleep(100);
                 }
-            } // END Write Final Block
+                const size_t bytes_read = pAMR->rgn_size - rgn_size;
+                arm_status = arm_write(pInstance->pARM, pAMR,
+                                       pAMR->pActive_memory + bytes_read,
+                                       pRgn_A, rgn_size);
+                // END Write Final Block
+            } while (arm_status != eARM_OK &&
+                     retry_count <= ACR_RW_MAX_RETRIES);
+            if (retry_count > ACR_RW_MAX_RETRIES) {
+                log_fatal("Retry Count %d exceeded %d", retry_count,
+                          ACR_RW_MAX_RETRIES);
+                (void) afv_file_close(&pCkpt_file);
+                afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                goto RESTART_FAIL;
+            }
+            // Successfull Write
+            rgn_size = 0;
+
+            log_trace("Copied %lu / %lu = %.2f %% (%d)",
+                      pAMR->rgn_size - rgn_size, pAMR->rgn_size,
+                      (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
+                      pMetadata->rank);
 
         } // END Region Loop
 
@@ -222,37 +284,38 @@ void *acr_cmd_restart(void *arg) {
         if (file_close_status != eAFV_FILE_OK) {
             log_error("FS Error: 0x%x", file_close_status);
             afv_destroy_metadata((afv_metadata_t **) &pMetadata);
-            free(meta_cli_hash_map);
             goto RESTART_FAIL;
         }
-
-        free(meta_cli_hash_map);
-        meta_cli_hash_map = NULL;
 
     } // END Restore
 
     { // BEGIN Notify Client of Completion
-        int acn_status = 0;
+        eACN_error acn_status = eACN_OK;
         acn_status = acn_set(pInstance->pACN, eACN_version, pMetadata->version);
-        if (acn_status != 0) {
-            log_warn("ACN Abnormal %d", acn_status);
+        if (acn_status != eACN_OK) {
+            log_warn("ACN Abnormal 0x%x", acn_status);
         }
         acn_status = acn_set_name(pInstance->pACN, pMetadata->chkpt_name);
-        if (acn_status != 0) {
-            log_warn("ACN Abnormal %d", acn_status);
+        if (acn_status != eACN_OK) {
+            log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
         log_trace("Set Version");
 
         acn_status = acn_tick(pInstance->pACN, eACN_restore);
-        if (acn_status != 0) {
-            log_warn("ACN Abnormal %d", acn_status);
+        if (acn_status != eACN_OK) {
+            log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-        log_trace("Ticked Restore");
+        log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
+                 pMetadata->chkpt_name, pMetadata->version);
     } // END Notify Client of Completion
 
 RESTART_FAIL:
+    if (meta_cli_hash_map) {
+        free(meta_cli_hash_map);
+        meta_cli_hash_map = NULL;
+    }
 
     afv_destroy_metadata((afv_metadata_t **) &pMetadata);
 
