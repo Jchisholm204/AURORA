@@ -260,7 +260,7 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
                                     pConf->timeout_ms);
         mdns_socket_close(sock);
         if (found <= 0) {
-            log_error("Failed find the server e=%d", found);
+            log_warn("Failed find the server e=%d", found);
             return NULL;
         }
     }
