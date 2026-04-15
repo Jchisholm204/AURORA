@@ -49,7 +49,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
         return eACN_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(pHndl->ucs_pRequest)) {
         size_t poll_count = 0;
-        while (ucs_status == UCS_INPROGRESS) {
+        do {
             ucs_status = ucp_request_check_status(pHndl->ucs_pRequest);
             int aci_status = 0;
             aci_status = aci_poll(pHndl->pACI);
@@ -61,7 +61,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
                 return eACN_ERR_TIMEOUT;
             }
             usleep(10);
-        }
+        } while (ucs_status == UCS_INPROGRESS);
         ucp_request_free(pHndl->ucs_pRequest);
         pHndl->ucs_pRequest = NULL;
     }
