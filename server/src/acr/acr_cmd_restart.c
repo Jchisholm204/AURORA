@@ -270,7 +270,7 @@ void *acr_cmd_restart(void *arg) {
                 goto RESTART_FAIL;
             }
             // Successfull Write
-            rgn_size -= rgn_size;
+            rgn_size = 0;
 
             log_trace("Copied %lu / %lu = %.2f %% (%d)",
                       pAMR->rgn_size - rgn_size, pAMR->rgn_size,
