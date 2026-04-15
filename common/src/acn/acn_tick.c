@@ -48,29 +48,24 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
         pHndl->ucs_pRequest = NULL;
         return eACN_ERR_UCS;
     } else if (UCS_PTR_IS_PTR(pHndl->ucs_pRequest)) {
-        size_t poll_count = 0;
-        do {
+        for (int i = 0; i < ACN_POLL_TIMEOUT_COUNT; i++) {
             ucs_status = ucp_request_check_status(pHndl->ucs_pRequest);
-            int aci_status = 0;
-            aci_status = aci_poll(pHndl->pACI);
-            if (aci_status != 0) {
-                return eACN_ERR_FATAL;
+            if (ucs_status != UCS_INPROGRESS) {
+                ucp_request_free(pHndl->ucs_pRequest);
+                pHndl->ucs_pRequest = NULL;
+                __atomic_thread_fence(__ATOMIC_ACQUIRE);
+                return eACN_OK;
             }
-            poll_count++;
-            if (poll_count > ACN_POLL_TIMEOUT_COUNT) {
-                return eACN_ERR_TIMEOUT;
-            }
-            usleep(10);
-        } while (ucs_status == UCS_INPROGRESS);
-        ucp_request_free(pHndl->ucs_pRequest);
-        pHndl->ucs_pRequest = NULL;
+            aci_poll(pHndl->pACI);
+        }
+        if (ucs_status != UCS_OK) {
+            log_error("Failed remote read: %s", ucs_status_string(ucs_status));
+            return eACN_ERR_UCS;
+        }
+        return eACN_ERR_TIMEOUT;
     }
 
-    if (ucs_status != UCS_OK) {
-        log_error("Failed remote read: %s", ucs_status_string(ucs_status));
-        return eACN_ERR_UCS;
-    }
-
+    pHndl->ucs_pRequest = NULL;
     __atomic_thread_fence(__ATOMIC_ACQUIRE);
 
     return eACN_OK;
