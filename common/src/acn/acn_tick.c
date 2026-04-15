@@ -60,6 +60,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
             if (poll_count > ACN_POLL_TIMEOUT_COUNT) {
                 return eACN_ERR_TIMEOUT;
             }
+            usleep(10);
         }
         ucp_request_free(pHndl->ucs_pRequest);
         pHndl->ucs_pRequest = NULL;
