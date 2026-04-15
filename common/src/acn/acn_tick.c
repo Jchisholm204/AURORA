@@ -21,7 +21,7 @@
 #define CHECK_NOTIF(notif)                                                     \
     (__builtin_clzll(notif) < __builtin_clzll(eACN_Nnotifications))
 
-#define ACN_POLL_TIMEOUT_COUNT 10
+#define ACN_POLL_TIMEOUT_COUNT 1000
 
 eACN_error _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
