@@ -54,13 +54,14 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
                 ucp_request_free(pHndl->ucs_pRequest);
                 pHndl->ucs_pRequest = NULL;
                 __atomic_thread_fence(__ATOMIC_ACQUIRE);
-                break;
+                if (ucs_status != UCS_OK) {
+                    log_error("Failed remote read: %s",
+                              ucs_status_string(ucs_status));
+                    return eACN_ERR_UCS;
+                }
+                return eACN_OK;
             }
             aci_poll(pHndl->pACI);
-        }
-        if (ucs_status != UCS_OK && ucs_status != UCS_INPROGRESS) {
-            log_error("Failed remote read: %s", ucs_status_string(ucs_status));
-            return eACN_ERR_UCS;
         }
         return eACN_ERR_TIMEOUT;
     }
