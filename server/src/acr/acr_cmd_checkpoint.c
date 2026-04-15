@@ -18,6 +18,7 @@
 #include "log.h"
 
 #include <memory.h>
+#include <unistd.h>
 
 // Leave modules seperate while ensuring nothing faults
 #if ARM_NAME_LEN != AFV_RGN_NAME_LEN
@@ -36,6 +37,7 @@ void *acr_cmd_checkpoint(void *arg) {
         eACN_error acn_status = eACN_OK;
         do {
             acn_status = acn_await(pInstance->pACN, eACN_memory);
+            usleep(1000);
         } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             log_error("ACN Error");
@@ -59,6 +61,7 @@ void *acr_cmd_checkpoint(void *arg) {
         do {
             acn_status = acn_get(pInstance->pACN, eACN_version,
                                  (uint64_t *) &pMetadata->version);
+            usleep(1000);
         } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             afv_destroy_metadata(&pMetadata);
@@ -67,6 +70,7 @@ void *acr_cmd_checkpoint(void *arg) {
         }
         do {
             acn_status = acn_get_name(pInstance->pACN, pMetadata->chkpt_name);
+            usleep(1000);
         } while (acn_status == eACN_ERR_TIMEOUT);
         if (acn_status != eACN_OK) {
             afv_destroy_metadata(&pMetadata);
@@ -123,6 +127,7 @@ void *acr_cmd_checkpoint(void *arg) {
                 eAFV_file_error write_status = eAFV_FILE_OK;
                 size_t retry_count = 0;
                 do {
+                    usleep(1000);
                     retry_count++;
                     if (write_status != eAFV_FILE_OK) {
                         log_error("FS Error: 0x%x", write_status);
@@ -154,6 +159,7 @@ void *acr_cmd_checkpoint(void *arg) {
                     goto CHECKPOINT_FAIL;
                 }
                 // Successfull Write
+                usleep(1000);
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
@@ -161,6 +167,7 @@ void *acr_cmd_checkpoint(void *arg) {
             eAFV_file_error write_status = eAFV_FILE_OK;
             size_t retry_count = 0;
             do {
+                usleep(1000);
                 retry_count++;
                 if (write_status != eAFV_FILE_OK) {
                     log_error("FS Error: 0x%x", write_status);

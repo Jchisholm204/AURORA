@@ -21,7 +21,7 @@
 
 // Command Scratchpad working memory size (500KB)
 #ifndef ACR_CMD_CTX_SCRATCH_SIZE
-#define ACR_CMD_CTX_SCRATCH_SIZE (500ULL * 1024ULL)
+#define ACR_CMD_CTX_SCRATCH_SIZE (5ULL * 1024ULL * 1024ULL)
 #endif
 
 struct aurora_command_ctx {

@@ -93,12 +93,18 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     // Early end for NOPs
     if (cmd_function == acr_cmd_nop) {
-        struct aurora_command_ctx nop_ctx = {0};
-        nop_ctx.pInstance = pInstance;
-        nop_ctx.flags = -1;
-        nop_ctx.pAIM = pHndl->pAIM;
-        // log_debug("NOP flags=%d instance=0x%lx", flags, pInstance);
-        (void) acr_cmd_nop(&nop_ctx);
+        // Deal with AIM
+        if (aim_enqueue(pHndl->pAIM, pInstance) != 0) {
+            log_fatal("Could Not Enqueue! A thread lost a connection");
+            return eACR_ERR_THREAD;
+        }
+
+        // struct aurora_command_ctx nop_ctx = {0};
+        // nop_ctx.pInstance = pInstance;
+        // nop_ctx.flags = -1;
+        // nop_ctx.pAIM = pHndl->pAIM;
+        // // log_debug("NOP flags=%d instance=0x%lx", flags, pInstance);
+        // (void) acr_cmd_nop(&nop_ctx);
         return eACR_OK;
     }
 

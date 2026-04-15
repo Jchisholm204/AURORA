@@ -76,7 +76,7 @@ struct aurora_completion_notifier_hndl
     // Local Notification
     ucp_mem_h local_mem_hndl;
     union aurora_completion_notifier_memory *volatile pLocal;
-    union aurora_completion_notifier_memory temp_memory;
+    volatile union aurora_completion_notifier_memory temp_memory;
     // Request Pointer (Single thread access only, Not locked)
     ucs_status_ptr_t ucs_pRequest;
 }
