@@ -237,8 +237,9 @@ void *acr_cmd_restart(void *arg) {
             eAFV_file_error write_status = eAFV_FILE_OK;
             write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
             if (write_status != eAFV_FILE_OK) {
-                log_error("FS Error: 0x%x", write_status);
-                continue;
+                (void) afv_file_close(&pCkpt_file);
+                afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+                goto RESTART_FAIL;
             }
             eARM_error arm_status = eARM_OK;
             size_t retry_count = 0;
