@@ -21,7 +21,7 @@
 #define CHECK_NOTIF(notif)                                                     \
     (__builtin_clzll(notif) < __builtin_clzll(eACN_Nnotifications))
 
-#define ACN_POLL_TIMEOUT_COUNT 5
+#define ACN_POLL_TIMEOUT_COUNT 10
 
 eACN_error _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
@@ -60,7 +60,6 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
         }
         if (ucs_status != UCS_OK) {
             log_error("Failed remote read: %s", ucs_status_string(ucs_status));
-            return eACN_ERR_UCS;
         }
         return eACN_ERR_TIMEOUT;
     }
