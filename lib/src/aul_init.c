@@ -16,10 +16,10 @@
 #include "aul_internal.h"
 #include "log.h"
 
+#include <arpa/inet.h>
 #include <ctype.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 static char *find_host_bf(void) {
     static char hostname[256];
@@ -43,7 +43,7 @@ static char *find_host_bf(void) {
         int version = versions[i];
         (void) snprintf(target_name, sizeof(target_name), "romebf%da%s",
                         version, digits);
-        log_trace("Looking for BF%d @ %s", version, target_name);
+        log_debug("Looking for BF%d @ %s", version, target_name);
         he = gethostbyname(target_name);
         if (he) {
             struct in_addr in_addr;
@@ -63,22 +63,25 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         return -1;
     }
 
+    log_set_level(LOG_DEBUG);
+
     // Setup the log file
     if (pCFG->opt_log_file) {
         _aul_ctx.log_file = fopen(pCFG->opt_log_file, "a");
         if (_aul_ctx.log_file) {
             log_add_fp(_aul_ctx.log_file, LOG_TRACE);
+            log_set_level(LOG_INFO);
         }
     }
 
     // Configuration Trace
-    log_trace("Initializing AUL:");
-    log_trace("\tSAVE: %s", pCFG->persistent_path);
+    log_info("Initializing AUL");
+    log_debug("\tSAVE: %s", pCFG->persistent_path);
     log_trace("\tEC: %d", pCFG->use_error_correction);
     log_trace("\tCon Mode: %d", pCFG->connection_mode);
     log_trace("\tOpt IP: %s", pCFG->opt_ip);
-    log_trace("\tLog File: %s", pCFG->opt_log_file);
-    log_trace("\tRank: %d", pCFG->rank);
+    log_debug("\tLog File: %s", pCFG->opt_log_file);
+    log_debug("\tRank: %d", pCFG->rank);
     log_trace("\tOpt GID: %d", pCFG->opt_group_id);
     log_trace("\tOpt GSize: %d", pCFG->opt_group_size);
 

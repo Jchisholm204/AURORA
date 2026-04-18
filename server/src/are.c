@@ -30,9 +30,24 @@
 #endif
 
 int are_main(int argc, char **argv) {
-
-    (void) argc;
-    (void) argv;
+    FILE *pLogFile = NULL;
+    if (argc >= 2) {
+        pLogFile = fopen(argv[1], "w");
+        if (pLogFile && argc == 2) {
+            (void) log_add_fp(pLogFile, LOG_TRACE);
+            log_set_level(LOG_DEBUG);
+        } else if (pLogFile && argc == 3) {
+            log_set_level(LOG_DEBUG);
+            int log_level = atoi(argv[2]);
+            if (log_level > 0 && log_level < LOG_FATAL) {
+                (void) log_add_fp(pLogFile, log_level);
+            } else {
+                (void) log_add_fp(pLogFile, LOG_TRACE);
+            }
+        } else {
+            log_error("Log File Failure");
+        }
+    }
 
     aim_hndl *pAIM = NULL;
     acl_hndl *pACL = NULL;
@@ -65,25 +80,21 @@ int are_main(int argc, char **argv) {
             log_error("UCS Error");
             pInstance->error_counter++;
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
-        } 
-        else if (acn_err == eACN_ERR_TIMEOUT) {
+        } else if (acn_err == eACN_ERR_TIMEOUT) {
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
-        } 
-        else if (pending & eACN_checkpoint) {
+        } else if (pending & eACN_checkpoint) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
             if (acr_status != eACR_OK) {
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
-        }
-        else if (pending & eACN_restore) {
+        } else if (pending & eACN_restore) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_restart);
             if (acr_status != eACR_OK) {
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
-        } 
-        else {
+        } else {
             eACR_error acr_status = acr_run(pACR, pInstance, 0, acr_cmd_nop);
             if (acr_status != eACR_OK) {
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);
@@ -96,6 +107,11 @@ int are_main(int argc, char **argv) {
     acr_finalize(&pACR);
     acl_finalize(&pACL);
     aim_finalize(&pAIM);
+
+    if (pLogFile) {
+        fclose(pLogFile);
+        pLogFile = NULL;
+    }
 
     return 0;
 }
