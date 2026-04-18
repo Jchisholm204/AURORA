@@ -16,142 +16,170 @@
 #include "log.h"
 #include "operating_configuration.h"
 
+#include <stdio.h>
+#include <time.h>
+
+#ifdef BENCHMARKING_ENABLED
+
+#define BENCH(name, func)                                                      \
+    do {                                                                       \
+        struct timespec start, end;                                            \
+        clock_gettime(CLOCK_MONOTONIC, &start);                                \
+        func;                                                                  \
+        clock_gettime(CLOCK_MONOTONIC, &end);                                  \
+        double t_local = (double) (end.tv_sec - start.tv_sec) +                \
+                         (double) (end.tv_nsec - start.tv_nsec) / 1e9;         \
+        printf("__BENCH__ {\"id\":\"%s\",\"time_ms\":%.9f}\n", name,           \
+               t_local * 1000.0);                                              \
+    } while (0)
+#else
+#define BENCH(name, func) func
+#endif
+
 void *acr_cmd_connection_up(void *arg) {
-    struct aurora_command_ctx *pCtx = arg;
-    if (!pCtx) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
+    BENCH("connection_up", {
+        struct aurora_command_ctx *pCtx = arg;
+        if (!pCtx) {
+            log_error("NULL Parameter");
+            return NULL;
+        }
 
-    log_trace("Attempting to accept new connection");
+        log_trace("Attempting to accept new connection");
 
-    aim_entry_t *pCli = aim_add_entry(pCtx->pAIM);
-    if (!pCli) {
-        log_error("Failed to retrieve memory for new AIM entry");
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
-    ads_exchange_data_t ads_data_tx = {0};
-    ads_exchange_data_t *ads_data_rx = NULL;
+        aim_entry_t *pCli = aim_add_entry(pCtx->pAIM);
+        if (!pCli) {
+            log_error("Failed to retrieve memory for new AIM entry");
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
+        ads_exchange_data_t ads_data_tx = {0};
+        ads_exchange_data_t *ads_data_rx = NULL;
 
-    pCli->pACI = aci_create_instance(&ads_data_tx.comm);
-    pCli->pACN = acn_create_instance(pCli->pACI, &ads_data_tx.notif);
+        pCli->pACI = aci_create_instance(&ads_data_tx.comm);
+        pCli->pACN = acn_create_instance(pCli->pACI, &ads_data_tx.notif);
 
-    if (!pCli->pACI || !pCli->pACN) {
-        log_error("Instance Failure");
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        aim_remove_entry(pCtx->pAIM, pCli);
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
+        if (!pCli->pACI || !pCli->pACN) {
+            log_error("Instance Failure");
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            aim_remove_entry(pCtx->pAIM, pCli);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
 
-    ads_data_rx = ads_exchange(pCtx->flags, &ads_data_tx);
+        BENCH("exchange",
+              { ads_data_rx = ads_exchange(pCtx->flags, &ads_data_tx); });
 
-    if (!ads_data_rx) {
-        log_error("ADS Exchange failure.");
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        aim_remove_entry(pCtx->pAIM, pCli);
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
+        if (!ads_data_rx) {
+            log_error("ADS Exchange failure.");
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            aim_remove_entry(pCtx->pAIM, pCli);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
 
-    opconf_t *pConfig = ads_data_rx->config.data;
+        opconf_t *pConfig = ads_data_rx->config.data;
 
-    if (!pConfig || ads_data_rx->config.size == sizeof(opconf_t)) {
-        log_error("No/Invalid Configuration??");
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        pConfig = NULL;
-        aim_remove_entry(pCtx->pAIM, pCli);
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
+        if (!pConfig || ads_data_rx->config.size == sizeof(opconf_t)) {
+            log_error("No/Invalid Configuration??");
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            pConfig = NULL;
+            aim_remove_entry(pCtx->pAIM, pCli);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
 
-    else {
-        pConfig->chkpt_opts.persistent_path =
-            (char *) ((uint8_t *) pConfig) + sizeof(opconf_t);
+        else {
+            pConfig->chkpt_opts.persistent_path =
+                (char *) ((uint8_t *) pConfig) + sizeof(opconf_t);
 
-        log_debug("rank=%d", pConfig->rank);
-        log_debug("group_id=%d", pConfig->group.id);
-        log_debug("group_size=%d", pConfig->group.size);
-        log_debug("path=%s", pConfig->chkpt_opts.persistent_path);
-    }
+            log_debug("rank=%d", pConfig->rank);
+            log_debug("group_id=%d", pConfig->group.id);
+            log_debug("group_size=%d", pConfig->group.size);
+            log_debug("path=%s", pConfig->chkpt_opts.persistent_path);
+        }
 
-    int aci_status = 0;
-    aci_status =
-        aci_connect_instance(pCli->pACI, &ads_data_tx.comm, &ads_data_rx->comm);
-    if (aci_status != 0) {
-        log_error("Instance Failure");
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        aim_remove_entry(pCtx->pAIM, pCli);
+        int aci_status = 0;
+        BENCH("aci_connect", {
+            aci_status = aci_connect_instance(pCli->pACI, &ads_data_tx.comm,
+                                              &ads_data_rx->comm);
+        });
+        if (aci_status != 0) {
+            log_error("Instance Failure");
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            aim_remove_entry(pCtx->pAIM, pCli);
+            aoc_free((opconf_t **) &ads_data_rx->config.data);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
+        eACN_error acn_status = eACN_OK;
+        acn_status = acn_connect_instance(pCli->pACN, &ads_data_tx.notif,
+                                          &ads_data_rx->notif);
+        if (acn_status != eACN_OK) {
+            log_error("Instance Failure");
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            aim_remove_entry(pCtx->pAIM, pCli);
+            aoc_free((opconf_t **) &ads_data_rx->config.data);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
+
+        // ARM must be created after ACI/ACN
+        pCli->pARM = arm_create_instance(pCli->pACI, pCli->pACN);
+
+        if (!pCli->pARM) {
+            log_error("Instance Failure");
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            aim_remove_entry(pCtx->pAIM, pCli);
+            aoc_free((opconf_t **) &ads_data_rx->config.data);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
+
+        BENCH("afv", {
+            pCli->pAFV =
+                afv_create_instance(pConfig->rank, pConfig->group.id,
+                                    pConfig->group.size,
+                                    pConfig->chkpt_opts.persistent_path,
+                                    pConfig->chkpt_opts.use_error_correction);
+        });
+
+        if (!pCli->pAFV) {
+            log_error("Instance Failure");
+            arm_destroy_instance(&pCli->pARM);
+            acn_destroy_instance(&pCli->pACN);
+            aci_destroy_instance(&pCli->pACI);
+            aim_remove_entry(pCtx->pAIM, pCli);
+            aoc_free((opconf_t **) &ads_data_rx->config.data);
+            (void) _acr_ctx_release_retry(pCtx, 2);
+            return NULL;
+        }
+
+        // Free the configuration chunk
         aoc_free((opconf_t **) &ads_data_rx->config.data);
+
+        if (ads_data_rx) {
+            free(ads_data_rx);
+            ads_data_rx = NULL;
+        }
+
+        log_trace("New connection accepted.");
+        // Deal with AIM
+        if (aim_enqueue(pCtx->pAIM, pCli) != 0) {
+            log_fatal("Could Not Enqueue! A thread lost a connection");
+            return NULL;
+        }
+        // Handler cleanup
+        pCtx->pInstance = NULL;
+
+        // Release the thread context
         (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
-    eACN_error acn_status = eACN_OK;
-    acn_status = acn_connect_instance(pCli->pACN, &ads_data_tx.notif,
-                                      &ads_data_rx->notif);
-    if (acn_status != eACN_OK) {
-        log_error("Instance Failure");
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
-
-    // ARM must be created after ACI/ACN
-    pCli->pARM = arm_create_instance(pCli->pACI, pCli->pACN);
-
-    if (!pCli->pARM) {
-        log_error("Instance Failure");
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
-
-    pCli->pAFV = afv_create_instance(pConfig->rank, pConfig->group.id,
-                                     pConfig->group.size,
-                                     pConfig->chkpt_opts.persistent_path,
-                                     pConfig->chkpt_opts.use_error_correction);
-
-    if (!pCli->pAFV) {
-        log_error("Instance Failure");
-        arm_destroy_instance(&pCli->pARM);
-        acn_destroy_instance(&pCli->pACN);
-        aci_destroy_instance(&pCli->pACI);
-        aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
-        (void) _acr_ctx_release_retry(pCtx, 2);
-        return NULL;
-    }
-
-    // Free the configuration chunk
-    aoc_free((opconf_t **) &ads_data_rx->config.data);
-
-    if (ads_data_rx) {
-        free(ads_data_rx);
-        ads_data_rx = NULL;
-    }
-
-    log_trace("New connection accepted.");
-    // Deal with AIM
-    if (aim_enqueue(pCtx->pAIM, pCli) != 0) {
-        log_fatal("Could Not Enqueue! A thread lost a connection");
-        return NULL;
-    }
-    // Handler cleanup
-    pCtx->pInstance = NULL;
-
-    // Release the thread context
-    (void) _acr_ctx_release_retry(pCtx, 2);
+    });
 
     return NULL;
 }
