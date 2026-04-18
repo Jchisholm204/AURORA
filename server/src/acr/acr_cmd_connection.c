@@ -191,7 +191,7 @@ void *acr_cmd_connection_down(void *arg) {
     }
     struct aurora_command_ctx *pCtx = arg;
 
-    log_trace("ACR is intentionally destroying an instance");
+    log_info("Closing Connection");
 
     // Run the command stuffs
     arm_destroy_instance(&pCtx->pInstance->pARM);
