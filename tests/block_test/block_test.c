@@ -25,7 +25,7 @@
         func;                                                                  \
         t_local = MPI_Wtime() - t_start;                                       \
         printf("__RANK_BENCH__ {\"id\":\"%s\",\"rank\":%d,\"time\":%.9f}\n",   \
-               name, rank, t_local);                                           \
+               name, rank, t_local * 1000);                                    \
     } while (0)
 
 int main(int argc, char **argv) {
@@ -92,10 +92,11 @@ int main(int argc, char **argv) {
         }
 
         // Memory regions cannot be unprotected while checkpoint is in progress
-
+        // Use this call to wait for the checkpoint to complete
         BENCH("mem_unprotect", rank, { AUL_Mem_unprotect(0); });
     });
 
+    // Need to re-register region for the restore to work
     AUL_Mem_protect(0, buffer, memory_size * 1024 / n_ranks);
 
     // 7. Restart Logic
