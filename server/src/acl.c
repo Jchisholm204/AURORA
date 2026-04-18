@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 #ifndef ACL_CONNECTION_ATTEMPTS
-#define ACL_CONNECTION_ATTEMPTS 10
+#define ACL_CONNECTION_ATTEMPTS 400
 #endif
 
 struct acl_connection_context {
@@ -64,7 +64,7 @@ acl_hndl *acl_init(aim_hndl *pAIM, acr_hndl *pACR) {
     int pthread_status = pthread_create(&pHndl->thread_manager, &thread_attr,
                                         _acl_connection_listener, pHndl);
     if (pthread_status != 0) {
-        log_error("Failed to create main worker thread");
+        log_fatal("Failed to create main worker thread");
     }
 
     return pHndl;
@@ -114,7 +114,8 @@ void *_acl_connection_listener(void *arg) {
             } while (1);
 
             if (acr_status != eACR_OK) {
-                log_error("Dropped Connection");
+                log_error("Dropped Connection: %d / %d attempts", attempts,
+                          ACL_CONNECTION_ATTEMPTS);
             }
         } else {
             // Spawned Connection Accept Handler Successfully

@@ -112,7 +112,7 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     if (refcount == pHndl->max_workers) {
         pHndl->refcount--; // Atomic
-        log_warn("Max Workers Reached.");
+        log_trace("WARN: Max Workers Reached.");
         return eACR_ERR_NO_WORKERS;
     }
 

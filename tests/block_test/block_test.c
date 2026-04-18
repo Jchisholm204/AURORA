@@ -12,8 +12,8 @@
 #include "aul.h"
 
 #include <memory.h>
-#include <openmpi-x86_64/mpi.h>
-// #include <mpi.h>
+// #include <openmpi-x86_64/mpi.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 
     if (aul_status != 0) {
         printf("AUL Init Failed");
-        MPI_Abort(MPI_COMM_WORLD, MPI_ERR_PROC_FAILED);
+        MPI_Abort(MPI_COMM_WORLD, 3);
     }
 
     if (rank == 0) {
@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     char ckpt_name[32];
+    int ckpt_version = 1;
     snprintf(ckpt_name, sizeof(ckpt_name), "BLOCKTEST");
 
     if (rank == 0)
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
     BENCH("ckpt_total", rank, {
         int checkpoint_status = 0;
         BENCH("ckpt_start", rank,
-              { checkpoint_status = AUL_Checkpoint(1, ckpt_name); });
+              { checkpoint_status = AUL_Checkpoint(ckpt_version, ckpt_name); });
 
         if (checkpoint_status != 0) {
             printf("[Rank %d] Checkpoint failed with status %d\n", rank,
@@ -104,8 +105,8 @@ int main(int argc, char **argv) {
     if (rank == 0)
         printf("Starting distributed restore...\n");
 
-    BENCH("ckpt_start", rank, {
-        if (AUL_Restart(1, ckpt_name) != 0) {
+    BENCH("restart", rank, {
+        if (AUL_Restart(ckpt_version, ckpt_name) != ckpt_version) {
             printf("[Rank %d] Restart failed\n", rank);
         }
     });
