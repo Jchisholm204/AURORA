@@ -31,7 +31,7 @@
 int main(int argc, char **argv) {
 
     if (argc < 2) {
-        printf("Usage: %s <global_chkpt_size_kb>", argv[0]);
+        printf("Usage: %s <global_chkpt_size_kb>\n", argv[0]);
         exit(3);
     }
     int memory_size = 0;
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         printf("[Rank 0] AUL Initialized %d with %d total ranks\n", aul_status,
                n_ranks);
-        printf("Each process writing %d KB", memory_size / n_ranks);
+        printf("Each process writing %d KB\n", memory_size / n_ranks);
     }
 
     char *buffer = malloc(memory_size * 1024 / n_ranks);
