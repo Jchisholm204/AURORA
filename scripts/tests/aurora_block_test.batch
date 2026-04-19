@@ -1,0 +1,56 @@
+#!/usr/bin/env zsh
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=1
+#SBATCH --partition=rome
+#SBATCH --time=00:10:00
+
+# --- Arguments ---
+# Usage: sbatch this_script.sh <num_procs> <mem_kb>
+local PROCS=${1:-4}
+local MEM_KB=${2:-524288}
+local ARCH=$(uname -m)
+
+echo "procs=$PROCS"
+echo "mem=$MEM_KB"
+echo "arch=$ARCH"
+echo "dir=$(pwd)"
+
+# 1. Global Environment Setup
+cd $HOME/scratch/aurora-project
+echo "dir=$(pwd)"
+source ./scripts/setup_env.sh $ARCH
+
+# 2. Architecture-Specific Logic
+if [[ "$ARCH" == "aarch64" ]]; then
+    # --- BLUEFIELD (ARM) ROLE ---
+    echo "[$(date)] [DPU] Starting Aurora Remote Engine..."
+    
+    # Run the server directly
+    # ./build_BF/server/aurora_remote_engine
+
+elif [[ "$ARCH" == "x86_64" ]]; then
+    # --- HOST (x86) ROLE ---
+    echo "[$(date)] [HOST] Starting Batch Controller on $(hostname)"
+
+    source ./scripts/setup_env.sh $ARCH
+    
+    # Source your runner functions only on the host
+    source ./scripts/runners.sh
+    
+    # Wait for the DPU sibling to be ready
+    echo "[$(date)] [HOST] Waiting 15s for DPU service to initialize..."
+    sleep 15
+    
+    # 3. Execute Batch
+    # run_mpi_batch defined in ./scripts/runners.sh
+    # Passing the executable path, memory, and the process count
+    run_mpi_batch ./build/tests/block_test "$MEM_KB" "$PROCS"
+    
+    echo "[$(date)] [HOST] Batch complete. Cleaning up job..."
+    
+    # Tear down the allocation to stop the DPU server
+    scancel $SLURM_JOB_ID
+else
+    echo "Unknown Architecture: $ARCH"
+    exit 1
+fi
