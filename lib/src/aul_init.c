@@ -148,7 +148,7 @@ int AUL_Init(const aul_configuration_t *pCFG) {
 
     // Use ADS to finalize ACI
     ads_conf_t ads_conf = {
-        .timeout_ms = 1000,
+        .timeout_ms = 15000,
         .opt_server_ip = pCFG->opt_ip,
     };
     switch (pCFG->connection_mode) {
