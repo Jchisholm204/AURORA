@@ -1,0 +1,26 @@
+./setup_env.sh:source:15: no such file or directory: ./setup_env.sh
+[Sat Apr 18 17:17:34 PDT 2026] [HOST] Starting Batch Controller on rome006.hpcadvisorycouncil.com
+[Sat Apr 18 17:17:34 PDT 2026] [HOST] Waiting 15s for DPU service to initialize...
+Preparing to run 5 iterations...
+--- [Run 1/5] Logging to: run_aurora_client_mem32kb_p16_run1.log ---
+run_mpi_batch:21: exec format error: mpirun
+--- [Run 1] Finished ---
+
+--- [Run 2/5] Logging to: run_aurora_client_mem32kb_p16_run2.log ---
+run_mpi_batch:21: exec format error: mpirun
+--- [Run 2] Finished ---
+
+--- [Run 3/5] Logging to: run_aurora_client_mem32kb_p16_run3.log ---
+run_mpi_batch:21: exec format error: mpirun
+--- [Run 3] Finished ---
+
+--- [Run 4/5] Logging to: run_aurora_client_mem32kb_p16_run4.log ---
+run_mpi_batch:21: exec format error: mpirun
+--- [Run 4] Finished ---
+
+--- [Run 5/5] Logging to: run_aurora_client_mem32kb_p16_run5.log ---
+run_mpi_batch:21: exec format error: mpirun
+--- [Run 5] Finished ---
+
+[Sat Apr 18 17:17:49 PDT 2026] [HOST] Batch complete. Cleaning up job...
+slurmstepd: error: *** JOB 600470 ON rome006 CANCELLED AT 2026-04-18T17:17:49 ***
