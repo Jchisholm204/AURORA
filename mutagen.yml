@@ -1,0 +1,13 @@
+sync:
+  defaults:
+    flushOnCreate: true
+    ignore:
+      vcs: true # Automatically ignores .git, .hg, etc.
+      paths:
+        - "build/"
+        - ".cache/"
+        - "checkpoints"
+        - ".git/"
+  aurora-sync:
+    alpha: "~/Documents/AURORA"
+    beta: "rome:~/scratch/aurora_project"
