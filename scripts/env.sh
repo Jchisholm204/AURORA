@@ -54,6 +54,8 @@ if [[ ! -f "$AURORA_CLUSTER_DIR/launch_config.sh" ]]; then
     return 1
 else
     source $AURORA_CLUSTER_DIR/launch_config.sh
+    # Must compress the array into a string to share across scripts
+    export ATH_NODES_STR="${(j: :)ATH_NODES}"
 fi
 
 # -- Source Scripts -- 
