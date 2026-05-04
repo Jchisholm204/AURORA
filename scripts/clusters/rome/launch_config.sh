@@ -2,12 +2,12 @@
 
 # ROME specific test configuration script
 
-# Slurm Specific Options
+# Slurm Extra Options
 export SBATCH_PARTITION=rome
 
 # Export Possible Launch Pair Configurations
 # Each should be "node-hostname,bf-hostname"
-export ATH_NODES=(
+typeset -gx ATH_NODES=(
     # Uncomment to use BF2 nodes
     # "rome001,romebf2a001"
     # "rome002,romebf2a002"
@@ -22,4 +22,4 @@ export ATH_NODES=(
 )
 
 # export ATH_BACKEND_PLATFORM="none"
-export ATH_BACKEND_PLATFORM="BF"
+export ATH_BACKEND_PLATFORM="bf"

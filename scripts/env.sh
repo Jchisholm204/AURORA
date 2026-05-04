@@ -32,11 +32,12 @@ if [[ ! -d $AURORA_CHECKPOINT_DIR ]]; then
     fi
 fi
 
-export AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/${AURORA_CLUSTER_NAME}"
+export AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/clusters/${AURORA_CLUSTER_NAME}"
 if [[ ! -d $AURORA_CLUSTER_DIR ]]; then
     echo "Error: Cluster Directory Not Found" >&2
     return 1
 fi
+
 
 # -- Directory Setup -- 
 

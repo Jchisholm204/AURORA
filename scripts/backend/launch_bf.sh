@@ -27,3 +27,7 @@ function launch_bf() {
     echo "Launched on PID: $BF_SSH_PID"
     return 0
 }
+
+for NODE in ${(s:,:)1}; do
+    echo "Launching backend on $NODE"
+done

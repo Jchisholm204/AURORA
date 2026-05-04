@@ -13,7 +13,6 @@ export ATH_JOB_TIME="0:20:0"
 # Platform Details (arrays in CSV format)
 export ATH_BACKEND_NODES=${(j:,:)ATH_NODES#*,}
 export ATH_TEST_NODES=${(j:,:)ATH_NODES%%,*}
-echo "${ATH_BACKEND_NODES}"
 
 ${AURORA_TESTS_DIR}/test.batch
 

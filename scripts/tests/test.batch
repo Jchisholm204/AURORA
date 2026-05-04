@@ -15,18 +15,8 @@ echo "TEST_NODES: ${ATH_TEST_NODES}"
 echo "TIMEOUT: ${ATH_JOB_TIME}"
 
 # Backend Launch
-if [[ $ATH_BACKEND_PLATFORM == "bf" ]]; then
-    echo "Launching BF:"
-    for NODE in $ATH_BACKEND_NODES; do
-        echo "->$NODE"
-    done
-elif [[ $ATH_BACKEND_PLATFORM == "none" ]]; then
-    echo "Not Launching Backend"
-elif [[ $ATH_BACKEND_PLATFORM == "node" ]]; then
-    echo "Launching backend on ${ATH_BACKEND_NODES[*]}"
-else
-    echo "Not Launching Backend"
-fi
+$AURORA_SCRIPT_DIR/backend/launch_${ATH_BACKEND_PLATFORM}.sh ${ATH_BACKEND_NODES}
+
 
 # time to bind
 # sleep 5
