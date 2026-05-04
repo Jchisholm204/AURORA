@@ -8,10 +8,10 @@
 
 echo "NAME: Test Launch Script"
 echo "JOB: ${ATH_JOB_NAME}"
-echo "NODE_LIST: ${ATH_JOB_NODE_LIST[*]}"
+echo "NODE_LIST: ${ATH_JOB_NODE_LIST[@]}"
 echo "BACKEND: ${ATH_BACKEND_PLATFORM}"
-echo "BACKEND_NODES: ${ATH_BACKEND_NODES[*]}"
-echo "TEST_NODES: ${ATH_TEST_NODES[*]}"
+echo "BACKEND_NODES: ${ATH_BACKEND_NODES[@]}"
+echo "TEST_NODES: ${ATH_TEST_NODES[@]}"
 echo "TIMEOUT: ${ATH_JOB_TIME}"
 
 # Backend Launch
@@ -29,28 +29,13 @@ else
 fi
 
 # time to bind
-sleep 5
+# sleep 5
 
 # Setup Host Launch
-source setup_env.sh "x86_64" $PROFILE
+# source setup_env.sh "x86_64" $PROFILE
 
-echo "[$(date)] STARTING HOST BENCHMARK (Arch: x86_64, Exe: $(basename $EXE_PATH))"
-echo "$MPI_PATH"
-$MPI_PATH/bin/mpirun -q \
-    -x OPAL_PREFIX=$MPI_PATH \
-    -x LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
-    -np 4 \
-    --map-by node \
-    --bind-to-core \
-    --report-bindings \
-    -H rome005,rome006,rome007,rome008 \
-    $EXE_PATH
 
-#,rome007,rome008 \
+
 
 echo "[$(date)] BENCHMARK RUN FINISHED"
-
-while read -p line; do
-    echo "From remote: $line"
-done
 

@@ -8,7 +8,7 @@
 
 
 AURORA_CHECKPOINT_DIR="checkpoints"
-AURORA_CLUSTER_DIR="odp0k"
+AURORA_CLUSTER_NAME="odp0k"
 
 # -- User Environment Variables -- 
 
@@ -32,18 +32,15 @@ if [[ ! -d $AURORA_CHECKPOINT_DIR ]]; then
     fi
 fi
 
+export AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/${AURORA_CLUSTER_NAME}"
 if [[ ! -d $AURORA_CLUSTER_DIR ]]; then
     echo "Error: Cluster Directory Not Found" >&2
     return 1
-else
-    export AURORA_TESTS_DIR="${AURORA_TOPLEVEL}/scripts/$AURORA_CLUSTER_DIR"
 fi
 
 # -- Directory Setup -- 
 
 # -- Source Scripts -- 
-source $AURORA_SCRIPT_DIR/launch_bf.sh
-source $AURORA_SCRIPT_DIR/runners.sh
 
 if [[ ! -f "$AURORA_CLUSTER_DIR/env.sh" ]]; then
     echo "Error: Cluster ENV script not found" >&2
@@ -51,3 +48,12 @@ if [[ ! -f "$AURORA_CLUSTER_DIR/env.sh" ]]; then
 else
     source $AURORA_CLUSTER_DIR/env.sh
 fi
+
+if [[ ! -f "$AURORA_CLUSTER_DIR/launch_config.sh" ]]; then
+    echo "Error: Cluster Launch Configuration script not found" >&2
+    return 1
+else
+    source $AURORA_CLUSTER_DIR/launch_config.sh
+fi
+
+# -- Source Scripts -- 
