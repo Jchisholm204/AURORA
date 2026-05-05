@@ -6,6 +6,7 @@
 
 # Test Test Launch Script
 
+# --nodes=${ATH_JOB_NODE_COUNT}
 echo "NAME: Test Launch Script"
 echo "JOB: ${ATH_JOB_NAME}"
 echo "NODE_LIST: ${ATH_JOB_NODE_LIST}"
@@ -13,17 +14,21 @@ echo "BACKEND: ${ATH_BACKEND_PLATFORM}"
 echo "BACKEND_NODES: ${ATH_BACKEND_NODES}"
 echo "TEST_NODES: ${ATH_TEST_NODES}"
 echo "TIMEOUT: ${ATH_JOB_TIME}"
+echo "PARTITION?: ${SBATCH_PARTITION}"
 
 # Backend Launch
-$AURORA_SCRIPT_DIR/backend/launch_${ATH_BACKEND_PLATFORM}.sh ${ATH_BACKEND_NODES}
+# $AURORA_SCRIPT_DIR/backend/launch_${ATH_BACKEND_PLATFORM}.sh ${ATH_BACKEND_NODES}
 
+source $AURORA_CLUSTER_DIR/env.sh "aarch64"
+srun --nodelist="${ATH_BACKEND_NODES}" "$AURORA_TOPLEVEL/build/server/aurora_remote_engine"
 
 # time to bind
-# sleep 5
+sleep 1
 
 # Setup Host Launch
-# source setup_env.sh "x86_64" $PROFILE
+source $AURORA_CLUSTER_DIR/env.sh "x86_64"
 
+srun --nodelist="${ATH_TEST_NODES}" "$AURORA_TOPLEVEL/build/server/aurora_remote_engine"
 
 
 

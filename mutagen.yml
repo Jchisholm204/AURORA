@@ -7,7 +7,7 @@ sync:
         - "build/"
         - ".cache/"
         - "checkpoints"
-        - ".git/"
+        # - ".git/"
   aurora-sync:
     alpha: "~/Documents/AURORA"
     beta: "rome:~/scratch/aurora_project"

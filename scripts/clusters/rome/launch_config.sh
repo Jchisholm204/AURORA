@@ -4,6 +4,7 @@
 
 # Slurm Extra Options
 export SBATCH_PARTITION=rome
+export SLURM_PARTITION=$SBATCH_PARTITION
 
 # Export Possible Launch Pair Configurations
 # Each should be "node-hostname,bf-hostname"

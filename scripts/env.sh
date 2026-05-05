@@ -8,13 +8,20 @@
 
 
 AURORA_CHECKPOINT_DIR="checkpoints"
-AURORA_CLUSTER_NAME="odp0k"
+AURORA_CLUSTER_NAME="rome"
 
 # -- User Environment Variables -- 
 
 # -- Directory Setup -- 
 
-export AURORA_TOPLEVEL=$(git rev-parse --show-toplevel)
+if [[ $(git rev-parse --is-inside-work-tree) == true ]]; then
+    export AURORA_TOPLEVEL=$(git rev-parse --show-toplevel)
+else
+    echo "WARNING: Git repository not detected.\n  Using: $(pwd)"
+    export AURORA_TOPLEVEL=$(pwd)
+fi
+
+
 export AURORA_SCRIPT_DIR="${AURORA_TOPLEVEL}/scripts"
 export AURORA_TESTS_DIR="${AURORA_TOPLEVEL}/scripts/tests"
 # Resource user variables properly
@@ -46,8 +53,6 @@ fi
 if [[ ! -f "$AURORA_CLUSTER_DIR/env.sh" ]]; then
     echo "Error: Cluster ENV script not found" >&2
     return 1
-else
-    source $AURORA_CLUSTER_DIR/env.sh
 fi
 
 if [[ ! -f "$AURORA_CLUSTER_DIR/launch_config.sh" ]]; then
