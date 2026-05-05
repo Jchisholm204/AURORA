@@ -1,0 +1,13 @@
+NAME: Test Launch Script
+JOB: 
+NODE_LIST: 
+BACKEND: 
+BACKEND_NODES: 
+TEST_NODES: 
+TIMEOUT: 
+PARTITION?: 
+/env.sh:source:21: no such file or directory: /env.sh
+srun: error: Hostlist is empty!  Can not run job.
+/env.sh:source:33: no such file or directory: /env.sh
+srun: error: Hostlist is empty!  Can not run job.
+[Mon May  4 19:24:30 PDT 2026] BENCHMARK RUN FINISHED

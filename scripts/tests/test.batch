@@ -1,8 +1,9 @@
 #!/usr/bin/env zsh
-#SBATCH --job-name=${ATH_JOB_NAME}
-#SBATCH --nodes=${ATH_JOB_NODE_COUNT}
-#SBATCH --nodelist=${ATH_JOB_NODE_LIST}
-#SBATCH --time=${ATH_JOB_TIME}
+
+#--job-name=${ATH_JOB_NAME}
+#--nodes=${ATH_JOB_NODE_COUNT}
+#--nodelist=${ATH_JOB_NODE_LIST}
+#--time=${ATH_JOB_TIME}
 
 # Test Test Launch Script
 
@@ -17,20 +18,31 @@ echo "TIMEOUT: ${ATH_JOB_TIME}"
 echo "PARTITION?: ${SBATCH_PARTITION}"
 
 # Backend Launch
-# $AURORA_SCRIPT_DIR/backend/launch_${ATH_BACKEND_PLATFORM}.sh ${ATH_BACKEND_NODES}
-
 source $AURORA_CLUSTER_DIR/env.sh "aarch64"
-srun --nodelist="${ATH_BACKEND_NODES}" "$AURORA_TOPLEVEL/build/server/aurora_remote_engine"
+
+srun --label \
+    --nodelist="${ATH_BACKEND_NODES}" \
+    --job-name="ARE_${ATH_JOB_NAME}" \
+    "$AURORA_TOPLEVEL/build_BF/server/aurora_remote_engine" &
+BACKEND_PID=$!
 
 # time to bind
 sleep 1
 
-# Setup Host Launch
+# Host Launch
 source $AURORA_CLUSTER_DIR/env.sh "x86_64"
 
-srun --nodelist="${ATH_TEST_NODES}" "$AURORA_TOPLEVEL/build/server/aurora_remote_engine"
+srun --label \
+    --nodelist="${ATH_TEST_NODES}" \
+    --job-name="test_discovery" \
+    "$AURORA_TOPLEVEL/build/tests/test_discovery"
 
+# Shutdown the server
+scancel --name="ARE_${ATH_JOB_NAME}" \
+    --signal=TERM \
+    --user=$USER
 
+sleep 2
 
 echo "[$(date)] BENCHMARK RUN FINISHED"
 
