@@ -17,7 +17,7 @@ export ATH_JOB_NODE_LIST=$( IFS=',';  echo "${ATH_NODES[*]}" )
 export ATH_JOB_TIME="00:02:00"
 
 echo "$ATH_JOB_NODE_COUNT"
-sbatch --export \
+sbatch --export=ALL \
     --output="idk.log" \
     --job-name=${ATH_JOB_NAME} \
     --nodes=${ATH_JOB_NODE_COUNT} \

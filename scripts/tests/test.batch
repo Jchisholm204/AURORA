@@ -1,13 +1,8 @@
 #!/usr/bin/env zsh
-
-#--job-name=${ATH_JOB_NAME}
-#--nodes=${ATH_JOB_NODE_COUNT}
-#--nodelist=${ATH_JOB_NODE_LIST}
-#--time=${ATH_JOB_TIME}
+# Some clusters (looking at you rome) do not support setting SLURM options here.
 
 # Test Test Launch Script
 
-# --nodes=${ATH_JOB_NODE_COUNT}
 echo "NAME: Test Launch Script"
 echo "JOB: ${ATH_JOB_NAME}"
 echo "NODE_LIST: ${ATH_JOB_NODE_LIST}"
@@ -22,18 +17,20 @@ source $AURORA_CLUSTER_DIR/env.sh "aarch64"
 
 srun --label \
     --nodelist="${ATH_BACKEND_NODES}" \
+    --nodes="${#${(s:,:)ATH_BACKEND_NODES}}" \
     --job-name="ARE_${ATH_JOB_NAME}" \
     "$AURORA_TOPLEVEL/build_BF/server/aurora_remote_engine" &
 BACKEND_PID=$!
 
 # time to bind
-sleep 1
+sleep 2
 
 # Host Launch
 source $AURORA_CLUSTER_DIR/env.sh "x86_64"
 
 srun --label \
     --nodelist="${ATH_TEST_NODES}" \
+    --nodes="${#${(s:,:)ATH_TEST_NODES}}" \
     --job-name="test_discovery" \
     "$AURORA_TOPLEVEL/build/tests/test_discovery"
 
