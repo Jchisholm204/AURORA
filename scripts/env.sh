@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 
-# -- User Environment Variables -- 
+# -- BEGIN User Environment Variables -- 
 #  Begin with '/' to set global directory, 
 #   otherwise it is assumed to be a local directory
 #   offset from the installation directory
@@ -10,26 +10,34 @@
 AURORA_CHECKPOINT_DIR="checkpoints"
 AURORA_CLUSTER_NAME="rome"
 
-# -- User Environment Variables -- 
+# -- END User Environment Variables -- 
 
-# -- Directory Setup -- 
+# -- BEGIN Directory/ENV Setup -- 
 
+# Find the toplevel of the project
 if [[ $(git rev-parse --is-inside-work-tree) == true ]]; then
     export AURORA_TOPLEVEL=$(git rev-parse --show-toplevel)
 else
-    echo "WARNING: Git repository not detected.\n  Using: $(pwd)"
+    # Compatibility layer for tarballs
+    echo "WARNING: Git repository not detected.\n  Using: $(pwd) as the top level directory."
     export AURORA_TOPLEVEL=$(pwd)
 fi
 
-
+# All AURORA paths declared here
+# Scripts ALWAYS use these paths rather than relative paths
 export AURORA_SCRIPT_DIR="${AURORA_TOPLEVEL}/scripts"
-export AURORA_TESTS_DIR="${AURORA_TOPLEVEL}/scripts/tests"
-# Resource user variables properly
+export AURORA_TESTS_DIR="${AURORA_SCRIPT_DIR}/tests"
+export AURORA_LAUNCH_DIR="${AURORA_SCRIPT_DIR}/launchers"
+export AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/clusters/${AURORA_CLUSTER_NAME}"
+
+# Fix Checkpointing directory (user ENV)
 if [[ $AURORA_CHECKPOINT_DIR[1] = "/" ]]; then
     export AURORA_CHECKPOINT_DIR=$AURORA_CHECKPOINT_DIR
 else
     export AURORA_CHECKPOINT_DIR="$AURORA_TOPLEVEL/$AURORA_CHECKPOINT_DIR"
 fi
+
+# -- Validity Checks --
 
 # Check the checkpoint directory is valid
 if [[ ! -d $AURORA_CHECKPOINT_DIR ]]; then
@@ -39,16 +47,16 @@ if [[ ! -d $AURORA_CHECKPOINT_DIR ]]; then
     fi
 fi
 
-export AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/clusters/${AURORA_CLUSTER_NAME}"
 if [[ ! -d $AURORA_CLUSTER_DIR ]]; then
     echo "Error: Cluster Directory Not Found" >&2
+    echo "Cluster Directory must contain cluster configuration scripts." >&2
     return 1
 fi
 
 
-# -- Directory Setup -- 
+# -- END Directory Setup -- 
 
-# -- Source Scripts -- 
+# -- BEGIN Source External Scripts -- 
 
 if [[ ! -f "$AURORA_CLUSTER_DIR/env.sh" ]]; then
     echo "Error: Cluster ENV script not found" >&2
@@ -64,4 +72,4 @@ else
     export ATH_NODES_STR="${(j: :)ATH_NODES}"
 fi
 
-# -- Source Scripts -- 
+# -- END Source External Scripts -- 
