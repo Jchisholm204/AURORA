@@ -9,6 +9,7 @@
 
 AURORA_CHECKPOINT_DIR="checkpoints"
 AURORA_CLUSTER_NAME="rome"
+AURORA_LOG_DIR="results/0.0.1-1"
 
 # -- END User Environment Variables -- 
 
@@ -30,20 +31,35 @@ export AURORA_TESTS_DIR="${AURORA_SCRIPT_DIR}/tests"
 export AURORA_LAUNCH_DIR="${AURORA_SCRIPT_DIR}/launchers"
 export AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/clusters/${AURORA_CLUSTER_NAME}"
 
-# Fix Checkpointing directory (user ENV)
+# Fix Checkpointing Directory (user ENV)
 if [[ $AURORA_CHECKPOINT_DIR[1] = "/" ]]; then
     export AURORA_CHECKPOINT_DIR=$AURORA_CHECKPOINT_DIR
 else
     export AURORA_CHECKPOINT_DIR="$AURORA_TOPLEVEL/$AURORA_CHECKPOINT_DIR"
 fi
 
+# Fix Logging Directory (user ENV)
+if [[ $AURORA_LOG_DIR[1] = "/" ]]; then
+    export AURORA_LOG_DIR=$AURORA_LOG_DIR
+else
+    export AURORA_LOG_DIR="$AURORA_TOPLEVEL/$AURORA_LOG_DIR"
+fi
+
 # -- Validity Checks --
 
 # Check the checkpoint directory is valid
 if [[ ! -d $AURORA_CHECKPOINT_DIR ]]; then
-    mkdir $AURORA_CHECKPOINT_DIR
+    mkdir -p "${AURORA_CHECKPOINT_DIR}"
     if [[ $? -ne 0 ]]; then
         echo "Warning: Specified Checkpoint Directory Unavaliable. Tests may fail." >&2
+    fi
+fi
+
+# Check the logging directory is valid
+if [[ ! -d $AURORA_LOG_DIR ]]; then
+    mkdir -p "${AURORA_LOG_DIR}"
+    if [[ $? -ne 0 ]]; then
+        echo "Warning: Specified Logging Directory Unavaliable. Tests may fail." >&2
     fi
 fi
 
