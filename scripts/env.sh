@@ -52,7 +52,7 @@ function _ath_finddir_abspath(){
 function ath_setup_env(){
     # All AURORA paths declared here (impure)
     # Scripts ALWAYS use these paths rather than relative paths
-    local AURORA_TOPLEVEL=$(_ath_finddir_basedir)
+    AURORA_TOPLEVEL=$(_ath_finddir_basedir)
     if [[ $? -ne 0 ]]; then
         printf "Fallback: Using %s as the top level directory.\n" $AURORA_TOPLEVEL
     fi
@@ -71,6 +71,7 @@ function ath_setup_env(){
     if [[ $? -ne 0 ]]; then
         printf "Warning: Invalid Logging Directory.\n"
     fi
+    export AURORA_TOPLEVEL
     export AURORA_SCRIPT_DIR AURORA_TESTS_DIR 
     export AURORA_LAUNCH_DIR AURORA_CLUSTER_DIR 
     export AURORA_CHECKPOINT_DIR

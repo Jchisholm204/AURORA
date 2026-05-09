@@ -2,9 +2,8 @@
 # Some clusters (looking at you rome) do not support setting SLURM options here.
 # Therefore, all options must be set during sbatch launch
 
-# Generic Front/Back-End Launch Script
+# Generic Front/Back-End SLURM Batch Launch Script
 
-echo "NAME: Test Launch Script"
 echo "JOB_NAME: ${ATH_JOB_NAME}"
 echo "JOB_NODES: ${ATH_JOB_NODES}"
 echo "JOB_TIMEOUT: ${ATH_JOB_TIME}"
