@@ -28,6 +28,7 @@ CMakeUserPresets.json
 # Logging and Testing
 *.log
 checkpoints*/
+slurm-*.out
 
 # Mutagen Sync
 mutagen.yml.lock

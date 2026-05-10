@@ -8,5 +8,5 @@ sync:
         - "checkpoints"
         - ".git/"
   aurora-sync:
-    alpha: "~/Documents/AURORA"
+    alpha: "."
     beta: "rome:~/scratch/aurora_project"
