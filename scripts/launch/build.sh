@@ -1,6 +1,7 @@
 #!/usr/bin/env zsh
 
 local BUILD_ARCH_DEFAULT="x86_64"
+# Leave this OFF, some tests only build on x86_64
 local BUILD_TESTS_DEFAULT="OFF"
 
 function build_gen_cmake() {
@@ -71,16 +72,26 @@ function build() {
     build_make $BUILD_DIR
 }
 
-function test_build_all() {
+# Example builder
+function _test_build_all() {
     build "x86_64" "ON"
     build "aarch64" "OFF"
 }
 
-function test_clean_all() {
-    rm -rf build_x86_64 build_aarch64
-}
+# -- BUILD --
 
-function test_build() {
-    test_build_all
-    test_clean_all
-}
+local BUILD_ARCH=$1
+local BUILD_TESTS=$2
+local BUILD_DIR=$3
+
+if [[ ! $BUILD_ARCH ]]; then
+    local BUILD_ARCH=$BUILD_ARCH_DEFAULT
+fi
+
+if [[ $BUILD_TESTS != "ON" ]]; then
+    local BUILD_TESTS=$BUILD_TESTS_DEFAULT
+fi
+
+build $BUILD_ARCH $BUILD_TESTS $BUILD_DIR
+
+# -- BUILD --
