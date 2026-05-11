@@ -109,9 +109,14 @@ function ath_source_cluster_config(){
     local CLUSTER_NAME=$1
     local CLUSTER_DIR="${AURORA_SCRIPT_DIR}/clusters/${CLUSTER_NAME}"
     ath_verify_cluster_config "$CLUSTER_NAME"
+    # Source Launch Configuration
     source $AURORA_CLUSTER_DIR/launch_config.sh
     # Must compress the array into a string to share across scripts
     export ATH_NODES_STR="${(j: :)ATH_NODES}"
+    # Seperate the lists for easy access in tests
+    # -> Platform Details (arrays in CSV format)
+    export ATH_BACKEND_NODES=${(j:,:)ATH_NODES#*,}
+    export ATH_TEST_NODES=${(j:,:)ATH_NODES%%,*}
 }
 
 ath_setup_env

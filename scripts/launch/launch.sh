@@ -38,6 +38,9 @@ function ath_launch_test(){
         "ATH_TEST_EXE"
         # General/Directory Exports
         "AURORA_CLUSTER_DIR"
+        # Slurm Exports
+        "SBATCH_PARTITION"
+        "SLURM_PARTITION"
     )
 
     for EXPORT in $EXPORT_LIST; do
