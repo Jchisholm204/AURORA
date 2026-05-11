@@ -1,61 +1,34 @@
 #!/usr/bin/env zsh
 
-function test_discovery(){
-    # -- BEGIN: Check Environment Variables --
 
-    if [ -n ${ATH_NODES_STR} ]; then
-        echo "Error: Source 'scripts/env.sh' before continuing." >&2
-        exit 1
+function run_test_discovery() {
+    local ITERATIONS=$1
+    if [[ ! $ITERATIONS ]]; then
+        local ITERATIONS=1
     fi
 
-    # Convert String back into array
-    export ATH_NODES=(${(z)ATH_NODES_STR})
+    local N_NODES=${#ATH_NODES}
 
-    # -- END: Check Environment Variables --
-
-    # -- BEGIN: Setup Test Variables --
-
-    export ATH_JOB_NAME="discovery"
-    export ATH_JOB_NODES=$( IFS=',';  echo "${ATH_NODES[*]}" )
-    export ATH_JOB_TIME="00:02:00"
-    export ATH_JOB_LOG="${AURORA_LOG_DIR}/${ATH_JOB_NAME}/x.log"
-    # -- END: Setup Test Variables --
+    for ((i = 0; i < $ITERATIONS; i++)); do
+        local TS_PAIR=${ATH_NODES[ $((i % N_NODES + 1)) ]}
+        ath_launch_test \
+            "discovery" \
+            "00:05:00" \
+            "$(date +%Y%m%d_%H%M)_${i}.log" \
+            "aarch64" \
+            ${TS_PAIR#*,} \
+            "${AURORA_TOP_DIR}/build_aarch64/server/aurora_remote_engine" \
+            "x86_64" \
+            ${TS_PAIR%%,*} \
+            "${AURORA_TOP_DIR}/build_x86_64/tests/test_discovery"
+    done
+    
 }
 
-# -- BEGIN: Check Environment Variables --
+# -- Run Test Discovery
 
-if [ -n ${ATH_NODES_STR} ]; then
-    echo "Error: Source 'scripts/env.sh' before continuing." >&2
-    exit 1
-fi
+# Ensure this env is setup properly
+source ${AURORA_SCRIPT_DIR}/env.sh
+run_test_discovery $1
 
-# Convert String back into array
-export ATH_NODES=(${(z)ATH_NODES_STR})
-
-# -- END: Check Environment Variables --
-
-# -- BEGIN: Setup Test Variables --
-
-export ATH_JOB_NAME="discovery"
-export ATH_JOB_NODES=$( IFS=',';  echo "${ATH_NODES[*]}" )
-export ATH_JOB_TIME="00:02:00"
-export ATH_JOB_LOG="${AURORA_LOG_DIR}/${ATH_JOB_NAME}/x.log"
-
-# Platform Details (arrays in CSV format)
-export ATH_BACKEND_NODES=${(j:,:)ATH_NODES#*,}
-export ATH_TEST_NODES=${(j:,:)ATH_NODES%%,*}
-
-# SLURM Job details
-export ATH_JOB_NAME="test_job"
-export ATH_JOB_NODE_COUNT="$((((${#${(s:,:)ATH_BACKEND_NODES}} + ${#${(s:,:)ATH_TEST_NODES}}))))"
-# Convert array into CSV format
-
-echo "$ATH_JOB_NODE_COUNT"
-sbatch --export=ALL \
-    --output="idk.log" \
-    --job-name=${ATH_JOB_NAME} \
-    --nodes=${ATH_JOB_NODE_COUNT} \
-    --nodelist=${ATH_JOB_NODE_LIST} \
-    --time=${ATH_JOB_TIME} \
-    ${AURORA_TESTS_DIR}/test.batch
-
+# -- Run Test Discovery
