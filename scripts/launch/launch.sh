@@ -19,7 +19,6 @@ function ath_launch_test(){
     local NODE_LIST=( ${(s:,:)ATH_JOB_NODE_LIST} )
     export ATH_JOB_NODE_COUNT=${#NODE_LIST}
 
-
     local OUT_DIR="${AURORA_LOG_DIR}/${ATH_JOB_NAME}"
     mkdir -p "$OUT_DIR"
     if [[ $? -ne 0 ]]; then
@@ -41,11 +40,13 @@ function ath_launch_test(){
         "AURORA_CLUSTER_DIR"
     )
 
+    for EXPORT in $EXPORT_LIST; do
+        export ${EXPORT}
+    done
 
     if [[ $DEBUG ]]; then
         for EXPORT in $EXPORT_LIST; do
             echo "Exporting ${EXPORT}=${(P)EXPORT}"
-            export ${EXPORT}
         done
         echo $ATH_JOB_NAME
         echo $ATH_JOB_TIME
@@ -73,5 +74,4 @@ function ath_launch_test(){
         --nodelist=${ATH_JOB_NODE_LIST} \
         --time=${ATH_JOB_TIME} \
         ${AURORA_LAUNCH_DIR}/launch.batch
-
 }

@@ -74,9 +74,12 @@ function ath_setup_env(){
         printf "Warning: Invalid Logging Directory.\n" >& 2
     fi
     export AURORA_TOP_DIR
-    export AURORA_SCRIPT_DIR AURORA_TESTS_DIR 
-    export AURORA_LAUNCH_DIR AURORA_CLUSTER_DIR 
+    export AURORA_SCRIPT_DIR
+    export AURORA_TESTS_DIR 
+    export AURORA_LAUNCH_DIR 
+    export AURORA_CLUSTER_DIR 
     export AURORA_CHECKPOINT_DIR
+    export AURORA_LOG_DIR
     source ${AURORA_LAUNCH_DIR}/launch.sh
 }
 
