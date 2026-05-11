@@ -16,13 +16,15 @@ local AURORA_LOG_DIR="results/0.0.1-1"
 function _ath_finddir_basedir(){
     # Helper function to find the base repository directory (pure)
     # Returns by echo, return value indicates git (0) or fallback (1)
-    if [[ $(git rev-parse --is-inside-work-tree) == true ]]; then
+    if [[ $(git rev-parse --is-inside-work-tree 2>& /dev/null) == true ]]; then
+        # Return through stdo (fd=1)
         printf "%s" $(git rev-parse --show-toplevel)
         return 0
     else
         # Compatibility layer for tarballs
-        printf "WARNING: Git repository not detected." >& 2
-        printf "Using: %s as the top level directory." $(pwd) >& 2
+        printf "WARNING: Git repository not detected.\n" >& 2
+        printf "Using: %s as the top level directory.\n" $(pwd) >& 2
+        # Return through stdo (fd=1)
         printf "%s" $(pwd)
         return 1
     fi
@@ -36,7 +38,7 @@ function _ath_finddir_abspath(){
     if [[ $DIR[1] == "/" ]]; then
         local DIR=$DIR
     else
-        local DIR="$(_ath_finddir_basedir)/${DIR}"
+        local DIR="$(_ath_finddir_basedir 2>& /dev/null)/${DIR}"
     fi
 
     echo "$DIR"
@@ -54,7 +56,7 @@ function ath_setup_env(){
     # Scripts ALWAYS use these paths rather than relative paths
     AURORA_TOP_DIR=$(_ath_finddir_basedir)
     if [[ $? -ne 0 ]]; then
-        printf "Fallback: Using %s as the top level directory.\n" $AURORA_TOP_DIR
+        printf "Fallback: Using %s as the top level directory.\n" $AURORA_TOP_DIR >& 2
     fi
 
     AURORA_SCRIPT_DIR="${AURORA_TOP_DIR}/scripts"
@@ -64,12 +66,12 @@ function ath_setup_env(){
     AURORA_CHECKPOINT_DIR=$(_ath_finddir_abspath "$AURORA_CHECKPOINT_DIR")
     mkdir -p $AURORA_CHECKPOINT_DIR
     if [[ $? -ne 0 ]]; then
-        printf "Warning: Invalid Checkpoint Directory.\n"
+        printf "Warning: Invalid Checkpoint Directory.\n" >& 2
     fi
     AURORA_LOG_DIR=$(_ath_finddir_abspath "$AURORA_LOG_DIR")
     mkdir -p $AURORA_LOG_DIR
     if [[ $? -ne 0 ]]; then
-        printf "Warning: Invalid Logging Directory.\n"
+        printf "Warning: Invalid Logging Directory.\n" >& 2
     fi
     export AURORA_TOP_DIR
     export AURORA_SCRIPT_DIR AURORA_TESTS_DIR 
