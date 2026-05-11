@@ -15,8 +15,10 @@ function ath_launch_test(){
     local ATH_TEST_NODES=$8
     local ATH_TEST_EXE=$9
 
-    export ATH_JOB_NODE_LIST="${ATH_BACKEND_NODES, $ATH_TEST_NODES}"
-    export ATH_JOB_NODE_COUNT="$((((${#${(s:,:)ATH_BACKEND_NODES}} + ${#${(s:,:)ATH_TEST_NODES}}))))"
+    export ATH_JOB_NODE_LIST="${ATH_BACKEND_NODES},${ATH_TEST_NODES}"
+    local NODE_LIST=( ${(s:,:)ATH_JOB_NODE_LIST} )
+    export ATH_JOB_NODE_COUNT=${#NODE_LIST}
+
 
     local OUT_DIR="${AURORA_LOG_DIR}/${ATH_JOB_NAME}"
     mkdir -p "$OUT_DIR"
@@ -24,12 +26,52 @@ function ath_launch_test(){
         printf "WARNING: Could not create output directory" >& 2
     fi
 
-    sbatch --export=ALL \
+    local EXPORT_LIST=(
+        # Testing Harness Exports
+        "ATH_JOB_NAME"
+        "ATH_JOB_TIME"
+        "ATH_JOB_LOG"
+        "ATH_BACKEND_ARCH"
+        "ATH_BACKEND_NODES"
+        "ATH_BACKEND_EXE"
+        "ATH_TEST_ARCH"
+        "ATH_TEST_NODES"
+        "ATH_TEST_EXE"
+        # General/Directory Exports
+        "AURORA_CLUSTER_DIR"
+    )
+
+
+    if [[ $DEBUG ]]; then
+        for EXPORT in $EXPORT_LIST; do
+            echo "Exporting ${EXPORT}=${(P)EXPORT}"
+            export ${EXPORT}
+        done
+        echo $ATH_JOB_NAME
+        echo $ATH_JOB_TIME
+        echo $ATH_JOB_LOG
+        echo $ATH_BACKEND_ARCH
+        echo $ATH_BACKEND_NODES
+        echo $ATH_BACKEND_EXE
+        echo $ATH_TEST_ARCH
+        echo $ATH_TEST_NODES
+        echo $ATH_TEST_EXE
+
+        echo $ATH_JOB_NAME
+        echo $ATH_JOB_NODE_COUNT
+        echo $ATH_JOB_NODE_LIST
+        echo $NODE_LIST
+        echo $ATH_JOB_TIME
+        echo $EXPORT_LIST
+    fi
+
+
+    sbatch --export=${(j:,:)EXPORT_LIST} \
         --output="${OUT_DIR}/${ATH_JOB_LOG}" \
         --job-name=${ATH_JOB_NAME} \
         --nodes=${ATH_JOB_NODE_COUNT} \
         --nodelist=${ATH_JOB_NODE_LIST} \
         --time=${ATH_JOB_TIME} \
-        ${AURORA_TESTS_DIR}/test.batch
+        ${AURORA_LAUNCH_DIR}/launch.batch
 
 }

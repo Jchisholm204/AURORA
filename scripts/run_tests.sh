@@ -11,10 +11,9 @@ local ATH_TEST_NODES=${(j:,:)ATH_NODES%%,*}
 
 # SLURM Job details
 local ATH_JOB_NAME="test_job"
-local ATH_JOB_NODE_COUNT="$((((${#${(s:,:)ATH_BACKEND_NODES}} + ${#${(s:,:)ATH_TEST_NODES}}))))"
 # Convert array into CSV format
-local ATH_JOB_NODE_LIST=$( IFS=',';  echo "${ATH_NODES[*]}" )
-local ATH_JOB_TIME="00:02:00"
+local ATH_JOB_TIME="00:05:00"
+
 
 ath_launch_test \
     $ATH_JOB_NAME \
@@ -22,8 +21,8 @@ ath_launch_test \
     "test.log" \
     "aarch64" \
     $ATH_BACKEND_NODES \
-    "${AURORA_TOP_DIR}/build_BF/server/aurora_remote_engine" \
+    "${AURORA_TOP_DIR}/build_aarch64/server/aurora_remote_engine" \
     "x86_64" \
     $ATH_TEST_NODES \
-    "${AURORA_TOP_DIR}/build/test_discovery"
+    "${AURORA_TOP_DIR}/build_x86_64/test_discovery"
 

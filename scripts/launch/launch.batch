@@ -5,7 +5,6 @@
 # Generic Front/Back-End SLURM Batch Launch Script
 
 echo "JOB_NAME: ${ATH_JOB_NAME}"
-echo "JOB_NODES: ${ATH_JOB_NODES}"
 echo "JOB_TIMEOUT: ${ATH_JOB_TIME}"
 echo "JOB_LOG: ${ATH_JOB_LOG}"
 echo "PARTITION?: ${SBATCH_PARTITION}"
@@ -16,12 +15,21 @@ echo "TEST_ARCH: ${ATH_TEST_ARCH}"
 echo "TEST_NODES: ${ATH_TEST_NODES}"
 echo "TEST_EXE: ${ATH_TEST_EXE}"
 
+# Grab this here to ensure cluster exports/cc 
+#  does not break it.
+local USER=$USER
+
+# Reformat arrays from CSV lists
+local ATH_BACKEND_NODES=( ${(s:,:)ATH_BACKEND_NODES} )
+local ATH_TEST_NODES=( ${(s:,:)ATH_TEST_NODES} )
+
 # Backend Launch
 source $AURORA_CLUSTER_DIR/env.sh "$ATH_BACKEND_ARCH"
 
 srun --label \
-    --nodelist="${ATH_BACKEND_NODES}" \
-    --nodes="${#${(s:,:)ATH_BACKEND_NODES}}" \
+    --export=ALL \
+    --nodelist="${(j:,:)ATH_BACKEND_NODES}" \
+    --nodes="${#ATH_BACKEND_NODES}" \
     --job-name="ARE_${ATH_JOB_NAME}" \
     "${ATH_BACKEND_EXE}" &
 BACKEND_PID=$!
@@ -33,8 +41,9 @@ sleep 2
 source $AURORA_CLUSTER_DIR/env.sh "$ATH_TEST_ARCH"
 
 srun --label \
-    --nodelist="${ATH_TEST_NODES}" \
-    --nodes="${#${(s:,:)ATH_TEST_NODES}}" \
+    --export=ALL \
+    --nodelist="${(j:,:)ATH_TEST_NODES}" \
+    --nodes="${#ATH_TEST_NODES}" \
     --job-name="TEST_${ATH_JOB_NAME}" \
     "${ATH_TEST_EXE}"
 
