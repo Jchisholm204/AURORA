@@ -81,6 +81,7 @@ function ath_setup_env(){
     export AURORA_CHECKPOINT_DIR
     export AURORA_LOG_DIR
     source ${AURORA_LAUNCH_DIR}/launch.sh
+    source ${AURORA_LAUNCH_DIR}/mpi_launch.sh
 }
 
 function ath_verify_cluster_config(){

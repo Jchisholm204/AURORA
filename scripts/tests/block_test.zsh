@@ -22,7 +22,7 @@ function run_test_blocking() {
         for ((mem_kb = MEM_KB_MIN; mem_kb <= MEM_KB_MAX; mem_kb=mem_kb*2)); do
             for ((procs = PROCS_MIN; procs <= PROCS_MAX; procs=procs*2)); do
                 local TS_PAIR=${ATH_NODES[ $((i % N_NODES + 1)) ]}
-                ath_launch_test \
+                ath_launch_test_mpi \
                     "blocking" \
                     "00:20:00" \
                     "$(date +%Y%m%d_%H%M)_${i}_${mem_kb}kb_${procs}p.log" \
@@ -31,7 +31,8 @@ function run_test_blocking() {
                     "${AURORA_TOP_DIR}/build_aarch64/server/aurora_remote_engine" \
                     "x86_64" \
                     ${TS_PAIR%%,*} \
-                    'mpirun -q -np ${procs} -H ${TS_PAIR%%,*} ${AURORA_TOP_DIR}/build_x86_64/tests/block_test ${mem_kb}'
+                    "${AURORA_TOP_DIR}/build_x86_64/tests/block_test ${mem_kb}" \
+                    ${procs}
                 done
             done
     done
