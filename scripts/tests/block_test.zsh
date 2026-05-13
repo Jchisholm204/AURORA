@@ -3,7 +3,7 @@
 # 64 MB
 local MEM_KB_MIN=$((64*1024))
 # 256 GB
-local MEM_KB_MAX=((256*1024*1024))
+local MEM_KB_MAX=$((256*1024*1024))
 # local MEM_KB_MAX=$((64*1024))
 
 local PROCS_MIN=8
@@ -76,12 +76,15 @@ local ITERATIONS=$1
 
 # Ensure this env is setup properly
 source ${AURORA_SCRIPT_DIR}/env.sh
-build_test_blocking 'aarch64' '8'
-build_test_blocking 'aarch64' '16'
-build_test_blocking 'aarch64' '32'
-build_test_blocking 'x86_64' '8'
-build_test_blocking 'x86_64' '16'
-build_test_blocking 'x86_64' '32'
+# Dont build if nobuild is specified
+if [[ ! $NOBUILD ]]; then
+    build_test_blocking 'aarch64' '8'
+    build_test_blocking 'aarch64' '16'
+    build_test_blocking 'aarch64' '32'
+    build_test_blocking 'x86_64' '8'
+    build_test_blocking 'x86_64' '16'
+    build_test_blocking 'x86_64' '32'
+fi
 run_test_blocking $ITERATIONS '8'
 run_test_blocking $ITERATIONS '16'
 run_test_blocking $ITERATIONS '32'
