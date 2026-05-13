@@ -8,18 +8,32 @@ function build_gen_cmake() {
     local BUILD_ARCH=$1
     local BUILD_DIR=$2
     local BUILD_TESTS=$3
+    # Optional Parameters
+    local ACR_MAX_WORKERS=$4
+    local AIM_MAX_WORKERS=$5
+
     if [[ ! $BUILD_ARCH ]]; then
         printf "Build Architecture Not Specified.\n" >& 2
         return 1
     fi
+
     if [[ ! $BUILD_DIR ]]; then
         printf "Build Directory Not Specified.\n" >& 2
         return 1
     fi
+
     if [[ $BUILD_TESTS != "ON" ]]; then
         local BUILD_TESTS=$BUILD_TESTS_DEFAULT
     fi
+
     printf "Build Tests %s.\n" $BUILD_TESTS
+
+    if [[ $ACR_MAX_WORKERS == <-> ]]; then
+        ACR_MAX_WORKERS="-DACR_MAX_WORKERS=${ACR_MAX_WORKERS}"
+    fi
+    if [[ $AIM_MAX_WORKERS == <-> ]]; then
+        AIM_MAX_WORKERS="-DAIM_MAX_WORKERS=${AIM_MAX_WORKERS}"
+    fi
 
     local PDIR=$(pwd)
     cd "${AURORA_TOP_DIR}"
@@ -30,6 +44,8 @@ function build_gen_cmake() {
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
 		-DBUILD_TESTING=${BUILD_TESTS} \
+        ${ACR_MAX_WORKERS} \
+        ${AIM_MAX_WORKERS} \
 		-G "Unix Makefiles" 
     cd "${PDIR}"
 }
@@ -52,6 +68,10 @@ function build() {
     local BUILD_ARCH=$1
     local BUILD_TESTS=$2
     local BUILD_DIR=$3
+    # Optional Parameters
+    local ACR_MAX_WORKERS=$4
+    local AIM_MAX_WORKERS=$5
+    
     if [[ ! $BUILD_ARCH ]]; then
         printf "Build Architecture Not Specified.\n" >& 2
         printf "Defaulting to: %s\n" $BUILD_ARCH_DEFAULT >& 2
@@ -68,8 +88,15 @@ function build() {
     # Source Cluster ENV
     source $AURORA_CLUSTER_DIR/env.sh $BUILD_ARCH
 
-    build_gen_cmake $BUILD_ARCH $BUILD_DIR $BUILD_TESTS
-    build_make $BUILD_DIR
+    build_gen_cmake \
+        $BUILD_ARCH \
+        $BUILD_DIR \
+        $BUILD_TESTS \
+        $ACR_MAX_WORKERS \
+        $AIM_MAX_WORKERS 
+
+    build_make \
+        $BUILD_DIR
 }
 
 # Example builder
@@ -83,6 +110,9 @@ function _test_build_all() {
 local BUILD_ARCH=$1
 local BUILD_TESTS=$2
 local BUILD_DIR=$3
+# Optional Parameters
+local ACR_MAX_WORKERS=$4
+local AIM_MAX_WORKERS=$5
 
 if [[ ! $BUILD_ARCH ]]; then
     local BUILD_ARCH=$BUILD_ARCH_DEFAULT
@@ -92,6 +122,11 @@ if [[ $BUILD_TESTS != "ON" ]]; then
     local BUILD_TESTS=$BUILD_TESTS_DEFAULT
 fi
 
-build $BUILD_ARCH $BUILD_TESTS $BUILD_DIR
+build \
+    $BUILD_ARCH \
+    $BUILD_TESTS \
+    $BUILD_DIR \
+    $ACR_MAX_WORKERS \
+    $AIM_MAX_WORKERS
 
 # -- BUILD --
