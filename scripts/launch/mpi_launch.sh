@@ -15,10 +15,17 @@ function ath_launch_test_mpi(){
     local ATH_TEST_NODES=$8
     local ATH_TEST_EXE=$9
     local ATH_TEST_PROCS=$10
+    local ATH_CHECKPOINT_DIR=$11
 
     if [[ ! $ATH_TEST_PROCS ]]; then
         ATH_TEST_PROCS='1'
         printf "WARNING: 'nprocs' not specified. default=${ATH_TEST_PROCS}" >& 2
+    fi
+
+    mkdir -p $ATH_CHECKPOINT_DIR
+    if [[ $! != 0 ]]; then
+        printf "ERROR: Could not create checkpoint directory." >& 2
+        exit 1
     fi
 
     export ATH_JOB_NODE_LIST="${ATH_BACKEND_NODES},${ATH_TEST_NODES}"
@@ -43,6 +50,7 @@ function ath_launch_test_mpi(){
         "ATH_TEST_NODES"
         "ATH_TEST_EXE"
         "ATH_TEST_PROCS"
+        "ATH_CHECKPOINT_DIR"
         # General/Directory Exports
         "AURORA_CLUSTER_DIR"
         # Slurm Exports

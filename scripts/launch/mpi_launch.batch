@@ -61,4 +61,7 @@ scancel --name="ARE_${ATH_JOB_NAME}" \
 # Wait for scancel
 sleep 2
 
+# Cleanup Checkpoint Directory
+rm -rf $ATH_CHECKPOINT_DIR
+
 echo "[$(date)] BENCHMARK RUN FINISHED"
