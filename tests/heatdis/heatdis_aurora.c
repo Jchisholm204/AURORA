@@ -1,6 +1,5 @@
 #include "aul.h"
 #include "heatdis.h"
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

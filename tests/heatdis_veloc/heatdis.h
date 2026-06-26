@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <openmpi-x86_64/mpi.h>
-// #include <mpi.h>
+#include <mpi.h>
 
 #define PRECISION   0.00001
 #define ITER_TIMES  600
