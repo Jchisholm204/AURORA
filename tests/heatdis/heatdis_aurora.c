@@ -1,5 +1,6 @@
 #include "aul.h"
 #include "heatdis.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,9 +102,11 @@ int main(int argc, char *argv[]) {
     aul_conf.opt_group_id = 0;
     aul_conf.opt_group_size = nbProcs;
 
-    if (AUL_Init(&aul_conf) != 0) {
-        printf("Error initializing AURORA! Aborting...\n");
-        exit(2);
+    TIME_REGION("Init") {
+        if (AUL_Init(&aul_conf) != 0) {
+            printf("Error initializing AURORA! Aborting...\n");
+            exit(2);
+        }
     }
 
     M = (int) sqrt((double) (arg * 1024.0 * 1024.0 * nbProcs) /
@@ -122,9 +125,11 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
         printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
-    AUL_Mem_protect(0, &i, 1 * sizeof(int));
-    AUL_Mem_protect(1, h, M * nbLines * sizeof(double));
-    AUL_Mem_protect(2, g, M * nbLines * sizeof(double));
+    TIME_REGION("Memory Reg") {
+        AUL_Mem_protect(0, &i, 1 * sizeof(int));
+        AUL_Mem_protect(1, h, M * nbLines * sizeof(double));
+        AUL_Mem_protect(2, g, M * nbLines * sizeof(double));
+    }
 
     wtime = MPI_Wtime();
     // Use -1 for latest version found
@@ -142,20 +147,22 @@ int main(int argc, char *argv[]) {
         printf("%d Error restarting from checkpoint %d!\n", rank,
                version_global);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
+    // MPI_Barrier(MPI_COMM_WORLD);
     if (version_global > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
                version_global);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
-        int v_restored = AUL_Restart(version_global, prog_name);
-        if (v_restored != version_global) {
-            printf("%d Error restarting from checkpoint %d! Aborting...\n",
-                   rank, v_restored);
-            exit(2);
+        TIME_REGION("Restart") {
+            int v_restored = AUL_Restart(version_global, prog_name);
+            if (v_restored != version_global) {
+                printf("%d Error restarting from checkpoint %d! Aborting...\n",
+                       rank, v_restored);
+                exit(2);
+            }
         }
-        MPI_Barrier(MPI_COMM_WORLD);
+        // MPI_Barrier(MPI_COMM_WORLD);
         printf("Done Restoring. %d\n", rank);
     } else
         i = 0;
@@ -170,9 +177,11 @@ int main(int argc, char *argv[]) {
             break;
         i++;
         if (i % CKPT_FREQ == 0)
-            if (AUL_Checkpoint(i, prog_name) != 0) {
-                printf("Error checkpointing! Aborting...\n");
-                exit(2);
+            TIME_REGION("Checkpoint") {
+                if (AUL_Checkpoint(i, prog_name) != 0) {
+                    printf("Error checkpointing! Aborting...\n");
+                    exit(2);
+                }
             }
     }
     if (rank == 0)
