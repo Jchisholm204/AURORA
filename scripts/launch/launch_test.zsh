@@ -16,7 +16,7 @@ function ath_launch_test(){
     local ATH_BACKEND_EXE=$6
     local ATH_BACKEND_NODES=$7
     
-    ${AURORA_LAUNCH_DIR}/launch_test_${ATH_BACKEND_PLATFORM}.zsh \
+    ${AURORA_LAUNCH_DIR}/launch_test_${AURORA_BACKEND_PLATFORM}.zsh \
         ${ATH_JOB_NAME} \
         ${ATH_JOB_LOG_DIR} \
         ${ATH_TEST_EXE} \

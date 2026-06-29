@@ -23,7 +23,7 @@ export AURORA_CLUSTER_NODES=(
 )
 
 # Set the backend platform (bf (for arm devices), host, none)
-export ATH_BACKEND_PLATFORM="none"
+export AURORA_BACKEND_PLATFORM="none"
 # export AURORA_CLUSTER_BACKEND_PLATFORM="bf"
 
 # Set the checkpoint directory to use on this cluster
