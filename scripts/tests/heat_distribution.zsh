@@ -5,9 +5,9 @@
 # All scripts re-source the ENV
 source ${AURORA_SCRIPT_DIR}/env.sh
 
-local CHECKPOINT_DIR=${ATH_CHECKPOINT_DIR}/heatdis
-local TMP_DIR=${ATH_CHECKPOINT_DIR}/heatdis
-local BUILD_DIR=${TMP_DIR}/heatdis/build
+local CHECKPOINT_DIR=${AURORA_CLUSTER_CHECKPOINT_DIR}/heatdis
+local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/heatdis
+local BUILD_DIR=${AURORA_CLUSTER_TMP_DIR}/heatdis/build
 
 function build_test_heat_distribution(){
     ${AURORA_LAUNCH_DIR}/build.sh \
@@ -49,7 +49,7 @@ for EXPORT in ${AURORA_EXPORT_LIST}; do
     echo "    ${EXPORT}: ${(P)EXPORT}"
 done
 
-build_test_heat_distribution
+# build_test_heat_distribution
 
 # Iterate over test conditions
 local N_RUNS=$1
