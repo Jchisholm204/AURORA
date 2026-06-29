@@ -14,6 +14,7 @@ fi
 local ATH_JOB_NODES="${ATH_TEST_NODES},${ATH_BACKEND_NODES}"
 local ATH_JOB_NODE_LIST=( ${(s:,:)ATH_JOB_NODE_LIST} )
 export ATH_JOB_NODE_COUNT=${#ATH_JOB_NODE_LIST}
+export AURORA_EXPORT_LIST
 
 function submit_test(){
     local JOB_NAME=$1

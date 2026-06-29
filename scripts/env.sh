@@ -8,8 +8,8 @@
 
 
 local AURORA_CHECKPOINT_DIR="checkpoints"
-# local AURORA_CLUSTER_NAME="odp0k"
-local AURORA_CLUSTER_NAME="rome"
+local AURORA_CLUSTER_NAME="odp0k"
+# local AURORA_CLUSTER_NAME="rome"
 local AURORA_LOG_DIR="results/0.0.1-2"
 
 # -- END User Environment Variables -- 
@@ -87,13 +87,16 @@ function ath_setup_env(){
         'SBATCH_PARTITION'
         'SLURM_PARTITION'
         # Cluster Exports
-        'ATH_TEST_NODES'
-        'ATH_BACKEND_NODES'
+        'AURORA_CLUSTER_NODES'
+        'AURORA_CLUSTER_BACKEND_NODES'
+        'AURORA_CLUSTER_CHECKPOINT_DIR'
+        'AURORA_CLUSTER_TMP_DIR'
     )
 
     for EXPORT in ${AURORA_EXPORT_LIST}; do
         export ${EXPORT}
     done
+    export AURORA_EXPORT_LIST
 
     source ${AURORA_LAUNCH_DIR}/launch.sh
     source ${AURORA_LAUNCH_DIR}/mpi_launch.sh
@@ -128,11 +131,11 @@ function ath_source_cluster_config(){
         # Source Launch Configuration
         source $AURORA_CLUSTER_DIR/launch_config.sh
         # Must compress the array into a string to share across scripts
-        export ATH_NODES_STR="${(j: :)ATH_NODES}"
+        export AURORA_CLUSTER_NODES_STR="${(j: :)ATH_NODES}"
         # Seperate the lists for easy access in tests
         # -> Platform Details (arrays in CSV format)
-        export ATH_BACKEND_NODES=${(j:,:)ATH_NODES#*,}
-        export ATH_TEST_NODES=${(j:,:)ATH_NODES%%,*}
+        export AURORA_CLUSTER_BACKEND_NODES=${(j:,:)AURORA_CLUSTER_NODES#*,}
+        export AURORA_CLUSTER_TEST_NODES=${(j:,:)AURORA_CLUSTER_NODES%%,*}
     else
         printf "Error: Cluster configuration invalid.\n"
     fi

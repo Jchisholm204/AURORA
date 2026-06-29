@@ -24,3 +24,6 @@ typeset -gx ATH_NODES=(
 
 # export ATH_BACKEND_PLATFORM="none"
 export ATH_BACKEND_PLATFORM="bf"
+
+export ATH_CHECKPOINT_DIR="$HOME/exafs/checkpoints"
+export ATH_TMP_DIR='/tmp/checkpoints'
