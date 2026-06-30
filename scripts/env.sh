@@ -120,6 +120,15 @@ function ath_verify_cluster_config(){
         printf "Error: Cluster Launch Configuration script not found\n" >&2
         return 3
     fi
+
+    # if [[ "${AURORA_BACKEND_PLATFORM}" == 'bf' ]]; then
+    # elif [[ "${AURORA_BACKEND_PLATFORM}" == 'host' ]]; then
+    # elif [[ "${AURORA_BACKEND_PLATFORM}" == 'none' ]]; then
+    # else
+    #     printf "Error: AURORA_BACKEND_PLATFORM must be in ('bf', 'host', 'none') \n" >&2
+    #     return 4
+    # fi
+
     return 0
 }
 
@@ -130,7 +139,7 @@ function ath_source_cluster_config(){
         # Source Launch Configuration
         source $AURORA_CLUSTER_DIR/launch_config.sh
         # Must compress the array into a string to share across scripts
-        export AURORA_CLUSTER_NODES_STR="${(j: :)ATH_NODES}"
+        export AURORA_CLUSTER_NODES_STR="${(j: :)AURORA_CLUSTER_NODES}"
         # Seperate the lists for easy access in tests
         # -> Platform Details (arrays in CSV format)
         export AURORA_CLUSTER_BACKEND_NODES=${(j:,:)AURORA_CLUSTER_NODES#*,}
