@@ -5,9 +5,17 @@
 # All scripts re-source the ENV
 source ${AURORA_SCRIPT_DIR}/env.sh
 
-local CHECKPOINT_DIR=${AURORA_CLUSTER_CHECKPOINT_DIR}/heatdis
-local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/heatdis
-local BUILD_DIR=${AURORA_CLUSTER_TMP_DIR}/heatdis/build
+local JOB_NAME=$1
+local LOG_DIR="${AURORA_LOG_DIR}/${JOB_NAME}"
+local TEST_NODES=$2
+local BACKEND_NODES=$3
+local N_RUNS=$4
+local MEM_MB=$5
+local PROCS=$6
+
+local CHECKPOINT_DIR=${AURORA_CLUSTER_CHECKPOINT_DIR}/${JOB_NAME}
+local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}
+local BUILD_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}/build
 local TEST_BUILD_DIR="${BUILD_DIR}_test"
 local BACKEND_BUILD_DIR="${BUILD_DIR}_backend"
 
@@ -32,36 +40,31 @@ function cleanup_test_heat_distribution(){
 }
 
 function run_test_heat_distribution(){
-    local PROCS=$1
-    local ITERATION=$2
+    local ITERATION=$1
     setup_test_heat_distribution
 
+    echo "Starting Heat Distribution Test:"
+    echo "ITERATION=$ITERATION"
     ath_launch_test \
-        "heatdis_${PROCS}_${ITERATION}" \
-        "${AURORA_LOG_DIR}/heatdis" \
-        "${TEST_BUILD_DIR}/tests/heatdis_aurora 256" \
-        'rome005' \
+        "${JOB_NAME}_${PROCS}_${ITERATION}" \
+        "${LOG_DIR}" \
+        "${TEST_BUILD_DIR}/tests/heatdis_aurora ${MEM_MB}" \
+        "${TEST_NODES}" \
         ${PROCS} \
         "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
-        'romebf3a005' 
+        "${BACKEND_NODES}" 
 
     cleanup_test_heat_distribution
 }
 
-
 echo 'Starting Heat Distribution Test:'
-for EXPORT in ${AURORA_EXPORT_LIST}; do
-    echo "    ${EXPORT}: ${(P)EXPORT}"
-done
-
+mkdir -p "${LOG_DIR}"
+mkdir -p "${TMP_DIR}"
 build_test_heat_distribution
 
-mkdir -p "${AURORA_LOG_DIR}/heatdis"
-
 # Iterate over test conditions
-local N_RUNS=1
 for ((i = 0; i < $N_RUNS; i++)); do
-    run_test_heat_distribution '2' "${i}"
+    run_test_heat_distribution "${i}"
 done
 
 echo "Heat Distribution Test Concluded"
