@@ -8,8 +8,8 @@
 
 
 local AURORA_CHECKPOINT_DIR="checkpoints"
-local AURORA_CLUSTER_NAME="odp0k"
-# local AURORA_CLUSTER_NAME="rome"
+# local AURORA_CLUSTER_NAME="odp0k"
+local AURORA_CLUSTER_NAME="rome"
 local AURORA_LOG_DIR="results/0.0.1-2"
 
 # -- END User Environment Variables -- 

@@ -39,11 +39,11 @@ function run_test_heat_distribution(){
     ath_launch_test \
         "heatdis_${PROCS}_${ITERATION}" \
         "${AURORA_LOG_DIR}/heatdis" \
-        "${TEST_BUILD_DIR}/tests/heatdis_aurora" \
-        'test_nodes' \
+        "${TEST_BUILD_DIR}/tests/heatdis_aurora 256" \
+        'rome005' \
         ${PROCS} \
         "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
-        'backend_nodes' 
+        'romebf3a005' 
 
     cleanup_test_heat_distribution
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-source ./env.sh
+source ${AURORA_TOP_DIR}/env.sh
 
 if [[ $DEBUG ]]; then
     echo ${ATH_NODES}

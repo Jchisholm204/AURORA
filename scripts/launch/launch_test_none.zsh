@@ -14,7 +14,7 @@ function ath_launch_test_none(){
 
     # Grab this here to ensure cluster exports/cc 
     #  does not break it.
-    local USER=$USER
+    local USER=$(whoami)
 
     # Test Launch
     source $AURORA_CLUSTER_DIR/env.sh 'x86_64'

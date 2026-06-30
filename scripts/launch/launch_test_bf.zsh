@@ -16,7 +16,7 @@ function ath_launch_test_bf(){
 
     # Grab this here to ensure cluster exports/cc 
     #  does not break it.
-    local USER=$USER
+    local USER=$(whoami)
 
     # Backend Launch
     source $AURORA_CLUSTER_DIR/env.sh 'AArch64'

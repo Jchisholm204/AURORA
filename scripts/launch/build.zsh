@@ -126,7 +126,7 @@ if [[ "${AURORA_BACKEND_PLATFORM}" == 'bf' ]]; then
         $ACR_MAX_WORKERS \
         $AIM_MAX_WORKERS
     build \
-        'AArch64' \
+        'aarch64' \
         'OFF' \
         $BACKEND_BUILD_DIR \
         $ACR_MAX_WORKERS \
