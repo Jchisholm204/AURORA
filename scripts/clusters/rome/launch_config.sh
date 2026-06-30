@@ -30,4 +30,4 @@ export AURORA_BACKEND_PLATFORM="bf"
 export AURORA_CLUSTER_CHECKPOINT_DIR="$HOME/exafs/checkpoints"
 
 # Temporary directory to use during testing
-export AURORA_CLUSTER_TMP_DIR='/tmp/checkpoints'
+export AURORA_CLUSTER_TMP_DIR="$HOME/exafs/tmp/checkpoints"

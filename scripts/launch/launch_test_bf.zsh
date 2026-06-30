@@ -19,11 +19,11 @@ function ath_launch_test_bf(){
     local USER=$(whoami)
 
     # Backend Launch
-    source $AURORA_CLUSTER_DIR/env.sh 'AArch64'
+    source $AURORA_CLUSTER_DIR/env.sh 'aarch64'
 
     # len(split(csv)->array)->int
-    local N_BACKEND_NODES=${(s:,:)ATH_BACKEND_NODES}
-    local N_BACKEND_NODES=${#N_BACKEND_NODES}
+    local ATH_BACKEND_NODES_ARR=(${(s:,:)ATH_BACKEND_NODES})
+    local N_BACKEND_NODES=${#ATH_BACKEND_NODES_ARR}
 
     srun --label \
         --export=ALL \
