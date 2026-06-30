@@ -8,30 +8,27 @@ source ${AURORA_SCRIPT_DIR}/env.sh
 local CHECKPOINT_DIR=${AURORA_CLUSTER_CHECKPOINT_DIR}/heatdis
 local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/heatdis
 local BUILD_DIR=${AURORA_CLUSTER_TMP_DIR}/heatdis/build
+local TEST_BUILD_DIR="${BUILD_DIR}_test"
+local BACKEND_BUILD_DIR="${BUILD_DIR}_backend"
 
 function build_test_heat_distribution(){
-    ${AURORA_LAUNCH_DIR}/build.sh \
-        'x86_64' \
-        'ON' \
-        ${BUILD_DIR}_x86_64 \
+    echo "${AURORA_CLUSTER_TMP_DIR}"
+    mkdir -p "${BUILD_DIR}_test"
+    mkdir -p "${BUILD_DIR}_backend"
+    ${AURORA_LAUNCH_DIR}/build.zsh \
+        ${TEST_BUILD_DIR} \
+        ${BACKEND_BUILD_DIR} \
         '16'
-    if [[ "${AURORA_BACKEND_PLATFORM}" == 'bf' ]]; then
-    ${AURORA_LAUNCH_DIR}/build.sh \
-        'AArch64' \
-        'OFF' \
-        ${BUILD_DIR}_AArch64 \
-        '16'
-    fi
 }
 
 function setup_test_heat_distribution(){
     mkdir -p $CHECKPOINT_DIR
-    mkdir -p $TMP_DIR
+    mkdir -p $TMP_DIR/checkpoints
 }
 
 function cleanup_test_heat_distribution(){
     rm -rf $CHECKPOINT_DIR
-    rm -rf $TMP_DIR
+    rm -rf $TMP_DIR/checkpoints
 }
 
 function run_test_heat_distribution(){
@@ -42,12 +39,11 @@ function run_test_heat_distribution(){
     ath_launch_test \
         "heatdis_${PROCS}_${ITERATION}" \
         "${AURORA_LOG_DIR}/heatdis" \
-        'text_exe' \
+        "${TEST_BUILD_DIR}/tests/heatdis_aurora" \
         'test_nodes' \
         ${PROCS} \
-        'backend_exe' \
+        "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
         'backend_nodes' 
-        
 
     cleanup_test_heat_distribution
 }

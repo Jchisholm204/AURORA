@@ -23,7 +23,8 @@ function ath_launch_test(){
         ${ATH_TEST_NODES} \
         ${ATH_TEST_PROCS} \
         ${ATH_BACKEND_EXE} \
-        ${ATH_BACKEND_NODES} 
+        ${ATH_BACKEND_NODES} \
+        > "${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}.log" 2>&1
 }
 
 # RUN

@@ -46,7 +46,7 @@ function ath_launch_test_bf(){
         -H "${ATH_TEST_NODES}" \
         -x OPAL_PREFIX=${OPAL_PREFIX} \
         ${=ATH_TEST_EXE} \
-        > "${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_backend.log" 2>&1
+        > "${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_test.log" 2>&1
 
 
     # Wait for test to complete
