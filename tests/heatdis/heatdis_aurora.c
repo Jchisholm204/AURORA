@@ -79,8 +79,12 @@ int main(int argc, char *argv[]) {
     int rank, nbProcs, nbLines, i, M, arg;
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
-    if (argc < 2) {
-        printf("Usage: %s <mem_in_mb>\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: <mem_in_mb> <checkpoint_dir>\n");
+        for(int i = 1; i < argc; i++){
+            printf("\t%s", argv[i]);
+        }
+        printf("\n");
         exit(1);
     }
 
@@ -101,6 +105,7 @@ int main(int argc, char *argv[]) {
     aul_conf.rank = rank;
     aul_conf.opt_group_id = 0;
     aul_conf.opt_group_size = nbProcs;
+    aul_conf.persistent_path = strdup(argv[2]);
 
     TIME_REGION("Init") {
         if (AUL_Init(&aul_conf) != 0) {

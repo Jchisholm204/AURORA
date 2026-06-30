@@ -13,6 +13,11 @@ local N_RUNS=$4
 local MEM_MB=$5
 local PROCS=$6
 
+echo "JOB: ${JOB_NAME}"
+echo "LOG_DIR: ${LOG_DIR}"
+echo "TEST_NODES: ${TEST_NODES}"
+echo ""
+
 local CHECKPOINT_DIR=${AURORA_CLUSTER_CHECKPOINT_DIR}/${JOB_NAME}
 local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}
 local BUILD_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}/build
@@ -46,14 +51,26 @@ function run_test_heat_distribution(){
     echo "Starting Heat Distribution Test:"
     echo "ITERATION=$ITERATION"
     ath_launch_test \
-        "${JOB_NAME}_${PROCS}_${ITERATION}" \
+        "${JOB_NAME}_p${PROCS}_i${ITERATION}" \
         "${LOG_DIR}" \
-        "${TEST_BUILD_DIR}/tests/heatdis_aurora ${MEM_MB}" \
+        "${TEST_BUILD_DIR}/tests/heatdis_aurora ${MEM_MB} ${CHECKPOINT_DIR}" \
         "${TEST_NODES}" \
         ${PROCS} \
         "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
         "${BACKEND_NODES}" 
 
+    echo "Test Completed... Starting Restore.."
+
+    ath_launch_test \
+        "${JOB_NAME}_p${PROCS}_i${ITERATION}_restore" \
+        "${LOG_DIR}" \
+        "${TEST_BUILD_DIR}/tests/heatdis_aurora ${MEM_MB} ${CHECKPOINT_DIR}" \
+        "${TEST_NODES}" \
+        ${PROCS} \
+        "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
+        "${BACKEND_NODES}" 
+
+    echo "Test Completed... Cleaning Environment.."
     cleanup_test_heat_distribution
 }
 
