@@ -45,7 +45,7 @@ function submit_test(){
 
 submit_test 'heat_distribution.zsh' '00:45:00' '2' \
     'heatdis_aurora' \
-    1 \
+    3 \
     '256' \
     '16'
 

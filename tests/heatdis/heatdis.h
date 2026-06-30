@@ -33,7 +33,7 @@ double doWork(int numprocs, int rank, int M, int nbLines, double *g, double *h);
              double ms =                                                       \
                  (double) (end.tv_sec - _t.start.tv_sec) * 1000.0 +            \
                  (double) (end.tv_nsec - _t.start.tv_nsec) / 1000000.0;        \
-             printf("[TIMER_APP] %-20s : %.6f ms", name, ms);                  \
+             printf("[TIMER_APP] %-20s : %.6f ms\n", name, ms);                  \
              _t.done = 1;                                                      \
          }))
 
