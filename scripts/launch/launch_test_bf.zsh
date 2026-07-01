@@ -29,7 +29,7 @@ function ath_launch_test_bf(){
         --export=ALL \
         --nodelist="${ATH_BACKEND_NODES}" \
         --nodes="${N_BACKEND_NODES}" \
-        --job-name="ARE_${ATH_JOB_NAME}" \
+        --job-name="${ATH_JOB_NAME}_backend" \
         ${=ATH_BACKEND_EXE} \
         > "${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_backend.log" 2>&1 &
     BACKEND_PID=$!
@@ -52,13 +52,17 @@ function ath_launch_test_bf(){
     # Wait for test to complete
 
     # Shutdown the server
-    scancel \
-        --name="ARE_${ATH_JOB_NAME}" \
-        --signal=TERM \
-        --user=$USER
+    # scancel \
+    #     --name="${ATH_JOB_NAME}_backend" \
+    #     --signal=TERM \
+    #     --user=$(whoami)
+    if kill -0 $BACKEND_PID 2>/dev/null; then
+        kill -TERM $BACKEND_PID
+        wait $BACKEND_PID 2>/dev/null
+    fi
 
-        # Wait for scancel
-        sleep 2
+    # Wait for scancel
+    sleep 2
 }
 
 # RUN

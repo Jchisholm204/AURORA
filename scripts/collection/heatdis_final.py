@@ -75,8 +75,10 @@ if __name__ == "__main__":
     # ==========================================
     # CONFIGURABLE VARIABLES
     # ==========================================
-    INPUT_LOG_DIR = "./results/0.0.1-2/heatdis_aurora/"
-    OUTPUT_CSV_PATH = "aurora_benchmark_summary.csv"
+    VERSION='0.0.1-2'
+    TEST='heatdis_aurora'
+    INPUT_LOG_DIR = f"./results/{VERSION}/{TEST}/"
+    OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_final_times.csv"
     # ==========================================
 
     print(f"Scanning target test logs in: {INPUT_LOG_DIR}")
@@ -102,3 +104,4 @@ if __name__ == "__main__":
             
     except Exception as e:
         print(f"Error executing script: {e}")
+
