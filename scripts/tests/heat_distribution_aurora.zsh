@@ -12,14 +12,19 @@ local BACKEND_NODES=$3
 local N_RUNS=$4
 local MEM_MB=$5
 local PROCS=$6
+local BACKEND_PROCS=$7
 
 echo "JOB: ${JOB_NAME}"
 echo "LOG_DIR: ${LOG_DIR}"
 echo "TEST_NODES: ${TEST_NODES}"
-echo ""
+echo "BACKEND_NODES: ${BACKEND_NODES}"
+echo "N_RUNS: ${N_RUNS}"
+echo "MEM_MB: ${MEM_MB}"
+echo "PROCS: ${PROCS}"
+echo "BACKEND_PROCS: ${BACKEND_PROCS}"
 
 local CHECKPOINT_DIR=${AURORA_CLUSTER_CHECKPOINT_DIR}/${JOB_NAME}
-local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}
+local TMP_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}_${MEM_MB}_${PROCS}_${N_RUNS}
 local BUILD_DIR=${AURORA_CLUSTER_TMP_DIR}/${JOB_NAME}/build
 local TEST_BUILD_DIR="${BUILD_DIR}_test"
 local BACKEND_BUILD_DIR="${BUILD_DIR}_backend"
@@ -31,7 +36,7 @@ function build_test_heat_distribution(){
     ${AURORA_LAUNCH_DIR}/build.zsh \
         ${TEST_BUILD_DIR} \
         ${BACKEND_BUILD_DIR} \
-        '16'
+        ${BACKEND_PROCS}
 }
 
 function setup_test_heat_distribution(){

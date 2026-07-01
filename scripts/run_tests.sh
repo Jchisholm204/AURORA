@@ -49,11 +49,44 @@ function submit_test(){
             "${@[5,-1]}"
 }
 
-# submit_test 'discovery' '00:45:00' 'heat_distribution.zsh' '10'
+# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+#     'heatdis_aurora8' \
+#     10 \
+#     '256' \
+#     '16' \
+#     '8'
+# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+#     'heatdis_aurora16' \
+#     10 \
+#     '256' \
+#     '16' \
+#     '16'
 
-submit_test 'heat_distribution.zsh' '00:45:00' '2' \
-    'heatdis_aurora' \
-    5 \
+submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+    'heatdis_aurora8' \
+    10 \
     '256' \
-    '32'
+    '32' \
+    '8'
+# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+#     'heatdis_aurora16' \
+#     10 \
+#     '256' \
+#     '32' \
+#     '16'
+
+# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+#     'heatdis_aurora16' \
+#     10 \
+#     '256' \
+#     '64' \
+#     '16'
+
+# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+#     'heatdis_aurora16' \
+#     10 \
+#     '256' \
+#     '128' \
+#     '16'
+
 
