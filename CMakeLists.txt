@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(AURORA)
+project(AURORA VERSION 0.1)
 
 # Language Options
 enable_language(C)
@@ -36,6 +36,8 @@ option(BUILD_TESTING "Enable Compilation of Test Files" ON)
 # Libraries
 include(${CMAKE_SOURCE_DIR}/cmake/FindUCX.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/FindMPI.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/FindThreads.cmake)
+
 
 set(COMMON_LIBRARIES
     m

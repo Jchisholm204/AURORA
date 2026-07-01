@@ -1,0 +1,12 @@
+sync:
+  defaults:
+    flushOnCreate: true
+    ignore:
+      paths:
+        - "build/"
+        - ".cache/"
+        - "checkpoints"
+        - ".git/"
+  aurora-sync:
+    alpha: "."
+    beta: "rome:~/scratch/aurora_project"

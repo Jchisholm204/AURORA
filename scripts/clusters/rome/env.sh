@@ -1,10 +1,12 @@
 #!/usr/bin/env zsh
 
 # Arch Independent Environment Setup Script
-# 
+# Made for the ROME cluster
+# Assumes GCC module has been installed to $HOME
 
 local ARCH_OPTIONS=( "aarch64" "x86_64" "none" )
 
+# Setup local or cross compilation env
 function setup_env() {
     local ARCH=$1
 
@@ -14,23 +16,29 @@ function setup_env() {
     echo "Setting up $ARCH environment for $LOCAL_ARCH"
 
     # Restore/Load Local ENVs
-    export MODULEPATH="/global/software/rocky-9.$LOCAL_ARCH/modfiles/langs:/global/software/rocky-9.$LOCAL_ARCH/modfiles/tools:/global/software/rocky-9.$LOCAL_ARCH/modfiles/apps:/etc/modulefiles:/usr/share/modulefiles"
+    source /etc/profile.d/modules.sh
+    export MODULEPATH="/global/software/rocky-9.$LOCAL_ARCH/modfiles/langs:/global/software/rocky-9.$LOCAL_ARCH/modfiles/tools:/global/software/rocky-9.$LOCAL_ARCH/modfiles/apps"
 
     module purge
 
     module load cmake
 
-    export MODULEPATH="/global/software/rocky-9.$ARCH/modfiles/langs:/global/software/rocky-9.$ARCH/modfiles/tools:/global/software/rocky-9.$ARCH/modfiles/apps:/etc/modulefiles:/usr/share/modulefiles"
+    export MODULEPATH="/global/software/rocky-9.$ARCH/modfiles/langs:/global/software/rocky-9.$ARCH/modfiles/tools:/global/software/rocky-9.$ARCH/modfiles/apps"
 
     module load gcc/11
     module load hpcx/2.20
 
     if [[ $ARCH != $LOCAL_ARCH && $ARCH == "aarch64" ]]; then
         echo "Loading Cross Compilation Tools"
-        module use ~/.modules/modfiles
+        module use $HOME/.modules/modfiles
         module load gcc-arm/15.2
     fi
-    
+
+    if [[ "${ARCH}" == 'x86_64' ]]; then
+        echo "Loading VeloC"
+        module use $HOME/.modules/modfiles
+        module load veloc
+    fi
     return 0
 }
 

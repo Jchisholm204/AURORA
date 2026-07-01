@@ -2,7 +2,6 @@
 #define _HEATDIS_H
 
 #include <math.h>
-// #include <openmpi-x86_64/mpi.h>
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>

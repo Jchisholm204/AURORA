@@ -13,6 +13,16 @@ target_include_directories(${TARG} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_options(${TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
+# Server Parameters
+if(DEFINED ACR_MAX_WORKERS)
+    target_compile_definitions(${TARG} PRIVATE ACR_MAX_WORKERS=${ACR_MAX_WORKERS})
+endif()
+
+if(DEFINED AIM_MAX_WORKERS)
+    target_compile_definitions(${TARG} PRIVATE AIM_MAX_WORKERS=${AIM_MAX_WORKERS})
+endif()
+
+
 target_link_libraries(${TARG} PRIVATE
     ${COMMON_LIBRARIES}
     ${CMAKE_PROJECT_NAME}::ucx

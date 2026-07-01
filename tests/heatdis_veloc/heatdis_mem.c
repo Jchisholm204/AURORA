@@ -1,10 +1,9 @@
-#include "aul.h"
 #include "heatdis.h"
+#include "veloc.h"
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 /*
     This sample application is based on the heat distribution code
@@ -80,17 +79,9 @@ int main(int argc, char *argv[]) {
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
     if (argc < 3) {
-        printf("Usage: <mem_in_mb> <checkpoint_dir>\n");
-        for(int i = 1; i < argc; i++){
-            printf("\t%s", argv[i]);
-        }
-        printf("\n");
+        printf("Usage: %s <mem_in_mb> <cfg_file>\n", argv[0]);
         exit(1);
     }
-
-    const char prog_name[AUL_NAME_LEN];
-    memset((char *) prog_name, 0, sizeof(prog_name));
-    strcpy((char *) prog_name, "heatdis");
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nbProcs);
@@ -100,16 +91,9 @@ int main(int argc, char *argv[]) {
         printf("Wrong memory size! See usage\n");
         exit(3);
     }
-
-    aul_configuration_t aul_conf = AUL_CONFIG_DEFAULT;
-    aul_conf.rank = rank;
-    aul_conf.opt_group_id = 0;
-    aul_conf.opt_group_size = nbProcs;
-    aul_conf.persistent_path = strdup(argv[2]);
-
-    TIME_REGION("Init", rank) {
-        if (AUL_Init(&aul_conf) != 0) {
-            printf("Error initializing AURORA! Aborting...\n");
+    TIME_REGION("Initialization", rank) {
+        if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
+            printf("Error initializing VELOC! Aborting...\n");
             exit(2);
         }
     }
@@ -117,8 +101,8 @@ int main(int argc, char *argv[]) {
     M = (int) sqrt((double) (arg * 1024.0 * 1024.0 * nbProcs) /
                    (2 * sizeof(double))); // two matrices needed
     nbLines = (M / nbProcs) + 3;
-    h = (double *) malloc(sizeof(double) * M * nbLines);
-    g = (double *) malloc(sizeof(double) * M * nbLines);
+    h = (double *) malloc(sizeof(double *) * M * nbLines);
+    g = (double *) malloc(sizeof(double *) * M * nbLines);
     initData(nbLines, M, rank, g);
     memSize = M * nbLines * 2 * sizeof(double) / (1024 * 1024);
 
@@ -131,44 +115,25 @@ int main(int argc, char *argv[]) {
         printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
     TIME_REGION("Memory Reg", rank) {
-        AUL_Mem_protect(0, &i, 1 * sizeof(int));
-        AUL_Mem_protect(1, h, M * nbLines * sizeof(double));
-        AUL_Mem_protect(2, g, M * nbLines * sizeof(double));
+        VELOC_Mem_protect(0, &i, 1, sizeof(int));
+        VELOC_Mem_protect(1, h, M * nbLines, sizeof(double));
+        VELOC_Mem_protect(2, g, M * nbLines, sizeof(double));
     }
 
     wtime = MPI_Wtime();
-    // Use -1 for latest version found
-    int version_local = AUL_Test(-1, prog_name);
-    printf("Proc %d latest verion = %d (-1 not found)\n", rank, version_local);
-    int version_global = 0;
-    (void) MPI_Allreduce(&version_local, &version_global, 1, MPI_INT, MPI_MIN,
-                         MPI_COMM_WORLD);
-    if (version_local != version_global) {
-        version_local = AUL_Test(version_global, prog_name);
-    }
-    (void) MPI_Allreduce(&version_local, &version_global, 1, MPI_INT, MPI_MIN,
-                         MPI_COMM_WORLD);
-    if (version_local != version_global) {
-        printf("%d Error restarting from checkpoint %d!\n", rank,
-               version_global);
-    }
-    // MPI_Barrier(MPI_COMM_WORLD);
-    if (version_global > 0) {
+    int v = VELOC_Restart_test("heatdis", 0);
+    if (v > 0) {
         printf("Previous checkpoint found at iteration %d, initiating "
                "restart...\n",
-               version_global);
+               v);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
         TIME_REGION("Restart", rank) {
-            int v_restored = AUL_Restart(version_global, prog_name);
-            if (v_restored != version_global) {
-                printf("%d Error restarting from checkpoint %d! Aborting...\n",
-                       rank, v_restored);
+            if (VELOC_Restart("heatdis", v) != VELOC_SUCCESS) {
+                printf("Error restarting from checkpoint! Aborting...\n");
                 exit(2);
             }
         }
-        // MPI_Barrier(MPI_COMM_WORLD);
-        printf("Done Restoring. %d\n", rank);
     } else
         i = 0;
     while (i < ITER_TIMES) {
@@ -183,7 +148,7 @@ int main(int argc, char *argv[]) {
         i++;
         if (i % CKPT_FREQ == 0)
             TIME_REGION("Checkpoint", rank) {
-                if (AUL_Checkpoint(i, prog_name) != 0) {
+                if (VELOC_Checkpoint("heatdis", i) != VELOC_SUCCESS) {
                     printf("Error checkpointing! Aborting...\n");
                     exit(2);
                 }
@@ -192,15 +157,9 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
         printf("Execution finished in %lf seconds.\n", MPI_Wtime() - wtime);
 
-    // Waits for checkpoint to finish
-    // Deregisters the RMA regions
-    AUL_Mem_unprotect(0);
-    MPI_Barrier(MPI_COMM_WORLD);
-    AUL_Mem_unprotect(1);
-    AUL_Mem_unprotect(2);
     free(h);
     free(g);
-    AUL_Finalize();
+    VELOC_Finalize(1); // wait for checkpoints to finish
     MPI_Finalize();
     return 0;
 }

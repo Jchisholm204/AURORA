@@ -30,8 +30,8 @@
 
 int main(int argc, char **argv) {
 
-    if (argc < 2) {
-        printf("Usage: %s <global_chkpt_size_kb>\n", argv[0]);
+    if (argc < 3) {
+        printf("Usage: <global_chkpt_size_kb> <checkpoint_dir> \n");
         exit(3);
     }
     int memory_size = 0;
@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
     cfg.rank = rank;
     cfg.opt_group_id = rank;
     cfg.opt_group_size = n_ranks;
+    cfg.persistent_path = argv[2];
     int aul_status = AUL_Init(&cfg);
 
     if (aul_status != 0) {
