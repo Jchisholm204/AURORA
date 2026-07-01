@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
         printf("Wrong memory size! See usage\n");
         exit(3);
     }
-    TIME_REGION("Initialization") {
+    TIME_REGION("Initialization", rank) {
         if (VELOC_Init(MPI_COMM_WORLD, argv[2]) != VELOC_SUCCESS) {
             printf("Error initializing VELOC! Aborting...\n");
             exit(2);
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
         printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
-    TIME_REGION("Memory Reg") {
+    TIME_REGION("Memory Reg", rank) {
         VELOC_Mem_protect(0, &i, 1, sizeof(int));
         VELOC_Mem_protect(1, h, M * nbLines, sizeof(double));
         VELOC_Mem_protect(2, g, M * nbLines, sizeof(double));
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
                v);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
-        TIME_REGION("Restart") {
+        TIME_REGION("Restart", rank) {
             if (VELOC_Restart("heatdis", v) != VELOC_SUCCESS) {
                 printf("Error restarting from checkpoint! Aborting...\n");
                 exit(2);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
             break;
         i++;
         if (i % CKPT_FREQ == 0)
-            TIME_REGION("Checkpoint") {
+            TIME_REGION("Checkpoint", rank) {
                 if (VELOC_Checkpoint("heatdis", i) != VELOC_SUCCESS) {
                     printf("Error checkpointing! Aborting...\n");
                     exit(2);

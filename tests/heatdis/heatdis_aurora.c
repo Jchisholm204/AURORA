@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     aul_conf.opt_group_size = nbProcs;
     aul_conf.persistent_path = strdup(argv[2]);
 
-    TIME_REGION("Init") {
+    TIME_REGION("Init", rank) {
         if (AUL_Init(&aul_conf) != 0) {
             printf("Error initializing AURORA! Aborting...\n");
             exit(2);
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     if (rank == 0)
         printf("Maximum number of iterations : %d \n", ITER_TIMES);
 
-    TIME_REGION("Memory Reg") {
+    TIME_REGION("Memory Reg", rank) {
         AUL_Mem_protect(0, &i, 1 * sizeof(int));
         AUL_Mem_protect(1, h, M * nbLines * sizeof(double));
         AUL_Mem_protect(2, g, M * nbLines * sizeof(double));
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
                version_global);
         // v can be any version, independent of what VELOC_Restart_test is
         // returning
-        TIME_REGION("Restart") {
+        TIME_REGION("Restart", rank) {
             int v_restored = AUL_Restart(version_global, prog_name);
             if (v_restored != version_global) {
                 printf("%d Error restarting from checkpoint %d! Aborting...\n",
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
             break;
         i++;
         if (i % CKPT_FREQ == 0)
-            TIME_REGION("Checkpoint") {
+            TIME_REGION("Checkpoint", rank) {
                 if (AUL_Checkpoint(i, prog_name) != 0) {
                     printf("Error checkpointing! Aborting...\n");
                     exit(2);
