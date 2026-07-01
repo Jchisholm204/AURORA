@@ -33,7 +33,12 @@ function setup_env() {
         module use $HOME/.modules/modfiles
         module load gcc-arm/15.2
     fi
-    
+
+    if [[ "${ARCH}" == 'x86_64' ]]; then
+        echo "Loading VeloC"
+        module use $HOME/.modules/modfiles
+        module load veloc
+    fi
     return 0
 }
 

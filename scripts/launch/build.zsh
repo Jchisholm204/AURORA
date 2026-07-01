@@ -1,5 +1,8 @@
 #!/usr/bin/env zsh
 
+# launch/build.zsh
+# Automatically builds the required executables to run tests
+
 local BUILD_ARCH_DEFAULT="x86_64"
 # Leave this OFF, some tests only build on x86_64
 local BUILD_TESTS_DEFAULT="OFF"
@@ -107,26 +110,38 @@ function _test_build_all() {
 
 # -- BUILD --
 
-local BUILD_ARCH=$1
-local BUILD_TESTS=$2
-local BUILD_DIR=$3
+local TEST_BUILD_DIR=$1
+local BACKEND_BUILD_DIR=$2
 # Optional Parameters
-local ACR_MAX_WORKERS=$4
-local AIM_MAX_WORKERS=$5
+local ACR_MAX_WORKERS=$3
+local AIM_MAX_WORKERS=$4
 
-if [[ ! $BUILD_ARCH ]]; then
-    local BUILD_ARCH=$BUILD_ARCH_DEFAULT
+if [[ "${AURORA_BACKEND_PLATFORM}" == 'bf' ]]; then
+    rm -rf "$TEST_BUILD_DIR"
+    rm -rf "$BACKEND_BUILD_DIR"
+    build \
+        'x86_64' \
+        'ON' \
+        $TEST_BUILD_DIR \
+        $ACR_MAX_WORKERS \
+        $AIM_MAX_WORKERS
+    build \
+        'aarch64' \
+        'OFF' \
+        $BACKEND_BUILD_DIR \
+        $ACR_MAX_WORKERS \
+        $AIM_MAX_WORKERS
+# elif [[ "${aurora_backend_platform}" == 'host' ]]; then
+else
+    rm -rf "$TEST_BUILD_DIR"
+    rm -rf "$BACKEND_BUILD_DIR"
+    build \
+        'x86_64' \
+        'ON' \
+        $TEST_BUILD_DIR \
+        $ACR_MAX_WORKERS \
+        $AIM_MAX_WORKERS
+    ln -s "${TEST_BUILD_DIR}" "${BACKEND_BUILD_DIR}"
 fi
-
-if [[ $BUILD_TESTS != "ON" ]]; then
-    local BUILD_TESTS=$BUILD_TESTS_DEFAULT
-fi
-
-build \
-    $BUILD_ARCH \
-    $BUILD_TESTS \
-    $BUILD_DIR \
-    $ACR_MAX_WORKERS \
-    $AIM_MAX_WORKERS
 
 # -- BUILD --

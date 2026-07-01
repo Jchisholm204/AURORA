@@ -193,11 +193,11 @@ void *acr_cmd_restart(void *arg) {
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
                 eAFV_file_error write_status = eAFV_FILE_OK;
-                log_trace(
-                    "Copying (%lu) %lu / %lu = %.2f %% (%d)", cpy_rgn_size,
-                    pAMR->rgn_size - rgn_size, pAMR->rgn_size,
-                    (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
-                    pMetadata->rank);
+                // log_trace(
+                //     "Copying (%lu) %lu / %lu = %.2f %% (%d)", cpy_rgn_size,
+                //     pAMR->rgn_size - rgn_size, pAMR->rgn_size,
+                //     (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
+                //     pMetadata->rank);
                 write_status = afv_file_read(pCkpt_file, pRgn_A, cpy_rgn_size);
                 if (write_status != eAFV_FILE_OK) {
                     log_error("FS Error: 0x%x", write_status);
@@ -230,10 +230,10 @@ void *acr_cmd_restart(void *arg) {
             } // END Block Copies
 
             // BEGIN  Write Final Block
-            log_trace("Copying (%lu) %lu / %lu = %.2f %% (%d)", rgn_size,
-                      pAMR->rgn_size - rgn_size, pAMR->rgn_size,
-                      (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
-                      pMetadata->rank);
+            // log_trace("Copying (%lu) %lu / %lu = %.2f %% (%d)", rgn_size,
+            //           pAMR->rgn_size - rgn_size, pAMR->rgn_size,
+            //           (float) (1.0 - ((float) rgn_size / pAMR->rgn_size)) * 100,
+            //           pMetadata->rank);
             eAFV_file_error write_status = eAFV_FILE_OK;
             write_status = afv_file_read(pCkpt_file, pRgn_A, rgn_size);
             if (write_status != eAFV_FILE_OK) {
