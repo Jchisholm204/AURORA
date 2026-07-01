@@ -84,7 +84,7 @@ function build() {
         local BUILD_DIR="build_${BUILD_ARCH}"
     fi
     if [[ $BUILD_TESTS != "ON" ]]; then
-        local BUILD_TESTS= $BUILD_TESTS_DEFAULT
+        local BUILD_TESTS=$BUILD_TESTS_DEFAULT
     fi
     printf "Building AURORA: %s\n" $BUILD_ARCH
 
