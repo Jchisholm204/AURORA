@@ -38,12 +38,12 @@ function submit_test(){
         --output="${AURORA_LOG_DIR}/${JOB_NAME}/slurm-%j.log" \
         --job-name=${JOB_NAME} \
         --nodes='2' \
-        --nodelist='rome006,romebf3a006' \
+        --nodelist='rome005,romebf3a005' \
         --time="${JOB_TIME}" \
         ${AURORA_TESTS_DIR}/${JOB_SCRIPT} \
             $JOB_NAME \
-            'rome006' \
-            'romebf3a006' \
+            'rome005' \
+            'romebf3a005' \
             "${@[5,-1]}"
         # --nodelist='rome005,romebf3a005' \
 }
@@ -95,9 +95,14 @@ submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
     '256' \
     '32' \
 
-# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
-#     'heatdis_aurora16' \
-#     10 \
-#     '256' \
-#     '128' \
-#     '16'
+submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
+    'heatdis_veloc' \
+    10 \
+    '256' \
+    '64' \
+
+submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
+    'heatdis_veloc' \
+    10 \
+    '256' \
+    '128' \
