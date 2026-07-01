@@ -56,7 +56,7 @@ function run_test_heat_distribution(){
     echo "Starting Heat Distribution Test:"
     echo "ITERATION=$ITERATION"
     ath_launch_test \
-        "${JOB_NAME}_p${PROCS}_i${ITERATION}" \
+        "${JOB_NAME}_p${PROCS}_i${ITERATION}_m${MEM_MB}_b${BACKEND_PROCS}" \
         "${LOG_DIR}" \
         "${TEST_BUILD_DIR}/tests/heatdis_aurora ${MEM_MB} ${CHECKPOINT_DIR}" \
         "${TEST_NODES}" \
@@ -67,7 +67,7 @@ function run_test_heat_distribution(){
     echo "Test Completed... Starting Restore.."
 
     ath_launch_test \
-        "${JOB_NAME}_p${PROCS}_i${ITERATION}_restore" \
+        "${JOB_NAME}_p${PROCS}_i${ITERATION}_m${MEM_MB}_b${BACKEND_PROCS}_restore" \
         "${LOG_DIR}" \
         "${TEST_BUILD_DIR}/tests/heatdis_aurora ${MEM_MB} ${CHECKPOINT_DIR}" \
         "${TEST_NODES}" \

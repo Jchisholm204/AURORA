@@ -48,18 +48,18 @@ function submit_test(){
         # --nodelist='rome005,romebf3a005' \
 }
 
-# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
-#     'heatdis_aurora8' \
-#     10 \
-#     '256' \
-#     '16' \
-#     '8'
-# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
-#     'heatdis_aurora16' \
-#     10 \
-#     '256' \
-#     '16' \
-#     '16'
+submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+    'heatdis_aurora' \
+    10 \
+    '256' \
+    '16' \
+    '8'
+submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+    'heatdis_aurora' \
+    10 \
+    '256' \
+    '16' \
+    '16'
 
 # submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
 #     'heatdis_aurora8' \
@@ -89,20 +89,20 @@ function submit_test(){
 #     '16'
 
 
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
-    '32' \
-
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
-    '64' \
-
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
-    '128' \
+# submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '32' \
+#
+# submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '64' \
+#
+# submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '128' \
