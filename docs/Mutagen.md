@@ -27,7 +27,7 @@ mutagen project start
 
 - Stop Mutagen
 ```sh
-mutagen project start
+mutagen project stop
 ```
 
 - View Status
