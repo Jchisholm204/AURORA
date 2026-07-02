@@ -170,6 +170,7 @@ amr_hndl *_arl_add(struct aurora_region_list *pList) {
 
     // Grab the last region and inc the counter
     amr_hndl *pRgn = &pList->data[pList->size++];
+    memset(pRgn, 0, sizeof(amr_hndl));
 
     return pRgn;
 }

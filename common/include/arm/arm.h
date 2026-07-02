@@ -35,6 +35,18 @@
 
 struct aurora_memory_region_hndl;
 
+enum aurora_region_manager_error_e {
+    eARM_OK = 0,
+    eARM_ERR_ID_NOT_FOUND,
+    eARM_ERR_NAME_NOT_FOUND,
+    eARM_ERR_MATCH_NOT_FOUND,
+    eARM_ERR_NULL,
+    eARM_ERR_INPROGRESS,
+    eARM_ERR_UCS,
+    eARM_ERR_FATAL,
+    eARM_N_ERR,
+};
+
 /**
  * @brief Region Free Callback.
  *
@@ -87,20 +99,21 @@ struct aurora_region_manager_hndl
 #endif
 ;
 
-enum aurora_region_manager_error_e {
-    eARM_OK = 0,
-    eARM_ERR_ID_NOT_FOUND,
-    eARM_ERR_NAME_NOT_FOUND,
-    eARM_ERR_MATCH_NOT_FOUND,
-    eARM_ERR_NULL,
-    eARM_ERR_INPROGRESS,
-    eARM_ERR_UCS,
-    eARM_ERR_FATAL,
-    eARM_N_ERR,
+struct aurora_region_manager_operation {
+    union {
+#ifdef ARM_INTERNAL
+        struct {
+            enum aurora_region_manager_error_e status;
+            ucs_status_ptr_t ucs_pStatus;
+        };
+#endif
+        uint64_t __reserved[2];
+    };
 };
 
 typedef struct aurora_memory_region_hndl amr_hndl;
 typedef struct aurora_region_manager_hndl arm_hndl;
+typedef struct aurora_region_manager_operation arm_op;
 typedef enum aurora_region_manager_error_e eARM_error;
 
 /**
@@ -183,6 +196,26 @@ extern eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
  */
 extern eARM_error arm_read(arm_hndl *pHndl, const amr_hndl *pAMR,
                            const uint64_t remote_addr, void *data, size_t size);
+
+/**
+ * @brief RDMA Read from a region (shadow or active)
+ *
+ * @param pHndl ARM Handle the region belongs to
+ * @param pOperation status pointer for the active operation, check with
+ * @param pAMR Memory Region Handle
+ * @param remote_addr Remote address to read from
+ * @param data region to copy the read data to
+ * @param size size of the transfer
+ * read_check
+ * @return Err or OK
+ */
+extern eARM_error arm_read_async(arm_hndl *pHndl, arm_op *pOperation,
+                                 const amr_hndl *pAMR,
+                                 const uint64_t remote_addr, void *data,
+                                 size_t size);
+
+extern eARM_error arm_read_check(arm_hndl *pHndl, arm_op *pOperation,
+                                 bool wait);
 
 #ifdef ARM_INTERNAL
 // Internal functions to add and remove from internal list
