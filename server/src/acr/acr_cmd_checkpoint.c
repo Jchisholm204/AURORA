@@ -105,8 +105,8 @@ void *acr_cmd_checkpoint(void *arg) {
 
         // Setup Copy Regions
         const size_t cpy_rgn_size = (ACR_CMD_CTX_SCRATCH_SIZE >> 1);
-        uint8_t *const pRgn_A = pCtx->pScratch;
-        uint8_t *const pRgn_B = pCtx->pScratch + cpy_rgn_size;
+        uint8_t *pRgn_A = pCtx->pScratch;
+        uint8_t *pRgn_B = pCtx->pScratch + cpy_rgn_size;
 
         // Complete the checkpoint
         for (size_t i = 0; i < pMetadata->n_regions; i++) { // BEGIN Region Loop
@@ -121,45 +121,48 @@ void *acr_cmd_checkpoint(void *arg) {
             memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
 
             log_trace("rgn: %d -> rgnid: %d (%d)", i, pAMR->id, pAMR->rgn_size);
+            // Queue RDMA Read for A=region[x]
+            arm_op arm_operation = {0};
+            eARM_error arm_status =
+                arm_read_async(pInstance->pARM, &arm_operation, pAMR,
+                               pAMR->pShadow_memory, pRgn_A, cpy_rgn_size);
+            if (arm_status != eARM_OK) {
+                log_error("ARM Error: %d", arm_status);
+            }
 
             while (rgn_size > cpy_rgn_size) { // BEGIN Block Copies
                 const size_t bytes_read = pAMR->rgn_size - rgn_size;
                 eAFV_file_error write_status = eAFV_FILE_OK;
-                size_t retry_count = 0;
-                do {
-                    usleep(1000);
-                    retry_count++;
-                    if (write_status != eAFV_FILE_OK) {
-                        log_error("FS Error: 0x%x", write_status);
-                    }
-                    eARM_error arm_status =
-                        arm_read(pInstance->pARM, pAMR,
-                                 pAMR->pShadow_memory + bytes_read, pRgn_A,
-                                 cpy_rgn_size);
-                    if (arm_status != eARM_OK) {
-                        log_error("ARM Err %d", arm_status);
-                        // Hard Fail
-                        if (arm_status == eARM_ERR_FATAL) {
-                            (void) afv_file_close(&pCkpt_file);
-                            afv_destroy_metadata(&pMetadata);
-                            goto CHECKPOINT_FAIL;
-                        }
-                        // Retry
-                        continue;
-                    }
-                    write_status =
-                        afv_file_write(pCkpt_file, pRgn_A, cpy_rgn_size);
-                } while (write_status != eAFV_FILE_OK &&
-                         retry_count <= ACR_RW_MAX_RETRIES);
-                if (retry_count > ACR_RW_MAX_RETRIES) {
-                    log_fatal("Retry Count %d exceeded %d", retry_count,
-                              ACR_RW_MAX_RETRIES);
-                    (void) afv_file_close(&pCkpt_file);
-                    afv_destroy_metadata(&pMetadata);
-                    goto CHECKPOINT_FAIL;
+
+                // Wait for previous RDMA read to finish
+                arm_status =
+                    arm_async_check(pInstance->pARM, &arm_operation, true);
+                if (arm_status != eARM_OK) {
+                    log_error("ARM Error: %d", arm_status);
                 }
-                // Successfull Write
-                usleep(1000);
+
+                // Swap: A=region[x+1], B=A
+                {
+                    void *const C = pRgn_A;
+                    pRgn_A = pRgn_B;
+                    pRgn_B = C;
+                }
+
+                // Send next RDMA Request A=region[x+1]
+                arm_status = arm_read_async(
+                    pInstance->pARM, &arm_operation, pAMR,
+                    pAMR->pShadow_memory + bytes_read + cpy_rgn_size, pRgn_A,
+                    cpy_rgn_size);
+                if (arm_status != eARM_OK) {
+                    log_warn("ARM Warning: %d", arm_status);
+                }
+
+                // Write recvd RDMA request B=region[x]
+                write_status = afv_file_write(pCkpt_file, pRgn_B, cpy_rgn_size);
+                if (write_status != eAFV_FILE_OK) {
+                    log_error("AFV Error: %d", write_status);
+                }
+
                 rgn_size -= cpy_rgn_size;
             } // END Block Copies
 
