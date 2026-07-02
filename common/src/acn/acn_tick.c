@@ -184,9 +184,8 @@ eACN_error acn_get_name(acn_hndl *pHndl, char name[static ACN_NAME_LEN]) {
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
-    memcpy(name, (char *) pHndl->pStaging->name, ACN_NAME_LEN);
+    (void) memcpy(name, (char *) pHndl->pStaging->name, ACN_NAME_LEN);
     return eACN_OK;
-    return eACN_ERR_NULL;
 }
 
 eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {

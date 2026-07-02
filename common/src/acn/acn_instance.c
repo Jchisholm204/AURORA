@@ -35,21 +35,19 @@ acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info) {
     // Dup allocate pLocal/Staging so that staging is registered with the NIC
     pHndl->pLocal =
         malloc(sizeof(union aurora_completion_notifier_memory) << 1);
-    pHndl->pStaging = (union aurora_completion_notifier_memory
-                           *) (((uint8_t *) pHndl->pLocal) +
-                               sizeof(union aurora_completion_notifier_memory));
-    pHndl->pRemote = 0;
-    pHndl->remote_rkey = NULL;
-
     if (!pHndl->pLocal) {
         log_error("Failed to create ACN memory region");
         free(pHndl);
         return NULL;
-    } else {
-        // Memset pLocal and pStaging
-        memset(pHndl->pLocal, 0,
-               sizeof(union aurora_completion_notifier_memory) << 1);
     }
+    // Memset pLocal and pStaging
+    memset(pHndl->pLocal, 0,
+           sizeof(union aurora_completion_notifier_memory) << 1);
+
+    // Offset by 1 struct
+    pHndl->pStaging = pHndl->pLocal + 1;
+    pHndl->pRemote = 0; // NULL
+    pHndl->remote_rkey = NULL;
 
     ucp_mem_map_params_t mparam;
     mparam.field_mask =
