@@ -82,6 +82,7 @@ int acn_tick(acn_hndl *pHndl, eACN_notification notifs) {
 
         // Increment tick i
         pHndl->pLocal->data[i]++;
+        __atomic_thread_fence(memory_order_release);
 
         // Clear the lowest bit
         notifs &= (notifs - 1);

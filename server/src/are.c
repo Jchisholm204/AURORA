@@ -85,6 +85,7 @@ int are_main(int argc, char **argv) {
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
         } else if (acn_err == eACN_ERR_TIMEOUT) {
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
+            printf(".");
         } else if (pending & eACN_checkpoint) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
@@ -102,6 +103,7 @@ int are_main(int argc, char **argv) {
             if (acr_status != eACR_OK) {
                 acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
+            printf(":");
         }
     }
 
