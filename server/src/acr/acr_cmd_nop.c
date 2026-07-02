@@ -6,6 +6,8 @@
  * @date Created: 2026-04-02
  * @modified Last Modified: 2026-04-02
  *
+ *  Does nothing, requeues the AIM instance
+ *
  * @copyright Copyright (c) 2026
  */
 
@@ -20,11 +22,6 @@ void *acr_cmd_nop(void *arg) {
         return NULL;
     }
     struct aurora_command_ctx *pCtx = arg;
-
-    // Do the command stuff
-
-    // NOP
-    // log_trace("NOP");
 
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
