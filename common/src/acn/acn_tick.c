@@ -28,7 +28,8 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
         return eACN_ERR_NULL;
     }
     ucp_request_param_t rparam;
-    rparam.op_attr_mask = UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    // rparam.op_attr_mask = UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    rparam.op_attr_mask = 0;
     ucs_status_t ucs_status = UCS_INPROGRESS;
 
     // Operation lock the request pointer (one pending at a time)
@@ -37,9 +38,9 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
     // -> Only send new requests when one is not presently active
     if (pHndl->ucs_pRequest == NULL) {
         pHndl->ucs_pRequest =
-            aci_get(pHndl->pACI, (void *) &pHndl->temp_memory,
-                    sizeof(pHndl->temp_memory), (uint64_t) pHndl->pRemote,
-                    pHndl->remote_rkey, &rparam);
+            aci_get(pHndl->pACI, (void *) pHndl->pStaging,
+                    sizeof(union aurora_completion_notifier_memory),
+                    (uint64_t) pHndl->pRemote, pHndl->remote_rkey, &rparam);
     }
 
     if (UCS_PTR_IS_ERR(pHndl->ucs_pRequest)) {
@@ -105,7 +106,7 @@ eACN_error acn_await(acn_hndl *pHndl, eACN_notification notifs) {
         i = __builtin_ctzll(notifs);
 
         // Clear lowest bit when remote equals local
-        if (pHndl->temp_memory.data[i] == pHndl->pLocal->data[i]) {
+        if (pHndl->pStaging->data[i] == pHndl->pLocal->data[i]) {
             notifs &= ~BIT(i);
         }
 
@@ -131,7 +132,7 @@ int acn_aheadbehind(acn_hndl *pHndl, eACN_notification notifs) {
         // Get number of lowest bit
         i = __builtin_ctzll(notifs);
 
-        diff += pHndl->temp_memory.data[i] - pHndl->pLocal->data[i];
+        diff += pHndl->pStaging->data[i] - pHndl->pLocal->data[i];
 
         // Clear the lowest bit
         notifs &= ~(notifs - 1);
@@ -160,7 +161,7 @@ eACN_error acn_get(acn_hndl *pHndl, eACN_notification notif, uint64_t *pValue) {
     }
     uint i = __builtin_ctzll(notif);
 
-    *pValue = pHndl->temp_memory.data[i];
+    *pValue = pHndl->pStaging->data[i];
 
     return 0;
 }
@@ -184,7 +185,7 @@ eACN_error acn_get_name(acn_hndl *pHndl, char name[static ACN_NAME_LEN]) {
     if ((mem_err = _acn_loadmem(pHndl)) != 0) {
         return mem_err;
     }
-    memcpy(name, (char *) pHndl->temp_memory.name, ACN_NAME_LEN);
+    memcpy(name, (char *) pHndl->pStaging->name, ACN_NAME_LEN);
     return eACN_OK;
     return eACN_ERR_NULL;
 }
@@ -212,7 +213,7 @@ eACN_error acn_check(acn_hndl *pHndl, eACN_notification *pNotifs) {
         // Get number of lowest bit
         i = __builtin_ctzll(notifs);
 
-        if (pHndl->temp_memory.data[i] != pHndl->pLocal->data[i]) {
+        if (pHndl->pStaging->data[i] != pHndl->pLocal->data[i]) {
             *pNotifs |= BIT(i);
         }
 

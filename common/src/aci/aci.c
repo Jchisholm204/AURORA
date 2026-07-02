@@ -89,7 +89,7 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
                            UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
     ep_params.err_handler.arg = pHndl;
     ep_params.err_handler.cb = _aci_err_cb;
-    ep_params.err_mode = UCP_ERR_HANDLING_MODE_PEER;
+    ep_params.err_mode = UCP_ERR_HANDLING_MODE_NONE;
     ep_params.address = (const ucp_address_t *) remote_info->data;
     ucs_status_t ucs_status;
     ucs_status = ucp_ep_create(pHndl->ucp_worker, &ep_params, &pHndl->ucp_ep);
