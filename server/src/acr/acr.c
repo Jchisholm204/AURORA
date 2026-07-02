@@ -15,6 +15,7 @@
 #include "aim.h"
 #include "log.h"
 
+#include <assert.h>
 #include <memory.h>
 #include <pthread.h>
 #include <stdatomic.h>
@@ -58,16 +59,16 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
 
 eACR_error acr_finalize(acr_hndl **ppHndl) {
     if (!ppHndl) {
-        return -1;
+        return eACR_ERR_NULL;
     }
     if (!*ppHndl) {
-        return -1;
+        return eACR_ERR_NULL;
     }
     // Ensure the reference count is 0 before freeing memory
     if ((*ppHndl)->refcount != 0) {
         log_warn("Attempted to free the ACR, but refcount = %d",
                  (*ppHndl)->refcount);
-        return -2;
+        return eACR_ERR_REFCOUNT;
     }
 
     if ((*ppHndl)->thread_contexts) {
@@ -77,7 +78,7 @@ eACR_error acr_finalize(acr_hndl **ppHndl) {
     free(*ppHndl);
     *ppHndl = NULL;
 
-    return 0;
+    return eACR_OK;
 }
 
 eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
@@ -93,29 +94,26 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     // Early end for NOPs
     if (cmd_function == acr_cmd_nop) {
-        // Deal with AIM
+        // Handles the queue here to avoid excess context switching
+
+        // Do nothing, requeue the AIM instance
         if (aim_enqueue(pHndl->pAIM, pInstance) != 0) {
             log_fatal("Could Not Enqueue! A thread lost a connection");
             return eACR_ERR_THREAD;
         }
-
-        // struct aurora_command_ctx nop_ctx = {0};
-        // nop_ctx.pInstance = pInstance;
-        // nop_ctx.flags = -1;
-        // nop_ctx.pAIM = pHndl->pAIM;
-        // // log_debug("NOP flags=%d instance=0x%lx", flags, pInstance);
-        // (void) acr_cmd_nop(&nop_ctx);
         return eACR_OK;
     }
 
+    // Atomic Increment refcount to get next runner
     size_t refcount = atomic_fetch_add(&pHndl->refcount, 1);
 
+    // No free workers
     if (refcount == pHndl->max_workers) {
         pHndl->refcount--; // Atomic
-        log_trace("WARN: Max Workers Reached.");
         return eACR_ERR_NO_WORKERS;
     }
 
+    // Find free worker in list
     struct aurora_command_ctx *pCCtx = NULL;
     uint64_t head_val = atomic_load(&pHndl->thread_ctx_head_idx);
     while (true) {
@@ -139,18 +137,20 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     // Always just ensure this matches..
     pCCtx->pAIM = pHndl->pAIM;
+    assert(pCCtx->pAIM == pHndl->pAIM);
 
     // MUST check, set and reset this every time
     if (pCCtx->pInstance) {
         log_fatal("The server made an avoidable mistake");
-        aim_enqueue(pHndl->pAIM, pCCtx->pInstance);
+        (void) aim_enqueue(pHndl->pAIM, pCCtx->pInstance);
+        pCCtx->pInstance = NULL;
     }
 
     pCCtx->pInstance = pInstance;
     pCCtx->flags = flags;
     pCCtx->__restricted.pHndl = pHndl;
 
-    // Todo: Make this multi threaded
+    // Todo: Issue #56
     pthread_attr_t thread_attr;
     pthread_attr_init(&thread_attr);
     pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
@@ -176,7 +176,6 @@ eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx) {
 
     // If the handle is null, this context was not part of the pool
     if (!pCtx->__restricted.pHndl) {
-        // log_trace("Released NULL");
         return eACR_OK;
     }
     uint64_t current_head =
@@ -197,7 +196,7 @@ eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx) {
         }
     }
 
-    // 5. Decrement refcount after the object is safely back in the pool
+    // Decrement refcount after the object is back in the pool
     atomic_fetch_sub(&pCtx->__restricted.pHndl->refcount, 1);
     return eACR_OK;
 }
@@ -212,8 +211,5 @@ eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count) {
     if (acr_status != 0) {
         log_error("Failed to release after %d / %d attempts", attempts, count);
     }
-    // else {
-    //     log_trace("Released after %d / %d attempts", attempts, count);
-    // }
     return acr_status;
 }

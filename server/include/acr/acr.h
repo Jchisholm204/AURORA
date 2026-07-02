@@ -56,6 +56,7 @@ enum aurora_command_runner_error_e {
     eACR_ERR_NULL,
     eACR_ERR_NO_WORKERS,
     eACR_ERR_THREAD,
+    eACR_ERR_REFCOUNT,
     eACR_N_ERR,
 };
 

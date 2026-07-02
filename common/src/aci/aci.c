@@ -89,7 +89,7 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
                            UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
     ep_params.err_handler.arg = pHndl;
     ep_params.err_handler.cb = _aci_err_cb;
-    ep_params.err_mode = UCP_ERR_HANDLING_MODE_PEER;
+    ep_params.err_mode = UCP_ERR_HANDLING_MODE_NONE;
     ep_params.address = (const ucp_address_t *) remote_info->data;
     ucs_status_t ucs_status;
     ucs_status = ucp_ep_create(pHndl->ucp_worker, &ep_params, &pHndl->ucp_ep);
@@ -114,19 +114,23 @@ int aci_disconnect_instance(aci_hndl *pHndl) {
 
     log_trace("Disconnecting Instance");
 
+    // Atomic Lock Unsafe -> Does not use ACI worker_in_use flag
+
     ucs_status_ptr_t ucs_pStatus = NULL;
     // Request a close if the ep is open
     if (pHndl->ucp_ep) {
         ucp_request_param_t ucp_request_param = {0};
         ucp_request_param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
-        ucp_request_param.flags = UCP_EP_CLOSE_FLAG_FORCE;
+        ucp_request_param.flags = 0;
+        // ucp_request_param.flags = UCP_EP_CLOSE_FLAG_FORCE;
         ucs_pStatus = ucp_ep_close_nbx(pHndl->ucp_ep, &ucp_request_param);
     }
 
     // Wait for the ep to get shut down
     if (UCS_PTR_IS_PTR(ucs_pStatus)) {
         while (ucp_request_check_status(ucs_pStatus) == UCS_INPROGRESS) {
-            (void) aci_poll(pHndl);
+            // Use ucp call directly to avoid ACI lock
+            (void) ucp_worker_progress(pHndl->ucp_worker);
         }
         ucp_request_free(ucs_pStatus);
     } else if (UCS_PTR_IS_ERR(ucs_pStatus)) {
@@ -135,6 +139,7 @@ int aci_disconnect_instance(aci_hndl *pHndl) {
     }
 
     for (int i = 0; i < 1000; i++) {
+        // Use ucp call directly to avoid ACI lock
         while (ucp_worker_progress(pHndl->ucp_worker) > 0)
             ;
     }
