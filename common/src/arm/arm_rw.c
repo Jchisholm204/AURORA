@@ -36,6 +36,7 @@ ucp_rkey_h _arm_get_rkey(const amr_hndl *pAMR, uint64_t addr, size_t size) {
 
     // Wrap Check
     if (addr + size < addr) {
+        log_error("Overflow");
         return NULL;
     }
 
@@ -45,6 +46,7 @@ ucp_rkey_h _arm_get_rkey(const amr_hndl *pAMR, uint64_t addr, size_t size) {
     if ((addr + size) <= active_max_addr && addr >= active_min_addr) {
         return pAMR->active_remote_key;
     }
+    log_error("OOB Access");
     return NULL;
 }
 
