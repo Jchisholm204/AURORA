@@ -27,7 +27,7 @@ eACN_error _acn_loadmem(acn_hndl *pHndl) {
     if (!pHndl) {
         return eACN_ERR_NULL;
     }
-    ucp_request_param_t rparam;
+    ucp_request_param_t rparam = {0};
     rparam.op_attr_mask = UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
     ucs_status_t ucs_status = UCS_INPROGRESS;
 
