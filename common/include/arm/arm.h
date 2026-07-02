@@ -183,6 +183,22 @@ extern const amr_hndl *arm_get_local_regions(arm_hndl *pHndl);
 extern eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
                             const uint64_t remote_addr, const void *data,
                             size_t size);
+/**
+ * @brief RDMA Write to a region (shadow or active)
+ *
+ * @param pHndl ARM Handle the region belongs to
+ * @param pOperation status pointer for the active operation, check with
+ * read_check
+ * @param pAMR Memory Region Handle
+ * @param remote_addr Remote address to write to
+ * @param data Local data to write
+ * @param size size of the write
+ * @return Err or OK
+ */
+extern eARM_error arm_write_async(arm_hndl *pHndl, arm_op *pOperation,
+                                  const amr_hndl *pAMR,
+                                  const uint64_t remote_addr, const void *data,
+                                  size_t size);
 
 /**
  * @brief RDMA Read from a region (shadow or active)
@@ -214,8 +230,16 @@ extern eARM_error arm_read_async(arm_hndl *pHndl, arm_op *pOperation,
                                  const uint64_t remote_addr, void *data,
                                  size_t size);
 
-extern eARM_error arm_read_check(arm_hndl *pHndl, arm_op *pOperation,
-                                 bool wait);
+/**
+ * @brief Check the status of an async ARM operation
+ *
+ * @param pHndl ARM Handle
+ * @param pOperation Operation Handle
+ * @param wait Set to true to block until the async request completes
+ * @return
+ */
+extern eARM_error arm_async_check(arm_hndl *pHndl, arm_op *pOperation,
+                                  bool wait);
 
 #ifdef ARM_INTERNAL
 // Internal functions to add and remove from internal list
