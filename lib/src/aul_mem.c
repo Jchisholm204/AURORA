@@ -54,7 +54,7 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 int AUL_Mem_unprotect(const uint64_t mem_id) {
     // Advance the client side memory tick (memory ops pending)
     eACN_error acn_status = eACN_OK;
-    TIME_REGION("Wait") {
+    TIME_REGION("Mem DeReg Wait") {
         do {
             acn_status = acn_await(_aul_ctx.pACN, eACN_checkpoint);
         } while (acn_status == eACN_ERR_TIMEOUT);
