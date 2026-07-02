@@ -19,7 +19,7 @@
 #include <unistd.h>
 
 #ifndef ARE_MAX_ERROR_COUNT
-#define ARE_MAX_ERROR_COUNT 16
+#define ARE_MAX_ERROR_COUNT 4
 #endif
 
 #ifndef AIM_MAX_WORKERS
@@ -62,7 +62,7 @@ int are_main(int argc, char **argv) {
     while (true) {
         aim_entry_t *pInstance = aim_dequeue(pAIM);
         if (!pInstance) {
-            usleep(1000);
+            usleep(500);
             continue;
         }
         eACN_notification pending;
@@ -70,13 +70,11 @@ int are_main(int argc, char **argv) {
 
         if (acn_err == eACN_ERR_FATAL ||
             pInstance->error_counter > ARE_MAX_ERROR_COUNT) {
-            if (pInstance->error_counter <= (ARE_MAX_ERROR_COUNT + 2)) {
-                log_debug("ACN Returned Fatal Error.. Closing Connection");
-            }
+            log_debug("ACN Returned Fatal Error.. Closing Connection");
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_connection_down);
             if (acr_status != eACR_OK) {
-                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+                (void) acr_run(pACR, pInstance, 0, acr_cmd_nop);
                 pInstance->error_counter++;
             }
         } else if (acn_err == eACN_ERR_UCS) {
@@ -85,25 +83,23 @@ int are_main(int argc, char **argv) {
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
         } else if (acn_err == eACN_ERR_TIMEOUT) {
             acr_run(pACR, pInstance, 0, acr_cmd_nop);
-            printf(".");
         } else if (pending & eACN_checkpoint) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_checkpoint);
             if (acr_status != eACR_OK) {
-                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+                (void) acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
         } else if (pending & eACN_restore) {
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_restart);
             if (acr_status != eACR_OK) {
-                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+                (void) acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
         } else {
             eACR_error acr_status = acr_run(pACR, pInstance, 0, acr_cmd_nop);
             if (acr_status != eACR_OK) {
-                acr_run(pACR, pInstance, 0, acr_cmd_nop);
+                (void) acr_run(pACR, pInstance, 0, acr_cmd_nop);
             }
-            printf(":");
         }
     }
 
