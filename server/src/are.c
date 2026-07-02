@@ -69,8 +69,10 @@ int are_main(int argc, char **argv) {
         eACN_error acn_err = acn_check(pInstance->pACN, &pending);
 
         if (acn_err == eACN_ERR_FATAL ||
-            pInstance->error_counter > ARE_MAX_ERROR_COUNT) {
-            log_debug("ACN Returned Fatal Error.. Closing Connection");
+            pInstance->error_counter >= ARE_MAX_ERROR_COUNT) {
+            if (pInstance->error_counter < (ARE_MAX_ERROR_COUNT + 1)) {
+                log_info("ACN Returned Fatal Error.. Closing Connection");
+            }
             eACR_error acr_status =
                 acr_run(pACR, pInstance, 0, acr_cmd_connection_down);
             if (acr_status != eACR_OK) {
