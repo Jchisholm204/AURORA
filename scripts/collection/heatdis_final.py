@@ -75,8 +75,8 @@ if __name__ == "__main__":
     # ==========================================
     # CONFIGURABLE VARIABLES
     # ==========================================
-    VERSION='0.0.1-2'
-    TEST='heatdis_aurora'
+    VERSION='0.0.1-3'
+    TEST='heatdis_veloc'
     INPUT_LOG_DIR = f"./results/{VERSION}/{TEST}/"
     OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_final_times.csv"
     # ==========================================

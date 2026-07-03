@@ -1,0 +1,4 @@
+Filename,MPI_Processes,Trial_Iteration,Memory_MB,Backend_Processes,Total_Runtime_Sec
+heatdis_aurora_p16_i0_m256_b8_test.log,16,0,256,8,106.751998
+heatdis_aurora_p16_i1_m256_b8_test.log,16,1,256,8,106.26406
+heatdis_aurora_p16_i2_m256_b8_test.log,16,2,256,8,106.676662

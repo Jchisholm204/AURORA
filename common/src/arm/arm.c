@@ -108,7 +108,7 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
             }
         }
         free(pHndl->remote_rgns.data);
-        pHndl->remote_rgns = (struct aurora_region_list) {0};
+        pHndl->remote_rgns = (struct aurora_region_list){0};
     }
 
     if (pHndl->local_rgns.data) {
@@ -117,7 +117,7 @@ eARM_error arm_destroy_instance(arm_hndl **ppHndl) {
             (void) arm_remove(pHndl, pAMR);
         }
         free(pHndl->local_rgns.data);
-        pHndl->local_rgns = (struct aurora_region_list) {0};
+        pHndl->local_rgns = (struct aurora_region_list){0};
     }
 
     ucs_status_t ucs_status = UCS_OK;
@@ -164,12 +164,18 @@ amr_hndl *_arl_add(struct aurora_region_list *pList) {
     // Reallocate the array if over size
     if (pList->size >= pList->capacity) {
         pList->capacity *= 2;
-        pList->data =
+        void *tmp =
             reallocarray(pList->data, pList->capacity, sizeof(amr_hndl));
+        if (!tmp) {
+            log_error("Bad Alloc??");
+            return NULL;
+        }
+        pList->data = tmp;
     }
 
     // Grab the last region and inc the counter
     amr_hndl *pRgn = &pList->data[pList->size++];
+    memset(pRgn, 0, sizeof(amr_hndl));
 
     return pRgn;
 }

@@ -1,0 +1,819 @@
+MPI_Processes,Memory_MB,Backend_Processes,Trial_Iteration,Rank,Metric,Time
+16,256,8,0,-1,Total_Execution_Sec,106.751998
+16,256,8,0,-1,lib_Checkpoint Total,29.043185
+16,256,8,0,-1,lib_Checkpoint Total,29.075617
+16,256,8,0,-1,lib_Checkpoint Total,30.411462
+16,256,8,0,-1,lib_Checkpoint Total,30.525055
+16,256,8,0,-1,lib_Checkpoint Total,30.538661
+16,256,8,0,-1,lib_Checkpoint Total,30.640063
+16,256,8,0,-1,lib_Checkpoint Total,30.616709
+16,256,8,0,-1,lib_Checkpoint Total,30.651304
+16,256,8,0,-1,lib_Checkpoint Total,30.659839
+16,256,8,0,-1,lib_Checkpoint Total,30.690016
+16,256,8,0,-1,lib_Checkpoint Total,30.754809
+16,256,8,0,-1,lib_Checkpoint Total,30.855639
+16,256,8,0,-1,lib_Checkpoint Total,30.928165
+16,256,8,0,-1,lib_Checkpoint Total,31.653931
+16,256,8,0,-1,lib_Checkpoint Total,31.664471
+16,256,8,0,-1,lib_Checkpoint Total,32.672479
+16,256,8,0,-1,lib_Checkpoint Total,866.896818
+16,256,8,0,-1,lib_Checkpoint Total,876.894593
+16,256,8,0,-1,lib_Checkpoint Total,883.374493
+16,256,8,0,-1,lib_Checkpoint Total,896.055098
+16,256,8,0,-1,lib_Checkpoint Total,898.231185
+16,256,8,0,-1,lib_Checkpoint Total,902.932186
+16,256,8,0,-1,lib_Checkpoint Total,914.848462
+16,256,8,0,-1,lib_Checkpoint Total,917.997681
+16,256,8,0,-1,lib_Checkpoint Total,930.890786
+16,256,8,0,-1,lib_Checkpoint Total,932.465631
+16,256,8,0,-1,lib_Checkpoint Total,936.324557
+16,256,8,0,-1,lib_Checkpoint Total,936.939746
+16,256,8,0,-1,lib_Checkpoint Total,942.806391
+16,256,8,0,-1,lib_Checkpoint Total,944.859337
+16,256,8,0,-1,lib_Checkpoint Total,945.717653
+16,256,8,0,-1,lib_Checkpoint Total,956.746427
+16,256,8,0,-1,lib_Checkpoint Total,856.031872
+16,256,8,0,-1,lib_Checkpoint Total,866.255751
+16,256,8,0,-1,lib_Checkpoint Total,879.905441
+16,256,8,0,-1,lib_Checkpoint Total,881.780452
+16,256,8,0,-1,lib_Checkpoint Total,883.288962
+16,256,8,0,-1,lib_Checkpoint Total,886.416941
+16,256,8,0,-1,lib_Checkpoint Total,887.541138
+16,256,8,0,-1,lib_Checkpoint Total,899.30155
+16,256,8,0,-1,lib_Checkpoint Total,903.820809
+16,256,8,0,-1,lib_Checkpoint Total,904.695656
+16,256,8,0,-1,lib_Checkpoint Total,907.101837
+16,256,8,0,-1,lib_Checkpoint Total,910.320647
+16,256,8,0,-1,lib_Checkpoint Total,922.829629
+16,256,8,0,-1,lib_Checkpoint Total,924.255072
+16,256,8,0,-1,lib_Checkpoint Total,925.424765
+16,256,8,0,-1,lib_Checkpoint Total,933.35142
+16,256,8,0,-1,lib_Memory Copy,26.37898
+16,256,8,0,-1,lib_Memory Copy,26.396322
+16,256,8,0,-1,lib_Memory Copy,26.565471
+16,256,8,0,-1,lib_Memory Copy,27.933937
+16,256,8,0,-1,lib_Memory Copy,27.960807
+16,256,8,0,-1,lib_Memory Copy,28.034967
+16,256,8,0,-1,lib_Memory Copy,28.013517
+16,256,8,0,-1,lib_Memory Copy,28.117873
+16,256,8,0,-1,lib_Memory Copy,28.086865
+16,256,8,0,-1,lib_Memory Copy,28.07333
+16,256,8,0,-1,lib_Memory Copy,28.108806
+16,256,8,0,-1,lib_Memory Copy,28.278986
+16,256,8,0,-1,lib_Memory Copy,28.277895
+16,256,8,0,-1,lib_Memory Copy,26.647244
+16,256,8,0,-1,lib_Memory Copy,26.671941
+16,256,8,0,-1,lib_Memory Copy,27.655052
+16,256,8,0,-1,lib_Memory Copy,16.708429
+16,256,8,0,-1,lib_Memory Copy,15.931265
+16,256,8,0,-1,lib_Memory Copy,15.859951
+16,256,8,0,-1,lib_Memory Copy,15.92304
+16,256,8,0,-1,lib_Memory Copy,16.000666
+16,256,8,0,-1,lib_Memory Copy,15.910576
+16,256,8,0,-1,lib_Memory Copy,15.665465
+16,256,8,0,-1,lib_Memory Copy,20.331139
+16,256,8,0,-1,lib_Memory Copy,20.395711
+16,256,8,0,-1,lib_Memory Copy,15.29112
+16,256,8,0,-1,lib_Memory Copy,24.048318
+16,256,8,0,-1,lib_Memory Copy,20.236391
+16,256,8,0,-1,lib_Memory Copy,25.224793
+16,256,8,0,-1,lib_Memory Copy,18.125346
+16,256,8,0,-1,lib_Memory Copy,18.179828
+16,256,8,0,-1,lib_Memory Copy,15.213203
+16,256,8,0,-1,lib_Memory Copy,16.08276
+16,256,8,0,-1,lib_Memory Copy,15.696072
+16,256,8,0,-1,lib_Memory Copy,15.700331
+16,256,8,0,-1,lib_Memory Copy,15.960951
+16,256,8,0,-1,lib_Memory Copy,15.318481
+16,256,8,0,-1,lib_Memory Copy,15.926436
+16,256,8,0,-1,lib_Memory Copy,15.967032
+16,256,8,0,-1,lib_Memory Copy,15.637602
+16,256,8,0,-1,lib_Memory Copy,22.71075
+16,256,8,0,-1,lib_Memory Copy,16.912663
+16,256,8,0,-1,lib_Memory Copy,15.688509
+16,256,8,0,-1,lib_Memory Copy,22.415734
+16,256,8,0,-1,lib_Memory Copy,15.340082
+16,256,8,0,-1,lib_Memory Copy,26.968747
+16,256,8,0,-1,lib_Memory Copy,26.780712
+16,256,8,0,-1,lib_Memory Copy,15.681675
+16,256,8,0,-1,lib_Wait,852.75387
+16,256,8,0,-1,lib_Wait,879.367319
+16,256,8,0,-1,lib_Wait,858.63303
+16,256,8,0,-1,lib_Wait,862.088315
+16,256,8,0,-1,lib_Wait,885.337709
+16,256,8,0,-1,lib_Wait,891.187884
+16,256,8,0,-1,lib_Wait,908.264586
+16,256,8,0,-1,lib_Wait,873.132199
+16,256,8,0,-1,lib_Wait,855.311817
+16,256,8,0,-1,lib_Wait,873.713714
+16,256,8,0,-1,lib_Wait,866.473062
+16,256,8,0,-1,lib_Wait,895.535189
+16,256,8,0,-1,lib_Wait,910.085084
+16,256,8,0,-1,lib_Wait,924.616994
+16,256,8,0,-1,lib_Wait,881.762909
+16,256,8,0,-1,lib_Wait,893.097309
+16,256,8,0,-1,lib_Wait,1.062941
+16,256,8,0,-1,lib_Wait,1.065967
+16,256,8,0,-1,lib_Wait,1.069895
+16,256,8,0,-1,lib_Wait,1.070546
+16,256,8,0,-1,lib_Wait,1.10459
+16,256,8,0,-1,lib_Wait,1.105081
+16,256,8,0,-1,lib_Wait,1.111773
+16,256,8,0,-1,lib_Wait,1.11009
+16,256,8,0,-1,lib_Wait,1.11548
+16,256,8,0,-1,lib_Wait,1.118616
+16,256,8,0,-1,lib_Wait,1.117403
+16,256,8,0,-1,lib_Wait,1.1204
+16,256,8,0,-1,lib_Wait,1.124707
+16,256,8,0,-1,lib_Wait,1.126641
+16,256,8,0,-1,lib_Wait,1.130849
+16,256,8,0,-1,lib_Wait,1.134877
+16,256,8,0,-1,lib_Wait,1.085975
+16,256,8,0,-1,lib_Wait,1.109288
+16,256,8,0,-1,lib_Wait,1.13124
+16,256,8,0,-1,lib_Wait,1.150817
+16,256,8,0,-1,lib_Wait,1.170504
+16,256,8,0,-1,lib_Wait,1.18959
+16,256,8,0,-1,lib_Wait,1.206822
+16,256,8,0,-1,lib_Wait,1.297403
+16,256,8,0,-1,lib_Wait,1.32261
+16,256,8,0,-1,lib_Wait,1.342097
+16,256,8,0,-1,lib_Wait,1.361885
+16,256,8,0,-1,lib_Wait,1.352637
+16,256,8,0,-1,lib_Wait,1.374448
+16,256,8,0,-1,lib_Wait,1.388014
+16,256,8,0,-1,lib_Wait,1.410946
+16,256,8,0,-1,lib_Wait,1.433969
+16,256,8,0,-1,lib_Wait for checkpoint,2.442128
+16,256,8,0,-1,lib_Wait for checkpoint,2.470201
+16,256,8,0,-1,lib_Wait for checkpoint,2.459942
+16,256,8,0,-1,lib_Wait for checkpoint,2.472396
+16,256,8,0,-1,lib_Wait for checkpoint,2.486222
+16,256,8,0,-1,lib_Wait for checkpoint,2.466164
+16,256,8,0,-1,lib_Wait for checkpoint,2.499787
+16,256,8,0,-1,lib_Wait for checkpoint,2.492704
+16,256,8,0,-1,lib_Wait for checkpoint,2.486451
+16,256,8,0,-1,lib_Wait for checkpoint,2.508934
+16,256,8,0,-1,lib_Wait for checkpoint,2.487834
+16,256,8,0,-1,lib_Wait for checkpoint,2.500699
+16,256,8,0,-1,lib_Wait for checkpoint,3.674419
+16,256,8,0,-1,lib_Wait for checkpoint,4.834533
+16,256,8,0,-1,lib_Wait for checkpoint,4.827009
+16,256,8,0,-1,lib_Wait for checkpoint,4.83288
+16,256,8,0,-1,lib_Wait for checkpoint,850.046494
+16,256,8,0,-1,lib_Wait for checkpoint,860.82138
+16,256,8,0,-1,lib_Wait for checkpoint,867.369138
+16,256,8,0,-1,lib_Wait for checkpoint,879.987316
+16,256,8,0,-1,lib_Wait for checkpoint,882.125552
+16,256,8,0,-1,lib_Wait for checkpoint,886.898067
+16,256,8,0,-1,lib_Wait for checkpoint,897.512662
+16,256,8,0,-1,lib_Wait for checkpoint,899.078401
+16,256,8,0,-1,lib_Wait for checkpoint,910.355633
+16,256,8,0,-1,lib_Wait for checkpoint,912.135735
+16,256,8,0,-1,lib_Wait for checkpoint,916.607264
+16,256,8,0,-1,lib_Wait for checkpoint,917.012867
+16,256,8,0,-1,lib_Wait for checkpoint,917.426296
+16,256,8,0,-1,lib_Wait for checkpoint,926.580672
+16,256,8,0,-1,lib_Wait for checkpoint,927.420503
+16,256,8,0,-1,lib_Wait for checkpoint,941.35549
+16,256,8,0,-1,lib_Wait for checkpoint,839.849123
+16,256,8,0,-1,lib_Wait for checkpoint,850.438451
+16,256,8,0,-1,lib_Wait for checkpoint,864.069806
+16,256,8,0,-1,lib_Wait for checkpoint,865.73421
+16,256,8,0,-1,lib_Wait for checkpoint,867.88514
+16,256,8,0,-1,lib_Wait for checkpoint,870.347757
+16,256,8,0,-1,lib_Wait for checkpoint,871.426057
+16,256,8,0,-1,lib_Wait for checkpoint,880.983211
+16,256,8,0,-1,lib_Wait for checkpoint,883.566735
+16,256,8,0,-1,lib_Wait for checkpoint,887.670421
+16,256,8,0,-1,lib_Wait for checkpoint,887.808792
+16,256,8,0,-1,lib_Wait for checkpoint,891.307089
+16,256,8,0,-1,lib_Wait for checkpoint,897.161171
+16,256,8,0,-1,lib_Wait for checkpoint,898.514509
+16,256,8,0,-1,lib_Wait for checkpoint,907.411149
+16,256,8,0,-1,lib_Wait for checkpoint,917.526193
+16,256,8,0,0,Checkpoint,30.956949
+16,256,8,0,0,Checkpoint,898.24434
+16,256,8,0,0,Checkpoint,881.79589
+16,256,8,0,0,Init,900.423942
+16,256,8,0,0,Memory Reg,110.554899
+16,256,8,0,1,Checkpoint,30.678775
+16,256,8,0,1,Checkpoint,936.340287
+16,256,8,0,1,Checkpoint,903.835437
+16,256,8,0,1,Init,908.390364
+16,256,8,0,1,Memory Reg,113.51
+16,256,8,0,2,Checkpoint,30.565482
+16,256,8,0,2,Checkpoint,914.862028
+16,256,8,0,2,Checkpoint,866.27094
+16,256,8,0,2,Init,891.774586
+16,256,8,0,2,Memory Reg,107.86679
+16,256,8,0,3,Checkpoint,30.665941
+16,256,8,0,3,Checkpoint,902.947696
+16,256,8,0,3,Checkpoint,925.438581
+16,256,8,0,3,Init,898.348226
+16,256,8,0,3,Memory Reg,122.47477
+16,256,8,0,4,Checkpoint,29.105362
+16,256,8,0,4,Checkpoint,896.071119
+16,256,8,0,4,Checkpoint,904.712368
+16,256,8,0,4,Init,891.096369
+16,256,8,0,4,Memory Reg,104.336727
+16,256,8,0,5,Checkpoint,29.072501
+16,256,8,0,5,Checkpoint,956.762127
+16,256,8,0,5,Checkpoint,887.559382
+16,256,8,0,5,Init,914.567107
+16,256,8,0,5,Memory Reg,96.726656
+16,256,8,0,6,Checkpoint,30.786018
+16,256,8,0,6,Checkpoint,918.011989
+16,256,8,0,6,Checkpoint,899.317911
+16,256,8,0,6,Init,915.252859
+16,256,8,0,6,Memory Reg,108.864348
+16,256,8,0,7,Checkpoint,32.69383
+16,256,8,0,7,Checkpoint,866.912588
+16,256,8,0,7,Checkpoint,907.119881
+16,256,8,0,7,Init,872.434069
+16,256,8,0,7,Memory Reg,97.453384
+16,256,8,0,8,Checkpoint,30.885325
+16,256,8,0,8,Checkpoint,945.732461
+16,256,8,0,8,Checkpoint,856.045128
+16,256,8,0,8,Init,908.357201
+16,256,8,0,8,Memory Reg,110.20483
+16,256,8,0,9,Checkpoint,30.645563
+16,256,8,0,9,Checkpoint,942.814998
+16,256,8,0,9,Checkpoint,910.336497
+16,256,8,0,9,Init,890.737083
+16,256,8,0,9,Memory Reg,99.588001
+16,256,8,0,10,Checkpoint,30.552116
+16,256,8,0,10,Checkpoint,936.956276
+16,256,8,0,10,Checkpoint,883.303209
+16,256,8,0,10,Init,891.957049
+16,256,8,0,10,Memory Reg,90.624382
+16,256,8,0,11,Checkpoint,30.685529
+16,256,8,0,11,Checkpoint,930.908239
+16,256,8,0,11,Checkpoint,924.26936
+16,256,8,0,11,Init,898.404452
+16,256,8,0,11,Memory Reg,120.907752
+16,256,8,0,12,Checkpoint,31.695279
+16,256,8,0,12,Checkpoint,944.876408
+16,256,8,0,12,Checkpoint,922.844898
+16,256,8,0,12,Init,888.517105
+16,256,8,0,12,Memory Reg,104.238912
+16,256,8,0,13,Checkpoint,31.684248
+16,256,8,0,13,Checkpoint,876.909581
+16,256,8,0,13,Checkpoint,933.367981
+16,256,8,0,13,Init,860.684819
+16,256,8,0,13,Memory Reg,86.546849
+16,256,8,0,14,Checkpoint,30.721115
+16,256,8,0,14,Checkpoint,883.389712
+16,256,8,0,14,Checkpoint,879.925489
+16,256,8,0,14,Init,915.202503
+16,256,8,0,14,Memory Reg,120.100883
+16,256,8,0,15,Checkpoint,30.435177
+16,256,8,0,15,Checkpoint,932.48092
+16,256,8,0,15,Checkpoint,886.434094
+16,256,8,0,15,Init,872.385137
+16,256,8,0,15,Memory Reg,98.874327
+16,256,8,1,-1,Total_Execution_Sec,106.26406
+16,256,8,1,-1,lib_Checkpoint Total,29.738985
+16,256,8,1,-1,lib_Checkpoint Total,32.04132
+16,256,8,1,-1,lib_Checkpoint Total,32.770503
+16,256,8,1,-1,lib_Checkpoint Total,32.822272
+16,256,8,1,-1,lib_Checkpoint Total,33.567795
+16,256,8,1,-1,lib_Checkpoint Total,35.069662
+16,256,8,1,-1,lib_Checkpoint Total,37.805964
+16,256,8,1,-1,lib_Checkpoint Total,38.343027
+16,256,8,1,-1,lib_Checkpoint Total,40.239827
+16,256,8,1,-1,lib_Checkpoint Total,40.27805
+16,256,8,1,-1,lib_Checkpoint Total,40.383257
+16,256,8,1,-1,lib_Checkpoint Total,40.478347
+16,256,8,1,-1,lib_Checkpoint Total,40.652756
+16,256,8,1,-1,lib_Checkpoint Total,41.915753
+16,256,8,1,-1,lib_Checkpoint Total,42.705009
+16,256,8,1,-1,lib_Checkpoint Total,43.100654
+16,256,8,1,-1,lib_Checkpoint Total,964.068954
+16,256,8,1,-1,lib_Checkpoint Total,971.180898
+16,256,8,1,-1,lib_Checkpoint Total,972.361742
+16,256,8,1,-1,lib_Checkpoint Total,974.565453
+16,256,8,1,-1,lib_Checkpoint Total,974.709163
+16,256,8,1,-1,lib_Checkpoint Total,982.978708
+16,256,8,1,-1,lib_Checkpoint Total,989.624675
+16,256,8,1,-1,lib_Checkpoint Total,992.997638
+16,256,8,1,-1,lib_Checkpoint Total,998.550025
+16,256,8,1,-1,lib_Checkpoint Total,1005.102746
+16,256,8,1,-1,lib_Checkpoint Total,1005.608639
+16,256,8,1,-1,lib_Checkpoint Total,1010.033042
+16,256,8,1,-1,lib_Checkpoint Total,1010.779087
+16,256,8,1,-1,lib_Checkpoint Total,1011.080114
+16,256,8,1,-1,lib_Checkpoint Total,1013.829872
+16,256,8,1,-1,lib_Checkpoint Total,911.749308
+16,256,8,1,-1,lib_Checkpoint Total,922.848132
+16,256,8,1,-1,lib_Checkpoint Total,937.057467
+16,256,8,1,-1,lib_Checkpoint Total,943.640571
+16,256,8,1,-1,lib_Checkpoint Total,957.58631
+16,256,8,1,-1,lib_Checkpoint Total,968.705822
+16,256,8,1,-1,lib_Checkpoint Total,983.189855
+16,256,8,1,-1,lib_Checkpoint Total,983.33574
+16,256,8,1,-1,lib_Checkpoint Total,985.19296
+16,256,8,1,-1,lib_Checkpoint Total,987.257739
+16,256,8,1,-1,lib_Checkpoint Total,987.479758
+16,256,8,1,-1,lib_Checkpoint Total,987.829397
+16,256,8,1,-1,lib_Checkpoint Total,988.943627
+16,256,8,1,-1,lib_Checkpoint Total,989.002648
+16,256,8,1,-1,lib_Checkpoint Total,989.237962
+16,256,8,1,-1,lib_Checkpoint Total,1009.645516
+16,256,8,1,-1,lib_Memory Copy,21.37689
+16,256,8,1,-1,lib_Memory Copy,22.497841
+16,256,8,1,-1,lib_Memory Copy,23.224089
+16,256,8,1,-1,lib_Memory Copy,23.296676
+16,256,8,1,-1,lib_Memory Copy,25.240566
+16,256,8,1,-1,lib_Memory Copy,24.315263
+16,256,8,1,-1,lib_Memory Copy,25.897221
+16,256,8,1,-1,lib_Memory Copy,25.233171
+16,256,8,1,-1,lib_Memory Copy,24.80222
+16,256,8,1,-1,lib_Memory Copy,24.818211
+16,256,8,1,-1,lib_Memory Copy,23.662144
+16,256,8,1,-1,lib_Memory Copy,26.202867
+16,256,8,1,-1,lib_Memory Copy,25.172678
+16,256,8,1,-1,lib_Memory Copy,25.257047
+16,256,8,1,-1,lib_Memory Copy,26.006026
+16,256,8,1,-1,lib_Memory Copy,26.42755
+16,256,8,1,-1,lib_Memory Copy,15.616522
+16,256,8,1,-1,lib_Memory Copy,16.116954
+16,256,8,1,-1,lib_Memory Copy,25.803628
+16,256,8,1,-1,lib_Memory Copy,15.985607
+16,256,8,1,-1,lib_Memory Copy,26.943585
+16,256,8,1,-1,lib_Memory Copy,16.085996
+16,256,8,1,-1,lib_Memory Copy,21.889456
+16,256,8,1,-1,lib_Memory Copy,20.383239
+16,256,8,1,-1,lib_Memory Copy,24.106582
+16,256,8,1,-1,lib_Memory Copy,20.348414
+16,256,8,1,-1,lib_Memory Copy,27.651768
+16,256,8,1,-1,lib_Memory Copy,27.650867
+16,256,8,1,-1,lib_Memory Copy,20.390293
+16,256,8,1,-1,lib_Memory Copy,25.892406
+16,256,8,1,-1,lib_Memory Copy,20.257242
+16,256,8,1,-1,lib_Memory Copy,26.329909
+16,256,8,1,-1,lib_Memory Copy,15.897396
+16,256,8,1,-1,lib_Memory Copy,16.003516
+16,256,8,1,-1,lib_Memory Copy,15.607689
+16,256,8,1,-1,lib_Memory Copy,16.136386
+16,256,8,1,-1,lib_Memory Copy,15.916862
+16,256,8,1,-1,lib_Memory Copy,15.851059
+16,256,8,1,-1,lib_Memory Copy,15.9793
+16,256,8,1,-1,lib_Memory Copy,24.294508
+16,256,8,1,-1,lib_Memory Copy,16.248096
+16,256,8,1,-1,lib_Memory Copy,26.635068
+16,256,8,1,-1,lib_Memory Copy,26.438729
+16,256,8,1,-1,lib_Memory Copy,24.018959
+16,256,8,1,-1,lib_Memory Copy,16.120887
+16,256,8,1,-1,lib_Memory Copy,26.395717
+16,256,8,1,-1,lib_Memory Copy,26.293104
+16,256,8,1,-1,lib_Memory Copy,15.938514
+16,256,8,1,-1,lib_Wait,917.730078
+16,256,8,1,-1,lib_Wait,858.845261
+16,256,8,1,-1,lib_Wait,892.616205
+16,256,8,1,-1,lib_Wait,874.315261
+16,256,8,1,-1,lib_Wait,920.71899
+16,256,8,1,-1,lib_Wait,943.290171
+16,256,8,1,-1,lib_Wait,943.705614
+16,256,8,1,-1,lib_Wait,918.642427
+16,256,8,1,-1,lib_Wait,922.54461
+16,256,8,1,-1,lib_Wait,928.373424
+16,256,8,1,-1,lib_Wait,993.96574
+16,256,8,1,-1,lib_Wait,942.50387
+16,256,8,1,-1,lib_Wait,917.032573
+16,256,8,1,-1,lib_Wait,943.355294
+16,256,8,1,-1,lib_Wait,942.247136
+16,256,8,1,-1,lib_Wait,942.683828
+16,256,8,1,-1,lib_Wait,1.059707
+16,256,8,1,-1,lib_Wait,1.064596
+16,256,8,1,-1,lib_Wait,1.064876
+16,256,8,1,-1,lib_Wait,1.068142
+16,256,8,1,-1,lib_Wait,1.073052
+16,256,8,1,-1,lib_Wait,1.059026
+16,256,8,1,-1,lib_Wait,1.120862
+16,256,8,1,-1,lib_Wait,1.125009
+16,256,8,1,-1,lib_Wait,1.129609
+16,256,8,1,-1,lib_Wait,1.1307
+16,256,8,1,-1,lib_Wait,1.12486
+16,256,8,1,-1,lib_Wait,1.132945
+16,256,8,1,-1,lib_Wait,1.13545
+16,256,8,1,-1,lib_Wait,1.14115
+16,256,8,1,-1,lib_Wait,1.142402
+16,256,8,1,-1,lib_Wait,1.147843
+16,256,8,1,-1,lib_Wait,1.087229
+16,256,8,1,-1,lib_Wait,1.111194
+16,256,8,1,-1,lib_Wait,1.134558
+16,256,8,1,-1,lib_Wait,1.150218
+16,256,8,1,-1,lib_Wait,1.169263
+16,256,8,1,-1,lib_Wait,1.187377
+16,256,8,1,-1,lib_Wait,1.21015
+16,256,8,1,-1,lib_Wait,1.319195
+16,256,8,1,-1,lib_Wait,1.335777
+16,256,8,1,-1,lib_Wait,1.361064
+16,256,8,1,-1,lib_Wait,1.377435
+16,256,8,1,-1,lib_Wait,1.398295
+16,256,8,1,-1,lib_Wait,1.374189
+16,256,8,1,-1,lib_Wait,1.396121
+16,256,8,1,-1,lib_Wait,1.410258
+16,256,8,1,-1,lib_Wait,1.43845
+16,256,8,1,-1,lib_Wait for checkpoint,8.187086
+16,256,8,1,-1,lib_Wait for checkpoint,8.198787
+16,256,8,1,-1,lib_Wait for checkpoint,9.391302
+16,256,8,1,-1,lib_Wait for checkpoint,9.414797
+16,256,8,1,-1,lib_Wait for checkpoint,9.410489
+16,256,8,1,-1,lib_Wait for checkpoint,10.585291
+16,256,8,1,-1,lib_Wait for checkpoint,11.757498
+16,256,8,1,-1,lib_Wait for checkpoint,12.939413
+16,256,8,1,-1,lib_Wait for checkpoint,14.113014
+16,256,8,1,-1,lib_Wait for checkpoint,15.287034
+16,256,8,1,-1,lib_Wait for checkpoint,15.301862
+16,256,8,1,-1,lib_Wait for checkpoint,15.30079
+16,256,8,1,-1,lib_Wait for checkpoint,16.505899
+16,256,8,1,-1,lib_Wait for checkpoint,16.523923
+16,256,8,1,-1,lib_Wait for checkpoint,16.531107
+16,256,8,1,-1,lib_Wait for checkpoint,16.539212
+16,256,8,1,-1,lib_Wait for checkpoint,945.323238
+16,256,8,1,-1,lib_Wait for checkpoint,947.480111
+16,256,8,1,-1,lib_Wait for checkpoint,948.309633
+16,256,8,1,-1,lib_Wait for checkpoint,954.918129
+16,256,8,1,-1,lib_Wait for checkpoint,956.253535
+16,256,8,1,-1,lib_Wait for checkpoint,958.469548
+16,256,8,1,-1,lib_Wait for checkpoint,960.978914
+16,256,8,1,-1,lib_Wait for checkpoint,968.748447
+16,256,8,1,-1,lib_Wait for checkpoint,969.06317
+16,256,8,1,-1,lib_Wait for checkpoint,977.305704
+16,256,8,1,-1,lib_Wait for checkpoint,977.864757
+16,256,8,1,-1,lib_Wait for checkpoint,978.065033
+16,256,8,1,-1,lib_Wait for checkpoint,984.717863
+16,256,8,1,-1,lib_Wait for checkpoint,987.314674
+16,256,8,1,-1,lib_Wait for checkpoint,989.469222
+16,256,8,1,-1,lib_Wait for checkpoint,990.659454
+16,256,8,1,-1,lib_Wait for checkpoint,895.731877
+16,256,8,1,-1,lib_Wait for checkpoint,906.699182
+16,256,8,1,-1,lib_Wait for checkpoint,921.302099
+16,256,8,1,-1,lib_Wait for checkpoint,927.398827
+16,256,8,1,-1,lib_Wait for checkpoint,941.52755
+16,256,8,1,-1,lib_Wait for checkpoint,952.722836
+16,256,8,1,-1,lib_Wait for checkpoint,958.91844
+16,256,8,1,-1,lib_Wait for checkpoint,960.50503
+16,256,8,1,-1,lib_Wait for checkpoint,960.901637
+16,256,8,1,-1,lib_Wait for checkpoint,962.490961
+16,256,8,1,-1,lib_Wait for checkpoint,962.818368
+16,256,8,1,-1,lib_Wait for checkpoint,963.672848
+16,256,8,1,-1,lib_Wait for checkpoint,967.102051
+16,256,8,1,-1,lib_Wait for checkpoint,968.832661
+16,256,8,1,-1,lib_Wait for checkpoint,972.69021
+16,256,8,1,-1,lib_Wait for checkpoint,993.602144
+16,256,8,1,0,Checkpoint,32.074182
+16,256,8,1,0,Checkpoint,993.010671
+16,256,8,1,0,Checkpoint,1009.664892
+16,256,8,1,0,Init,854.712913
+16,256,8,1,0,Memory Reg,85.34631
+16,256,8,1,1,Checkpoint,40.270245
+16,256,8,1,1,Checkpoint,972.37705
+16,256,8,1,1,Checkpoint,987.271085
+16,256,8,1,1,Init,774.917212
+16,256,8,1,1,Memory Reg,72.051539
+16,256,8,1,2,Checkpoint,37.837304
+16,256,8,1,2,Checkpoint,974.579489
+16,256,8,1,2,Checkpoint,985.207707
+16,256,8,1,2,Init,846.488547
+16,256,8,1,2,Memory Reg,87.831653
+16,256,8,1,3,Checkpoint,32.858418
+16,256,8,1,3,Checkpoint,1005.118346
+16,256,8,1,3,Checkpoint,983.345478
+16,256,8,1,3,Init,870.634763
+16,256,8,1,3,Memory Reg,89.309427
+16,256,8,1,4,Checkpoint,40.50675
+16,256,8,1,4,Checkpoint,1010.794006
+16,256,8,1,4,Checkpoint,989.251887
+16,256,8,1,4,Init,872.346548
+16,256,8,1,4,Memory Reg,81.467942
+16,256,8,1,5,Checkpoint,40.418864
+16,256,8,1,5,Checkpoint,974.725154
+16,256,8,1,5,Checkpoint,968.719699
+16,256,8,1,5,Init,871.135426
+16,256,8,1,5,Memory Reg,83.978052
+16,256,8,1,6,Checkpoint,35.102835
+16,256,8,1,6,Checkpoint,964.084082
+16,256,8,1,6,Checkpoint,957.60212
+16,256,8,1,6,Init,847.471619
+16,256,8,1,6,Memory Reg,82.211032
+16,256,8,1,7,Checkpoint,38.375717
+16,256,8,1,7,Checkpoint,1011.096204
+16,256,8,1,7,Checkpoint,937.073818
+16,256,8,1,7,Init,845.351685
+16,256,8,1,7,Memory Reg,78.384362
+16,256,8,1,8,Checkpoint,41.945539
+16,256,8,1,8,Checkpoint,982.993064
+16,256,8,1,8,Checkpoint,943.65558
+16,256,8,1,8,Init,851.094826
+16,256,8,1,8,Memory Reg,117.644706
+16,256,8,1,9,Checkpoint,32.801883
+16,256,8,1,9,Checkpoint,998.566025
+16,256,8,1,9,Checkpoint,989.011484
+16,256,8,1,9,Init,867.327221
+16,256,8,1,9,Memory Reg,65.744767
+16,256,8,1,10,Checkpoint,33.597951
+16,256,8,1,10,Checkpoint,971.272441
+16,256,8,1,10,Checkpoint,911.762444
+16,256,8,1,10,Init,870.011188
+16,256,8,1,10,Memory Reg,87.875686
+16,256,8,1,11,Checkpoint,40.308867
+16,256,8,1,11,Checkpoint,1005.621083
+16,256,8,1,11,Checkpoint,987.843624
+16,256,8,1,11,Init,866.524428
+16,256,8,1,11,Memory Reg,87.88865
+16,256,8,1,12,Checkpoint,43.129839
+16,256,8,1,12,Checkpoint,1013.844801
+16,256,8,1,12,Checkpoint,987.494996
+16,256,8,1,12,Init,775.124593
+16,256,8,1,12,Memory Reg,67.855404
+16,256,8,1,13,Checkpoint,29.771146
+16,256,8,1,13,Checkpoint,1010.049163
+16,256,8,1,13,Checkpoint,922.864502
+16,256,8,1,13,Init,871.847127
+16,256,8,1,13,Memory Reg,100.379916
+16,256,8,1,14,Checkpoint,40.685717
+16,256,8,1,14,Checkpoint,989.641456
+16,256,8,1,14,Checkpoint,983.206166
+16,256,8,1,14,Init,823.482569
+16,256,8,1,14,Memory Reg,74.724045
+16,256,8,1,15,Checkpoint,42.737159
+16,256,8,1,15,Checkpoint,971.196307
+16,256,8,1,15,Checkpoint,988.957623
+16,256,8,1,15,Init,869.233082
+16,256,8,1,15,Memory Reg,75.772962
+16,256,8,2,-1,Total_Execution_Sec,106.676662
+16,256,8,2,-1,lib_Checkpoint Total,35.25903
+16,256,8,2,-1,lib_Checkpoint Total,35.290931
+16,256,8,2,-1,lib_Checkpoint Total,35.443109
+16,256,8,2,-1,lib_Checkpoint Total,35.606136
+16,256,8,2,-1,lib_Checkpoint Total,35.681738
+16,256,8,2,-1,lib_Checkpoint Total,35.791476
+16,256,8,2,-1,lib_Checkpoint Total,35.997014
+16,256,8,2,-1,lib_Checkpoint Total,36.15884
+16,256,8,2,-1,lib_Checkpoint Total,36.337508
+16,256,8,2,-1,lib_Checkpoint Total,36.406328
+16,256,8,2,-1,lib_Checkpoint Total,36.41289
+16,256,8,2,-1,lib_Checkpoint Total,36.454238
+16,256,8,2,-1,lib_Checkpoint Total,36.458636
+16,256,8,2,-1,lib_Checkpoint Total,36.477422
+16,256,8,2,-1,lib_Checkpoint Total,36.510815
+16,256,8,2,-1,lib_Checkpoint Total,36.571229
+16,256,8,2,-1,lib_Checkpoint Total,977.275298
+16,256,8,2,-1,lib_Checkpoint Total,998.766829
+16,256,8,2,-1,lib_Checkpoint Total,1011.215341
+16,256,8,2,-1,lib_Checkpoint Total,1012.540979
+16,256,8,2,-1,lib_Checkpoint Total,1032.929371
+16,256,8,2,-1,lib_Checkpoint Total,1033.354381
+16,256,8,2,-1,lib_Checkpoint Total,1041.383439
+16,256,8,2,-1,lib_Checkpoint Total,1052.172235
+16,256,8,2,-1,lib_Checkpoint Total,1056.842834
+16,256,8,2,-1,lib_Checkpoint Total,1057.58886
+16,256,8,2,-1,lib_Checkpoint Total,1058.980672
+16,256,8,2,-1,lib_Checkpoint Total,1060.724818
+16,256,8,2,-1,lib_Checkpoint Total,1060.984417
+16,256,8,2,-1,lib_Checkpoint Total,1061.838866
+16,256,8,2,-1,lib_Checkpoint Total,1065.48687
+16,256,8,2,-1,lib_Checkpoint Total,1071.916904
+16,256,8,2,-1,lib_Checkpoint Total,976.790547
+16,256,8,2,-1,lib_Checkpoint Total,982.958137
+16,256,8,2,-1,lib_Checkpoint Total,986.977088
+16,256,8,2,-1,lib_Checkpoint Total,992.303593
+16,256,8,2,-1,lib_Checkpoint Total,992.329763
+16,256,8,2,-1,lib_Checkpoint Total,1004.444627
+16,256,8,2,-1,lib_Checkpoint Total,1005.809849
+16,256,8,2,-1,lib_Checkpoint Total,1006.899552
+16,256,8,2,-1,lib_Checkpoint Total,1022.136448
+16,256,8,2,-1,lib_Checkpoint Total,1024.894676
+16,256,8,2,-1,lib_Checkpoint Total,1027.779962
+16,256,8,2,-1,lib_Checkpoint Total,1030.328803
+16,256,8,2,-1,lib_Checkpoint Total,1047.573854
+16,256,8,2,-1,lib_Checkpoint Total,1049.620879
+16,256,8,2,-1,lib_Checkpoint Total,1054.697905
+16,256,8,2,-1,lib_Checkpoint Total,1122.330435
+16,256,8,2,-1,lib_Memory Copy,27.834063
+16,256,8,2,-1,lib_Memory Copy,27.268825
+16,256,8,2,-1,lib_Memory Copy,27.796112
+16,256,8,2,-1,lib_Memory Copy,27.245381
+16,256,8,2,-1,lib_Memory Copy,27.771465
+16,256,8,2,-1,lib_Memory Copy,27.449737
+16,256,8,2,-1,lib_Memory Copy,27.691333
+16,256,8,2,-1,lib_Memory Copy,28.404501
+16,256,8,2,-1,lib_Memory Copy,28.206938
+16,256,8,2,-1,lib_Memory Copy,28.046776
+16,256,8,2,-1,lib_Memory Copy,28.068776
+16,256,8,2,-1,lib_Memory Copy,28.092281
+16,256,8,2,-1,lib_Memory Copy,28.092622
+16,256,8,2,-1,lib_Memory Copy,28.521071
+16,256,8,2,-1,lib_Memory Copy,28.200525
+16,256,8,2,-1,lib_Memory Copy,28.230722
+16,256,8,2,-1,lib_Memory Copy,15.83309
+16,256,8,2,-1,lib_Memory Copy,15.930303
+16,256,8,2,-1,lib_Memory Copy,15.867655
+16,256,8,2,-1,lib_Memory Copy,16.768391
+16,256,8,2,-1,lib_Memory Copy,15.746517
+16,256,8,2,-1,lib_Memory Copy,17.705487
+16,256,8,2,-1,lib_Memory Copy,20.408059
+16,256,8,2,-1,lib_Memory Copy,17.480363
+16,256,8,2,-1,lib_Memory Copy,18.894357
+16,256,8,2,-1,lib_Memory Copy,23.126962
+16,256,8,2,-1,lib_Memory Copy,26.856838
+16,256,8,2,-1,lib_Memory Copy,26.896543
+16,256,8,2,-1,lib_Memory Copy,19.264375
+16,256,8,2,-1,lib_Memory Copy,21.518441
+16,256,8,2,-1,lib_Memory Copy,24.694475
+16,256,8,2,-1,lib_Memory Copy,23.5825
+16,256,8,2,-1,lib_Memory Copy,16.149015
+16,256,8,2,-1,lib_Memory Copy,16.818506
+16,256,8,2,-1,lib_Memory Copy,15.875139
+16,256,8,2,-1,lib_Memory Copy,28.038255
+16,256,8,2,-1,lib_Memory Copy,28.033004
+16,256,8,2,-1,lib_Memory Copy,16.005756
+16,256,8,2,-1,lib_Memory Copy,15.954799
+16,256,8,2,-1,lib_Memory Copy,15.983624
+16,256,8,2,-1,lib_Memory Copy,15.893133
+16,256,8,2,-1,lib_Memory Copy,15.770592
+16,256,8,2,-1,lib_Memory Copy,15.908762
+16,256,8,2,-1,lib_Memory Copy,15.798084
+16,256,8,2,-1,lib_Memory Copy,15.963095
+16,256,8,2,-1,lib_Memory Copy,15.531782
+16,256,8,2,-1,lib_Memory Copy,15.858818
+16,256,8,2,-1,lib_Memory Copy,16.455011
+16,256,8,2,-1,lib_Wait,941.737196
+16,256,8,2,-1,lib_Wait,984.496294
+16,256,8,2,-1,lib_Wait,980.084443
+16,256,8,2,-1,lib_Wait,956.971717
+16,256,8,2,-1,lib_Wait,1011.636838
+16,256,8,2,-1,lib_Wait,1005.889899
+16,256,8,2,-1,lib_Wait,988.606809
+16,256,8,2,-1,lib_Wait,943.624021
+16,256,8,2,-1,lib_Wait,1020.452236
+16,256,8,2,-1,lib_Wait,991.576444
+16,256,8,2,-1,lib_Wait,1012.866414
+16,256,8,2,-1,lib_Wait,993.922183
+16,256,8,2,-1,lib_Wait,1018.908958
+16,256,8,2,-1,lib_Wait,978.095525
+16,256,8,2,-1,lib_Wait,993.768643
+16,256,8,2,-1,lib_Wait,960.934653
+16,256,8,2,-1,lib_Wait,1.064545
+16,256,8,2,-1,lib_Wait,1.064515
+16,256,8,2,-1,lib_Wait,1.071689
+16,256,8,2,-1,lib_Wait,1.075536
+16,256,8,2,-1,lib_Wait,1.1251
+16,256,8,2,-1,lib_Wait,1.131211
+16,256,8,2,-1,lib_Wait,1.135479
+16,256,8,2,-1,lib_Wait,1.134347
+16,256,8,2,-1,lib_Wait,1.138595
+16,256,8,2,-1,lib_Wait,1.14148
+16,256,8,2,-1,lib_Wait,1.149124
+16,256,8,2,-1,lib_Wait,1.149084
+16,256,8,2,-1,lib_Wait,1.153845
+16,256,8,2,-1,lib_Wait,1.157631
+16,256,8,2,-1,lib_Wait,1.16256
+16,256,8,2,-1,lib_Wait,1.16256
+16,256,8,2,-1,lib_Wait,1.096986
+16,256,8,2,-1,lib_Wait,1.112065
+16,256,8,2,-1,lib_Wait,1.131112
+16,256,8,2,-1,lib_Wait,1.151018
+16,256,8,2,-1,lib_Wait,1.168021
+16,256,8,2,-1,lib_Wait,1.184803
+16,256,8,2,-1,lib_Wait,1.20461
+16,256,8,2,-1,lib_Wait,1.328914
+16,256,8,2,-1,lib_Wait,1.354953
+16,256,8,2,-1,lib_Wait,1.349022
+16,256,8,2,-1,lib_Wait,1.370882
+16,256,8,2,-1,lib_Wait,1.365192
+16,256,8,2,-1,lib_Wait,1.378517
+16,256,8,2,-1,lib_Wait,1.397373
+16,256,8,2,-1,lib_Wait,1.421308
+16,256,8,2,-1,lib_Wait,1.437509
+16,256,8,2,-1,lib_Wait for checkpoint,7.248955
+16,256,8,2,-1,lib_Wait for checkpoint,7.495952
+16,256,8,2,-1,lib_Wait for checkpoint,7.677273
+16,256,8,2,-1,lib_Wait for checkpoint,7.836013
+16,256,8,2,-1,lib_Wait for checkpoint,7.858616
+16,256,8,2,-1,lib_Wait for checkpoint,7.868395
+16,256,8,2,-1,lib_Wait for checkpoint,8.015342
+16,256,8,2,-1,lib_Wait for checkpoint,8.189
+16,256,8,2,-1,lib_Wait for checkpoint,8.209218
+16,256,8,2,-1,lib_Wait for checkpoint,8.201975
+16,256,8,2,-1,lib_Wait for checkpoint,8.213887
+16,256,8,2,-1,lib_Wait for checkpoint,8.225569
+16,256,8,2,-1,lib_Wait for checkpoint,8.200543
+16,256,8,2,-1,lib_Wait for checkpoint,8.232593
+16,256,8,2,-1,lib_Wait for checkpoint,8.235939
+16,256,8,2,-1,lib_Wait for checkpoint,8.238003
+16,256,8,2,-1,lib_Wait for checkpoint,961.300762
+16,256,8,2,-1,lib_Wait for checkpoint,982.726749
+16,256,8,2,-1,lib_Wait for checkpoint,995.237189
+16,256,8,2,-1,lib_Wait for checkpoint,995.63621
+16,256,8,2,-1,lib_Wait for checkpoint,1015.504983
+16,256,8,2,-1,lib_Wait for checkpoint,1017.06889
+16,256,8,2,-1,lib_Wait for checkpoint,1020.830056
+16,256,8,2,-1,lib_Wait for checkpoint,1031.949755
+16,256,8,2,-1,lib_Wait for checkpoint,1033.649127
+16,256,8,2,-1,lib_Wait for checkpoint,1034.32436
+16,256,8,2,-1,lib_Wait for checkpoint,1034.568209
+16,256,8,2,-1,lib_Wait for checkpoint,1037.788335
+16,256,8,2,-1,lib_Wait for checkpoint,1040.163369
+16,256,8,2,-1,lib_Wait for checkpoint,1040.654295
+16,256,8,2,-1,lib_Wait for checkpoint,1041.602081
+16,256,8,2,-1,lib_Wait for checkpoint,1048.158433
+16,256,8,2,-1,lib_Wait for checkpoint,960.522027
+16,256,8,2,-1,lib_Wait for checkpoint,964.11187
+16,256,8,2,-1,lib_Wait for checkpoint,964.224281
+16,256,8,2,-1,lib_Wait for checkpoint,966.026827
+16,256,8,2,-1,lib_Wait for checkpoint,970.957537
+16,256,8,2,-1,lib_Wait for checkpoint,988.350315
+16,256,8,2,-1,lib_Wait for checkpoint,989.691632
+16,256,8,2,-1,lib_Wait for checkpoint,990.812393
+16,256,8,2,-1,lib_Wait for checkpoint,1006.127698
+16,256,8,2,-1,lib_Wait for checkpoint,1008.986695
+16,256,8,2,-1,lib_Wait for checkpoint,1011.754038
+16,256,8,2,-1,lib_Wait for checkpoint,1014.44636
+16,256,8,2,-1,lib_Wait for checkpoint,1031.486575
+16,256,8,2,-1,lib_Wait for checkpoint,1033.944797
+16,256,8,2,-1,lib_Wait for checkpoint,1038.754327
+16,256,8,2,-1,lib_Wait for checkpoint,1105.735421
+16,256,8,2,0,Checkpoint,36.484365
+16,256,8,2,0,Checkpoint,1032.943828
+16,256,8,2,0,Checkpoint,1030.341968
+16,256,8,2,0,Init,1492.00463
+16,256,8,2,0,Memory Reg,118.676573
+16,256,8,2,1,Checkpoint,36.53958
+16,256,8,2,1,Checkpoint,998.782939
+16,256,8,2,1,Checkpoint,1054.7112
+16,256,8,2,1,Init,1478.607844
+16,256,8,2,1,Memory Reg,81.638392
+16,256,8,2,2,Checkpoint,36.442556
+16,256,8,2,2,Checkpoint,1011.227514
+16,256,8,2,2,Checkpoint,976.802769
+16,256,8,2,2,Init,1480.379503
+16,256,8,2,2,Memory Reg,92.045392
+16,256,8,2,3,Checkpoint,36.187694
+16,256,8,2,3,Checkpoint,1057.605221
+16,256,8,2,3,Checkpoint,982.971832
+16,256,8,2,3,Init,1487.266961
+16,256,8,2,3,Memory Reg,91.632785
+16,256,8,2,4,Checkpoint,35.471742
+16,256,8,2,4,Checkpoint,1056.858684
+16,256,8,2,4,Checkpoint,992.344841
+16,256,8,2,4,Init,1485.622162
+16,256,8,2,4,Memory Reg,101.165007
+16,256,8,2,5,Checkpoint,35.293665
+16,256,8,2,5,Checkpoint,1060.738003
+16,256,8,2,5,Checkpoint,1005.831881
+16,256,8,2,5,Init,1475.695577
+16,256,8,2,5,Memory Reg,79.96547
+16,256,8,2,6,Checkpoint,36.436525
+16,256,8,2,6,Checkpoint,1071.933225
+16,256,8,2,6,Checkpoint,986.99393
+16,256,8,2,6,Init,1478.349388
+16,256,8,2,6,Memory Reg,95.123322
+16,256,8,2,7,Checkpoint,35.315567
+16,256,8,2,7,Checkpoint,1033.371615
+16,256,8,2,7,Checkpoint,1122.345053
+16,256,8,2,7,Init,1480.730214
+16,256,8,2,7,Memory Reg,128.964639
+16,256,8,2,8,Checkpoint,35.818277
+16,256,8,2,8,Checkpoint,1060.999565
+16,256,8,2,8,Checkpoint,1006.916384
+16,256,8,2,8,Init,1477.338623
+16,256,8,2,8,Memory Reg,109.251403
+16,256,8,2,9,Checkpoint,36.599403
+16,256,8,2,9,Checkpoint,1052.185971
+16,256,8,2,9,Checkpoint,1022.150395
+16,256,8,2,9,Init,1475.089785
+16,256,8,2,9,Memory Reg,89.134066
+16,256,8,2,10,Checkpoint,36.506677
+16,256,8,2,10,Checkpoint,1041.399278
+16,256,8,2,10,Checkpoint,1004.453404
+16,256,8,2,10,Init,1481.190802
+16,256,8,2,10,Memory Reg,111.595951
+16,256,8,2,11,Checkpoint,35.632115
+16,256,8,2,11,Checkpoint,1065.501658
+16,256,8,2,11,Checkpoint,1027.79526
+16,256,8,2,11,Init,1478.312678
+16,256,8,2,11,Memory Reg,112.051139
+16,256,8,2,12,Checkpoint,36.024596
+16,256,8,2,12,Checkpoint,1012.556568
+16,256,8,2,12,Checkpoint,992.320214
+16,256,8,2,12,Init,1476.224063
+16,256,8,2,12,Memory Reg,94.625053
+16,256,8,2,13,Checkpoint,35.710934
+16,256,8,2,13,Checkpoint,1058.991141
+16,256,8,2,13,Checkpoint,1047.590675
+16,256,8,2,13,Init,1488.952588
+16,256,8,2,13,Memory Reg,92.44764
+16,256,8,2,14,Checkpoint,36.495005
+16,256,8,2,14,Checkpoint,1061.85603
+16,256,8,2,14,Checkpoint,1049.638884
+16,256,8,2,14,Init,1479.217454
+16,256,8,2,14,Memory Reg,119.395448
+16,256,8,2,15,Checkpoint,36.362245
+16,256,8,2,15,Checkpoint,977.289505
+16,256,8,2,15,Checkpoint,1024.910104
+16,256,8,2,15,Init,1487.686012
+16,256,8,2,15,Memory Reg,82.498593

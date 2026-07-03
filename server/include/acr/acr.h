@@ -19,7 +19,7 @@
 #include <stdatomic.h>
 #include <threads.h>
 
-// Command Scratchpad working memory size (500KB)
+// Command Scratchpad working memory size (5MB)
 #ifndef ACR_CMD_CTX_SCRATCH_SIZE
 #define ACR_CMD_CTX_SCRATCH_SIZE (5ULL * 1024ULL * 1024ULL)
 #endif
