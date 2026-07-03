@@ -69,6 +69,9 @@ eARM_error arm_write_async(arm_hndl *pHndl, arm_op *pOperation,
         log_error("NULL Parameter");
         return eARM_ERR_NULL;
     }
+    if (pOperation->ucs_pStatus) {
+        return eARM_ERR_INPROGRESS;
+    }
     ucp_rkey_h ucp_remote_key = _arm_get_rkey(pAMR, remote_addr, size);
     if (!ucp_remote_key) {
         log_error("NULL Parameter");
@@ -119,11 +122,6 @@ eARM_error arm_read_async(arm_hndl *pHndl, arm_op *pOperation,
         log_fatal("NULL Parameter");
         return eARM_ERR_FATAL;
     }
-    ucp_rkey_h ucp_remote_key = _arm_get_rkey(pAMR, remote_addr, size);
-    if (!ucp_remote_key) {
-        log_error("NULL Parameter");
-        return eARM_ERR_NULL;
-    }
     if (!pOperation) {
         log_error("NULL Parameter");
         return eARM_ERR_NULL;
@@ -133,6 +131,12 @@ eARM_error arm_read_async(arm_hndl *pHndl, arm_op *pOperation,
     }
     pOperation->status = eARM_OK;
     pOperation->ucs_pStatus = NULL;
+
+    ucp_rkey_h ucp_remote_key = _arm_get_rkey(pAMR, remote_addr, size);
+    if (!ucp_remote_key) {
+        log_error("NULL Parameter");
+        return eARM_ERR_NULL;
+    }
 
     ucp_request_param_t ucp_rparams = {0};
     pOperation->ucs_pStatus = aci_get(pHndl->pACI, data, size, remote_addr,
@@ -179,6 +183,7 @@ eARM_error arm_async_check(arm_hndl *pHndl, arm_op *pOperation, bool wait) {
         if (ucs_status != UCS_INPROGRESS) {
             ucp_request_free(pOperation->ucs_pStatus);
             pOperation->ucs_pStatus = NULL;
+            pOperation->status = eARM_OK;
         }
     }
 
