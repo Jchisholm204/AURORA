@@ -321,11 +321,6 @@ size_t *_acr_cmd_restart_gen_mapping(aim_entry_t *pInstance,
 
     size_t *meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
     if (!meta_cli_hash_map) {
-        log_warn("Bad Alloc??");
-        meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
-    }
-
-    if (!meta_cli_hash_map) {
         log_error("Bad Alloc??");
         return NULL;
     }
