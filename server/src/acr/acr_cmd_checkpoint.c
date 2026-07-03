@@ -66,7 +66,6 @@ void *acr_cmd_checkpoint(void *arg) {
                                  pMetadata->chkpt_name);
 
     if (!pCkpt_file) {
-        afv_destroy_metadata(&pMetadata);
         log_error("Bad Alloc??");
         goto CHECKPOINT_FAIL;
     }
@@ -179,7 +178,6 @@ void *acr_cmd_checkpoint(void *arg) {
     file_close_status = afv_file_close(&pCkpt_file);
     if (file_close_status != eAFV_FILE_OK) {
         log_error("FS Error: 0x%x", file_close_status);
-        afv_destroy_metadata(&pMetadata);
         goto CHECKPOINT_FAIL;
     }
 
@@ -187,12 +185,14 @@ void *acr_cmd_checkpoint(void *arg) {
              pMetadata->chkpt_name, pMetadata->version);
 
     eAFV_verif metadata_status = eAFV_VERIF_OK;
+    // Takes ownership of the metadata file (on success)
     metadata_status = afv_write_metadata(pInstance->pAFV, pMetadata);
     if (metadata_status != eAFV_VERIF_OK) {
         log_error("FS Error: 0x%x", metadata_status);
         goto CHECKPOINT_FAIL;
     } else {
-        afv_destroy_metadata(&pMetadata);
+        // AFV module takes ownership
+        pMetadata = NULL;
     }
 
     // NOP
@@ -225,7 +225,7 @@ CHECKPOINT_FAIL:
 eACN_error _acr_cmd_checkpoint_init(aim_entry_t *pInstance) {
     if (!pInstance) {
         log_warn("NULL Parameter");
-        return NULL;
+        return eACN_ERR_NULL;
     }
     eACN_error acn_status = eACN_OK;
     do {
