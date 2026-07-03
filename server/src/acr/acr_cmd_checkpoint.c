@@ -127,7 +127,6 @@ void *acr_cmd_checkpoint(void *arg) {
             const size_t read_cpy_size = rgn_read_remaining >= cpy_rgn_size
                                              ? cpy_rgn_size
                                              : rgn_read_remaining;
-            log_debug("Reading %ld", read_cpy_size);
             // Read from base + (size - remaining) = (base + read)
             arm_status = arm_read_async(pInstance->pARM, &arm_operation, pAMR,
                                         pAMR->pShadow_memory + pAMR->rgn_size -
@@ -139,7 +138,6 @@ void *acr_cmd_checkpoint(void *arg) {
             }
             rgn_read_remaining -= read_cpy_size;
 
-            log_debug("Writing %ld", cpy_rgn_size);
             // Write recvd RDMA request B=region[x]
             eAFV_file_error write_status = eAFV_FILE_OK;
             write_status = afv_file_write(pCkpt_file, pRgn_B, cpy_rgn_size);
