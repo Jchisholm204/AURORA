@@ -223,6 +223,10 @@ CHECKPOINT_FAIL:
 }
 
 eACN_error _acr_cmd_checkpoint_init(aim_entry_t *pInstance) {
+    if (!pInstance) {
+        log_warn("NULL Parameter");
+        return NULL;
+    }
     eACN_error acn_status = eACN_OK;
     do {
         acn_status = acn_await(pInstance->pACN, eACN_memory);
@@ -232,6 +236,10 @@ eACN_error _acr_cmd_checkpoint_init(aim_entry_t *pInstance) {
 }
 
 afv_metadata_t *_acr_cmd_checkpoint_gen_metadata(aim_entry_t *pInstance) {
+    if (!pInstance) {
+        log_warn("NULL Parameter");
+        return NULL;
+    }
     size_t arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
 
     afv_metadata_t *pMetadata = afv_create_metadata(arm_n_regions);
