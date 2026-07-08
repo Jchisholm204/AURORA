@@ -29,8 +29,8 @@ function submit_test(){
     if [[ $DEF_LOCAL_LAUNCH ]]; then
         ${AURORA_TESTS_DIR}/${JOB_SCRIPT} \
             $JOB_NAME \
-            'rome005' \
-            'romebf3a005' \
+            'rome006' \
+            'romebf3a006' \
             "${@[5,-1]}"
     else
         # Launch with Sbatch
@@ -38,12 +38,12 @@ function submit_test(){
             --output="${AURORA_LOG_DIR}/${JOB_NAME}/slurm-%j.log" \
             --job-name=${JOB_NAME} \
             --nodes='2' \
-            --nodelist='rome005,romebf3a005' \
+            --nodelist='rome006,romebf3a006' \
             --time="${JOB_TIME}" \
             ${AURORA_TESTS_DIR}/${JOB_SCRIPT} \
             $JOB_NAME \
-            'rome005' \
-            'romebf3a005' \
+            'rome006' \
+            'romebf3a006' \
             "${@[5,-1]}"
     fi
 }
@@ -62,19 +62,19 @@ function submit_test(){
 #     '64' \
 #     '16'
 
-submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
-    'heatdis_aurora' \
-    10 \
-    '128' \
-    '64' \
-    '16'
-
-submit_test 'heat_distribution_aurora.zsh' '8:00:00' '2' \
-    'heatdis_aurora' \
-    10 \
-    '256' \
-    '64' \
-    '16'
+# submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '128' \
+#     '64' \
+#     '16'
+#
+# submit_test 'heat_distribution_aurora.zsh' '8:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '256' \
+#     '64' \
+#     '16'
 
 # submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
 #     'heatdis_aurora' \
@@ -83,6 +83,19 @@ submit_test 'heat_distribution_aurora.zsh' '8:00:00' '2' \
 #     '128' \
 #     '16'
 
+submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+    'heatdis_aurora' \
+    10 \
+    '128' \
+    '128' \
+    '16'
+
+# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '256' \
+#     '128' \
+#     '16'
 
 # submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
 #     'heatdis_veloc' \
@@ -90,20 +103,32 @@ submit_test 'heat_distribution_aurora.zsh' '8:00:00' '2' \
 #     '64' \
 #     '64' 
 
-submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '128' \
-    '64' 
-
-submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
-    '64' 
-
+# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '128' \
+#     '64' 
+#
+# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '64' 
+#
 # submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
 #     'heatdis_veloc' \
 #     10 \
 #     '64' \
+#     '128'
+
+submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
+    'heatdis_veloc' \
+    10 \
+    '128' \
+    '128'
+
+# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
 #     '128'
