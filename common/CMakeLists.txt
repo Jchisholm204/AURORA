@@ -16,10 +16,6 @@ target_include_directories(${LIB_TARG} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/log.c/src
 )
 
-target_include_directories(${LIB_TARG} PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/mdns
-)
-
 target_compile_options(${LIB_TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
 target_link_libraries(${LIB_TARG} PRIVATE 
