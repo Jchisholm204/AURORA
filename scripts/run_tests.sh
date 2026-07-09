@@ -48,58 +48,107 @@ function submit_test(){
     fi
 }
 
-# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+# submit_test 'test script name.zsh' 'hh:mm:ss' 'number of nodes' \
+#     'test name' \
+#     10 \ # trial iterations 
+#     '256' \ # extra parameters -> heatdis mem
+#     '16' \ # extra parameters -> heatdis mpi procs
+#     '8' # extra parameters -> headis server threads
+
+# submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
 #     'heatdis_aurora' \
 #     10 \
-#     '256' \
-#     '16' \
-#     '8'
-# submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '256' \
-#     '16' \
+#     '64' \
+#     '64' \
 #     '16'
-submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+
+# submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '128' \
+#     '64' \
+#     '16'
+#
+# submit_test 'heat_distribution_aurora.zsh' '8:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '256' \
+#     '64' \
+#     '16'
+
+# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '64' \
+#     '128' \
+#     '16'
+
+# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '128' \
+#     '128' \
+#     '16'
+
+# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '256' \
+#     '128' \
+#     '16'
+
+submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
     'heatdis_aurora' \
     10 \
-    '256' \
-    '32' \
+    '512' \
+    '128' \
     '16'
-submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
+
+submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
     'heatdis_aurora' \
     10 \
-    '256' \
-    '64' \
-    '16'
-submit_test 'heat_distribution_aurora.zsh' '02:00:00' '2' \
-    'heatdis_aurora' \
-    10 \
-    '256' \
-    '64' \
-    '16'
+    '512' \
+    '128' \
+    '8'
 
+# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '64' \
+#     '64' 
 
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
+# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '128' \
+#     '64' 
+#
+# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '64' 
+#
+# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '64' \
+#     '128'
+
+# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '128' \
+#     '128'
+
+# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '128'
+
+submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
     'heatdis_veloc' \
     10 \
-    '256' \
-    '16' 
-
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
-    '32' 
-
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
-    '64' 
-
-submit_test 'heat_distribution_veloc.zsh' '02:00:00' '2' \
-    'heatdis_veloc' \
-    10 \
-    '256' \
+    '512' \
     '128'
