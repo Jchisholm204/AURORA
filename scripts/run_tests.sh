@@ -90,12 +90,26 @@ function submit_test(){
 #     '128' \
 #     '16'
 
+# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+#     'heatdis_aurora' \
+#     10 \
+#     '256' \
+#     '128' \
+#     '16'
+
 submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
     'heatdis_aurora' \
     10 \
-    '256' \
+    '512' \
     '128' \
     '16'
+
+submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
+    'heatdis_aurora' \
+    10 \
+    '512' \
+    '128' \
+    '8'
 
 # submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
 #     'heatdis_veloc' \
@@ -127,8 +141,14 @@ submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
 #     '128' \
 #     '128'
 
+# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
+#     'heatdis_veloc' \
+#     10 \
+#     '256' \
+#     '128'
+
 submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
     'heatdis_veloc' \
     10 \
-    '256' \
+    '512' \
     '128'
