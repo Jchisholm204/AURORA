@@ -157,44 +157,60 @@ function submit_test(){
 
 # Baseline Test
 
-submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-    'heatdis_orig' \
-    10 \
-    '64' \
-    '64' 
+# submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '64' \
+#     '64' 
+#
+# submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '128' \
+#     '64' 
+#
+# submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '256' \
+#     '64' 
+#
+# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '64' \
+#     '128'
+#
+# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '128' \
+#     '128'
+#
+# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '256' \
+#     '128'
+#
+# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
+#     'heatdis_orig' \
+#     10 \
+#     '512' \
+#     '128'
 
-submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-    'heatdis_orig' \
+
+
+
+submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+    'block_test_aurora' \
     10 \
+    '1024' \
     '128' \
-    '64' 
+    '8'
 
-submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-    'heatdis_orig' \
+submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
+    'block_test_veloc' \
     10 \
-    '256' \
-    '64' 
-
-submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-    'heatdis_orig' \
-    10 \
-    '64' \
-    '128'
-
-submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-    'heatdis_orig' \
-    10 \
-    '128' \
-    '128'
-
-submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-    'heatdis_orig' \
-    10 \
-    '256' \
-    '128'
-
-submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-    'heatdis_orig' \
-    10 \
-    '512' \
-    '128'
+    '1024' \
+    '128' 

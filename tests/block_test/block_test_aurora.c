@@ -31,7 +31,7 @@
 int main(int argc, char **argv) {
 
     if (argc < 3) {
-        printf("Usage: <global_chkpt_size_kb> <checkpoint_dir> \n");
+        printf("Usage: <global_chkpt_size_mb> <checkpoint_dir> \n");
         exit(3);
     }
     int memory_size = 0;
@@ -62,10 +62,10 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         printf("[Rank 0] AUL Initialized %d with %d total ranks\n", aul_status,
                n_ranks);
-        printf("Each process writing %d KB\n", memory_size / n_ranks);
+        printf("Each process writing %d MB\n", memory_size / n_ranks);
     }
 
-    char *buffer = malloc(memory_size * 1024 / n_ranks);
+    char *buffer = malloc(memory_size * 1024 * 1024 / n_ranks);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
     BENCH("ckpt_total", rank, {
         int checkpoint_status = 0;
-        BENCH("ckpt_start", rank,
+        BENCH("ckpt_app_block", rank,
               { checkpoint_status = AUL_Checkpoint(ckpt_version, ckpt_name); });
 
         if (checkpoint_status != 0) {
