@@ -2,9 +2,9 @@
  * @file block_test.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-04-18
- * @modified Last Modified: 2026-04-18
+ * @modified Last Modified: 2026-07-17
  *
  * @copyright Copyright (c) 2026
  */
@@ -34,8 +34,8 @@ int main(int argc, char **argv) {
         printf("Usage: <global_chkpt_size_mb> <veloc_config.cfg> \n");
         exit(3);
     }
-    int memory_size = 0;
-    if (sscanf(argv[1], "%d", &memory_size) != 1) {
+    size_t memory_size = 0;
+    if (sscanf(argv[1], "%ld", &memory_size) != 1) {
         printf("Wrong memory size! See usage\n");
         exit(3);
     }
@@ -56,36 +56,64 @@ int main(int argc, char **argv) {
         printf("Each process writing %d MB\n", memory_size / n_ranks);
     }
 
-    char *buffer = malloc(memory_size * 1024 * 1024 / n_ranks);
+    size_t proc_mem_size =
+        ((size_t) memory_size) * 1024ULL * 1024ULL / ((size_t) n_ranks);
+    char *buffer = malloc(proc_mem_size);
+
+    // Fill memory with 'random' values
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        buffer[i] = (char) (i % 255);
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
     char ckpt_name[32];
     int ckpt_version = 1;
     snprintf(ckpt_name, sizeof(ckpt_name), "BLOCKTEST");
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    BENCH("mem_protect", rank, {
-        VELOC_Mem_protect(0, buffer, memory_size * 1024 / n_ranks,
-                          sizeof(char));
-    });
+    BENCH("mem_protect", rank,
+          { VELOC_Mem_protect(0, buffer, proc_mem_size, sizeof(char)); });
 
     MPI_Barrier(MPI_COMM_WORLD);
     if (rank == 0)
         printf("Starting distributed restore...\n");
 
+    // Poison Memory
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        buffer[i] = 0x3F;
+    }
+
     BENCH("restart", rank, {
         int v = VELOC_Restart_test(ckpt_name, ckpt_version);
         if (VELOC_Restart(ckpt_name, ckpt_version) != VELOC_SUCCESS) {
             printf("[Rank %d] Restart failed\n", rank);
-        }
-        else{
+        } else {
             printf("[Rank %d] Restart Success\n", rank);
         }
     });
+
+    size_t failures = 0;
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        if (buffer[i] != (char) (i % 255)) {
+            failures++;
+        }
+    }
+
+    if (failures) {
+        printf("[Rank %d] had %ld restart failures\n", rank, failures);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     if (rank == 0)
         printf("Starting distributed checkpoint...\n");
+
+    // Fill memory with 'random' values
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        buffer[i] = (char) (i % 255);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 

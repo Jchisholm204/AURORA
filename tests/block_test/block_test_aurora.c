@@ -2,9 +2,9 @@
  * @file block_test.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-04-18
- * @modified Last Modified: 2026-04-18
+ * @modified Last Modified: 2026-07-17
  *
  * @copyright Copyright (c) 2026
  */
@@ -34,8 +34,8 @@ int main(int argc, char **argv) {
         printf("Usage: <global_chkpt_size_mb> <checkpoint_dir> \n");
         exit(3);
     }
-    int memory_size = 0;
-    if (sscanf(argv[1], "%d", &memory_size) != 1) {
+    size_t memory_size = 0;
+    if (sscanf(argv[1], "%ld", &memory_size) != 1) {
         printf("Wrong memory size! See usage\n");
         exit(3);
     }
@@ -62,15 +62,21 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         printf("[Rank 0] AUL Initialized %d with %d total ranks\n", aul_status,
                n_ranks);
-        printf("Each process writing %d MB\n", memory_size / n_ranks);
+        printf("Each process writing %ld MB\n", memory_size / n_ranks);
     }
 
-    char *buffer = malloc(memory_size * 1024 * 1024 / n_ranks);
+    size_t proc_mem_size =
+        ((size_t) memory_size) * 1024ULL * 1024ULL / ((size_t) n_ranks);
+    char *buffer = malloc(proc_mem_size);
+
+    // Fill memory with 'random' values
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        buffer[i] = (char) (i % 255);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    BENCH("mem_protect", rank,
-          { AUL_Mem_protect(0, buffer, memory_size * 1024 / n_ranks); });
+    BENCH("mem_protect", rank, { AUL_Mem_protect(0, buffer, proc_mem_size); });
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -93,13 +99,21 @@ int main(int argc, char **argv) {
                    checkpoint_status);
         }
 
-        // Memory regions cannot be unprotected while checkpoint is in progress
+        // Memory regions cannot be unprotected while checkpoint is in
+        // progress
         // Use this call to wait for the checkpoint to complete
         BENCH("mem_unprotect", rank, { AUL_Mem_unprotect(0); });
     });
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // Poison Memory
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        buffer[i] = 0x3F;
+    }
+
     // Need to re-register region for the restore to work
-    AUL_Mem_protect(0, buffer, memory_size * 1024 / n_ranks);
+    AUL_Mem_protect(0, buffer, proc_mem_size);
 
     // 7. Restart Logic
     MPI_Barrier(MPI_COMM_WORLD);
@@ -111,6 +125,17 @@ int main(int argc, char **argv) {
             printf("[Rank %d] Restart failed\n", rank);
         }
     });
+
+    size_t failures = 0;
+    for (size_t i = 0; i < proc_mem_size; i++) {
+        if (buffer[i] != (char) (i % 255)) {
+            failures++;
+        }
+    }
+
+    if (failures) {
+        printf("[Rank %d] had %ld restart failures\n", rank, failures);
+    }
 
     AUL_Finalize();
 

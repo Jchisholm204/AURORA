@@ -203,35 +203,30 @@ function submit_test(){
 
 
 # Heatmap Tests
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '1024' \
-#     '128' \
-#     '8'
+HEATMAP_MEM='16384'
+HEATMAP_PROCS='128'
+submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+    'block_test_aurora_heatmap' \
+    10 \
+    "${HEATMAP_MEM}" \
+    "${HEATMAP_PROCS}" \
+    '8'
 
 submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora' \
+    'block_test_aurora_heatmap' \
     10 \
-    '1024' \
-    '128' \
+    "${HEATMAP_MEM}" \
+    "${HEATMAP_PROCS}" \
     '16'
 
 submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora' \
+    'block_test_aurora_heatmap' \
     10 \
-    '1024' \
-    '128' \
+    "${HEATMAP_MEM}" \
+    "${HEATMAP_PROCS}" \
     '32'
 
 # Synthetic
-submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora' \
-    10 \
-    '1024' \
-    '64' \
-    '16'
-
 # submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
 #     'block_test_aurora' \
 #     10 \
@@ -259,21 +254,21 @@ submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
 #     '4096' \
 #     '64' \
 #     '16'
-
-submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora' \
-    10 \
-    '16384' \
-    '128' \
-    '16'
-
-submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora' \
-    10 \
-    '16384' \
-    '64' \
-    '16'
-
+#
+# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+#     'block_test_aurora' \
+#     10 \
+#     '16384' \
+#     '128' \
+#     '16'
+#
+# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+#     'block_test_aurora' \
+#     10 \
+#     '16384' \
+#     '64' \
+#     '16'
+#
 # submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
 #     'block_test_aurora' \
 #     10 \
@@ -308,11 +303,11 @@ submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
 #     '1024' \
 #     '128' 
 
-submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-    'block_test_veloc' \
-    10 \
-    '1024' \
-    '64' 
+# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
+#     'block_test_veloc' \
+#     10 \
+#     '1024' \
+#     '64' 
 
 # submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
 #     'block_test_veloc' \
@@ -338,17 +333,17 @@ submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
 #     '4096' \
 #     '64' 
 
-submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-    'block_test_veloc' \
-    10 \
-    '16384' \
-    '128' 
-
-submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-    'block_test_veloc' \
-    10 \
-    '16384' \
-    '64' 
+# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
+#     'block_test_veloc' \
+#     10 \
+#     '16384' \
+#     '128' 
+#
+# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
+#     'block_test_veloc' \
+#     10 \
+#     '16384' \
+#     '64' 
 
 # submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
 #     'block_test_veloc' \
