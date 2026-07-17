@@ -2,119 +2,110 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-from matplotlib.ticker import ScalarFormatter, LogLocator, FuncFormatter
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 import os
 import numpy as np
 
 # ==========================================
 # CONFIGURATION - Adjust these for your figure
 # ==========================================
-CSV_FILES = {
-    8:  "./aurora8_bench_results.csv",
-    16: "./aurora16_bench_results.csv",
-    32: "./aurora32_bench_results.csv",
-}
+# Target file path (e.g., "block_test_aurora_times.csv" or "block_test_veloc_times.csv")
+TESTS_VERSION = "0.0.2-3"
+RESULTS_DIR = f"./results/{TESTS_VERSION}"
+INPUT_FILE = f"{RESULTS_DIR}/block_test_aurora_times.csv"
 
 # CHOOSE YOUR METRIC:
-# Options: "restart", "ckpt_total", "mem_unprotect" (from your JSON logs)
-TARGET_METRIC = "ckpt_start"
+# Options in this file: "mem_protect", "wait_timer", "ckpt_app_block", "mem_unprotect", "ckpt_total", "restart"
+TARGET_METRIC = "ckpt_total"
 
 # SCALE OPTION: "linear" or "log"
-# Log scale is better for seeing detail in small values when large values exist
 PLOT_SCALE = "linear"
 
-MAX_RANKS = 32
+# DATA FILTERING (Matches the raw numbers directly now)
+TARGET_PROC_COUNT = 128     # Options in file: 64, 128
+MEM_FILTER_MB = 1024      # Options in file: 1024, 4096, 16384, 32768
+MAX_RANKS = 128             # Truncate view up to a certain rank
 
-# DATA FILTERING
-# MEM_FILTER_KB = 16384  # 16MB
-# MEM_FILTER_KB = 262144  # 256MB
-# MEM_FILTER_KB = 1048576  # 1GB
-# MEM_FILTER_KB = 16777216  # 16GB
-MEM_FILTER_KB = 67108864  # 64GB
-OUTPUT_IMAGE = f"./images/heatmaps_{MEM_FILTER_KB}/heatmap_{
-    TARGET_METRIC}_{PLOT_SCALE}_{MEM_FILTER_KB}.png"
+# Setup dynamic directory and save path
+OUTPUT_IMAGE = f"{
+    RESULTS_DIR}/heatmap_{TARGET_METRIC}_{PLOT_SCALE}_p{TARGET_PROC_COUNT}.png"
 # ==========================================
 
 
 def generate_custom_heatmap():
-    all_dfs = []
-    for threads, file_path in CSV_FILES.items():
-        if os.path.exists(file_path):
-            temp_df = pd.read_csv(file_path)
-            temp_df['server_threads'] = threads
-            all_dfs.append(temp_df)
-
-    if not all_dfs:
+    if not os.path.exists(INPUT_FILE):
+        print(f"Error: Target file '{INPUT_FILE}' does not exist.")
         return
-    master_df = pd.concat(all_dfs, ignore_index=True)
-    plot_df = master_df[(master_df['metric'] == TARGET_METRIC) & (
-        master_df['mem_kb'] == MEM_FILTER_KB)].copy()
-    plot_df = plot_df[plot_df['rank'] < MAX_RANKS].copy()
+
+    # Load file
+    master_df = pd.read_csv(INPUT_FILE)
+
+    # 1. Map directly to the column (no math adjustment needed since numbers match)
+    plot_df = master_df[
+        (master_df['metric'] == TARGET_METRIC) &
+        (master_df['mem_mb'] == MEM_FILTER_MB) &
+        (master_df['proc_count'] == TARGET_PROC_COUNT) &
+        (master_df['rank'] < MAX_RANKS)
+    ].copy()
 
     if plot_df.empty:
+        print(f"Warning: No rows matched your filter choices.\n"
+              f"Check that metric={TARGET_METRIC}, mem_kb column value={MEM_FILTER_MB} MB, and proc_count={TARGET_PROC_COUNT} exist together.")
         return
 
-    # Aggregate and Pivot
+    # 2. Aggregate and Pivot (Rows: server_threads, Columns: rank)
     pivot_ready = plot_df.groupby(['server_threads', 'rank'])[
         'time_ms'].mean().reset_index()
+
+    # Ensure rank is treated cleanly as integer columns
+    pivot_ready['rank'] = pivot_ready['rank'].astype(int)
+
     heatmap_data = pivot_ready.pivot(
         index="server_threads", columns="rank", values="time_ms")
     heatmap_data = heatmap_data.sort_index(ascending=True)
 
-    plt.figure(figsize=(16, 8))
+    plt.figure(figsize=(16, 6))
 
-    # 1. Use PowerNorm to stretch the lower values
-    # gamma < 1 (e.g., 0.3) expands the lower end of the range visually.
-    # gamma = 1 is linear.
-    # gamma > 1 expands the higher end.
+    # 3. Setup Scale Normalization
     vmin, vmax = heatmap_data.min().min(), heatmap_data.max().max()
-    norm = None
-    if PLOT_SCALE == "log":
-        norm = colors.PowerNorm(gamma=0.3, vmin=vmin, vmax=vmax)
-    else:
-        norm = None
+    norm = colors.PowerNorm(gamma=0.3, vmin=vmin,
+                            vmax=vmax) if PLOT_SCALE == "log" else None
 
-    # 2. Define a formatter to keep labels clean
+    # Formatter for clean colorbar annotations
     def format_func(value, tick_number):
         if value >= 1000:
             return f'{value/1000:.2f}k'
         return f'{value:.2f}'
 
-# 3. Create Smoothed Heatmap
-    # We use imshow for blending (interpolation)
+    # 4. Create Heatmap via imshow
     im = plt.imshow(
         heatmap_data,
         aspect='auto',
         cmap="magma",
         norm=norm,
-        # interpolation='bilinear',  # This blends the colors
-        # extent=[0, len(heatmap_data.columns)-0.5, 0, len(heatmap_data.index)-1]
-        # extent=[0, len(heatmap_data.columns)-0.5, 0, len(heatmap_data.index)-1]
+        interpolation=None  # Preserves discrete per-rank cell boxes
     )
 
-    # Add the colorbar manually to control ticks
+    # Colorbar layout customization
     cbar = plt.colorbar(im)
     cbar.set_label('Time (ms)', fontsize=12)
-
-    # Increase the number of ticks on the colorbar
-    # MaxNLocator(10) will try to find ~10 nice-looking intervals
-    from matplotlib.ticker import MaxNLocator
-    cbar.ax.yaxis.set_major_locator(MaxNLocator(nbins=24))
+    cbar.ax.yaxis.set_major_locator(MaxNLocator(nbins=12))
     cbar.ax.yaxis.set_major_formatter(FuncFormatter(format_func))
 
-    # Re-align the Y-axis labels because imshow flips them compared to heatmap
+    # Explicitly map indices back to the source values
     plt.yticks(range(len(heatmap_data.index)), heatmap_data.index)
 
-    # 4. Final Formatting
-    plt.title(f"Aurora {TARGET_METRIC} Latency per Rank, {MEM_FILTER_KB/1024}MB Checkpoint Size",
-              fontsize=16, pad=20)
-
+    # Label formatting with accurate MB sizes (e.g., 32768 MB)
+    plt.title(f"Aurora {TARGET_METRIC} Latency per Rank\n"
+              f"({MEM_FILTER_MB} MB Checkpoint Size | MPI Procs: {TARGET_PROC_COUNT})",
+              fontsize=15, pad=15)
     plt.xlabel("MPI Rank", fontsize=12)
     plt.ylabel("Server Thread Count", fontsize=12)
 
-    # Improve X-axis tick frequency
-    plt.xticks(np.arange(0, len(heatmap_data.columns), 4),
-               heatmap_data.columns[::4])
+    # Step standard X-axis tick intervals so it doesn't get cluttered
+    tick_step = 4 if MAX_RANKS <= 64 else 8
+    plt.xticks(np.arange(0, len(heatmap_data.columns), tick_step),
+               heatmap_data.columns[::tick_step])
 
     plt.tight_layout()
     plt.savefig(OUTPUT_IMAGE, dpi=300)

@@ -8,7 +8,7 @@ import numpy as np
 # ==========================================
 
 # Input Benchmark files (e.g., baseline vs. optimized)
-TESTS_VERSION = "0.0.2-1"
+TESTS_VERSION = "0.0.2-3"
 RESULTS_DIR = f"./results/{TESTS_VERSION}"
 INPUT_CSV_1 = f"{RESULTS_DIR}/heatdis_aurora_final_times.csv"
 INPUT_CSV_2 = f"{RESULTS_DIR}/heatdis_veloc_final_times.csv"
@@ -17,7 +17,7 @@ LABEL_CSV_1 = "AURORA"
 LABEL_CSV_2 = "VELOC"
 
 # Filters for the plot
-TARGET_MPI_PROCS = 128
+TARGET_MPI_PROCS = 64
 TARGET_BACKEND_PROCS = 16
 
 OUTPUT_IMAGE = f"{
