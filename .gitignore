@@ -32,3 +32,6 @@ slurm-*.out
 
 # Mutagen Sync
 mutagen.yml.lock
+
+# Libreoffice Lock Files
+*.~lock.*
