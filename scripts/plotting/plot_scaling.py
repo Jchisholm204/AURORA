@@ -13,14 +13,15 @@ RESULTS_DIR = f"./results/{TESTS_VERSION}"
 
 # Input block test files
 INPUT_CSV_1 = f"{RESULTS_DIR}/block_test_aurora_times.csv"
-INPUT_CSV_2 = f"{RESULTS_DIR}/block_test_veloc_times.csv"
+INPUT_CSV_2 = f"{RESULTS_DIR}/none.csv"
+# INPUT_CSV_2 = f"{RESULTS_DIR}/block_test_veloc_times.csv"
 
 LABEL_CSV_1 = "AURORA"
 LABEL_CSV_2 = "VELOC"
 
 # 1. CHOOSE YOUR TARGET METRIC
 # Options in these files: "ckpt_total", "ckpt_app_block", "mem_protect", "mem_unprotect", "restart"
-TARGET_METRIC = "ckpt_app_block"
+TARGET_METRIC = "ckpt_total"
 
 # 2. DATA FILTERING OPTIONS
 PROC_COUNTS = [64, 128]

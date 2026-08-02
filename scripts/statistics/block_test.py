@@ -4,16 +4,16 @@ import os
 # ==========================================
 # CONFIGURATION - Mirrors your heatmap script
 # ==========================================
-TESTS_VERSION = "0.0.2-3"
+TESTS_VERSION = "0.0.2-4"
 RESULTS_DIR = f"./results/{TESTS_VERSION}"
-INPUT_FILE = f"{RESULTS_DIR}/block_test_aurora_times.csv"
+INPUT_FILE = f"{RESULTS_DIR}/block_test_aurora_heatmap_times.csv"
 
 # CHOOSE YOUR METRIC:
-TARGET_METRIC = "ckpt_total"
+TARGET_METRIC = "restart"
 
 # DATA FILTERING
 TARGET_PROC_COUNT = 128     # Options: 64, 128
-MEM_FILTER_MB = 1024       # Options: 1024, 4096, 16384, 32768
+MEM_FILTER_MB = 2048  # Options: 1024, 4096, 16384, 32768
 MAX_RANKS = 128            # Filter up to a certain rank
 # ==========================================
 

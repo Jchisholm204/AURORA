@@ -1,26 +1,37 @@
 # Testing Scripts
 The Testing Scripts encompass:
-1. The high-level testing framework that submits tests and gathers results
-2. Cluster-specific environment setups and launch variables
-3. Generic testing platforms
+1. Cluster-specific environment setups and launch variables
+2. The high-level testing framework that submits tests and gathers results
+3. Data collection and plotting scripts
 
-All global variables used in testing scripts are prefixed with `ATH` (AURORA Testing Harness).
+---
 
-## High-Level Testing Framework
+## Cluster Specific Configuration
+Each cluster must contain its own testing environment setup scripts under `scripts/clusters/$CLUSTER_NAME/`.
+Within this directory, two scripts control the environment setup (`env.sh`) and launch configuration (`launch_config.sh`).
+The directory organization and script names must follow the outlined format.
 
-## Cluster Specific Variables
-Each cluster must contain its own testing environment setup script.
-This script should be under `scripts/$CLUSTER_NAME/launch_configuration.sh`.
+### `env.sh`
+The purpose of the cluster specific `env.sh` script is to load the modules required to compile and run AURORA:
+- VeloC
+- UCX
+- MPI
+- GCC
+- CMake
+
+Optionally, the `env.sh` script can load the ARM cross compilation toolchain.
+If implemented, the script should use the first argument to determine the toolchain to load (`x86_64` or `aarch64`).
+
+### `launch_config.sh`
 The script should export the following variables, used in the generic testing scripts:
 
-
-#### `ATH_NODES`
+#### `AURORA_CLUSTER_NODES`
 A ZSH style array consisting of node-BlueField hostname pairs.
 Each pair is a comma delimited array consisting of the node and BF hostnames.
 For example:
 
 ```sh
-export ATH_NODES=(
+export AURORA_CLUSTER_NODES=(
     "host001,bf001"
     ...
     "host999,bf999"
@@ -32,7 +43,7 @@ The names and format should match the names used in Slurm.
 These names are used to launch the Slurm Job.
 For cases where a BF is not used, the list can be modified as follows:
 ```sh
-export ATH_NODES=(
+export AURORA_CLUSTER_NODES=(
     "host001"
     ...
     "host999"
@@ -46,24 +57,40 @@ export ATH_NODES=(
 Determines the launch mechanism used for the server.
 Possible options include:
 ```sh
-# export ATH_BACKEND_PLATFORM="none"
-export ATH_BACKEND_PLATFORM="BF"
+export ATH_BACKEND_PLATFORM="none"
+export ATH_BACKEND_PLATFORM="bf"
 ```
 
 >!NOTE
 > Only one ATH platform can be specified at a time.
 > Use of `none` assumes that the backend will be run externally.
+> IE, the testing environment will not launch the backend.
 > Options are case-sensitive.
 
 
+#### `AURORA_CLUSTER_CHECKPOINT_DIR`
+Sets the directory to use for checkpoints.
+This must be an absolute path, ending *without* a `/`.
+
+#### `AURORA_CLUSTER_TMP_DIR`
+Sets the directory to use temporary files, such as build artifacts.
+This must be an absolute path, ending *without* a `/`.
+
 ## Generic Testing Platform
-Located under [`scripts/tests`](../../scripts/tests), each of the following tests have their own "generic" test launch script:
+[`scripts/env.sh`](../../scripts/env.sh) sets all global testing variables.
+At the top of the file:
 
-- Test: Launches the most basic 'does it crash or not' test
-- Blocking Test: Used to generate all figures from `0.0.0`. Each MPI rank checkpoints/restores $\frac{\text{mem}}{n}$ KB.
-- Heat Distribution Benchmark: A modified version of the heat distribution benchmark used to characterize VELOC.
+#### `AURORA_CLUSTER_NAME`
+The cluster name, or the name of the cluster folder.
+This should not be a full path, and must match one of the folders within `scripts/clusters`.
 
-### Test Script Parameters
-Each of these scripts uses a number of parameters to determine their launch parameters at launch time.
-Parameters are set via the cluster specific testing platform `launch_configuration.sh` script and the high level testing framework.
+#### `AURORA_LOG_DIR`
+Sets the output directory for all log files.
+It is recomended to use the default `results/test_version` layout.
+Results will then be saved to the `AURORA/results` directory.
+
+### Running Tests
+After sourcing the `scripts/env.sh` to setup all test variables,
+[`scripts/run_tests.sh`](../../scripts/run_tests.sh)
+can be run to automatically spawn individual slurm jobs for each test.
 

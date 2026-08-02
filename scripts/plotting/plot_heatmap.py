@@ -10,25 +10,25 @@ import numpy as np
 # CONFIGURATION - Adjust these for your figure
 # ==========================================
 # Target file path (e.g., "block_test_aurora_times.csv" or "block_test_veloc_times.csv")
-TESTS_VERSION = "0.0.2-3"
+TESTS_VERSION = "0.0.2-4"
 RESULTS_DIR = f"./results/{TESTS_VERSION}"
-INPUT_FILE = f"{RESULTS_DIR}/block_test_aurora_times.csv"
+INPUT_FILE = f"{RESULTS_DIR}/block_test_aurora_heatmap_times.csv"
 
 # CHOOSE YOUR METRIC:
 # Options in this file: "mem_protect", "wait_timer", "ckpt_app_block", "mem_unprotect", "ckpt_total", "restart"
-TARGET_METRIC = "ckpt_total"
+TARGET_METRIC = "ckpt_app_block"
 
 # SCALE OPTION: "linear" or "log"
 PLOT_SCALE = "linear"
 
 # DATA FILTERING (Matches the raw numbers directly now)
 TARGET_PROC_COUNT = 128     # Options in file: 64, 128
-MEM_FILTER_MB = 1024      # Options in file: 1024, 4096, 16384, 32768
+MEM_FILTER_MB = 2048  # Options in file: 1024, 4096, 16384, 32768
 MAX_RANKS = 128             # Truncate view up to a certain rank
 
 # Setup dynamic directory and save path
 OUTPUT_IMAGE = f"{
-    RESULTS_DIR}/heatmap_{TARGET_METRIC}_{PLOT_SCALE}_p{TARGET_PROC_COUNT}.png"
+    RESULTS_DIR}/heatmap_{TARGET_METRIC}_{PLOT_SCALE}_p{TARGET_PROC_COUNT}_{MEM_FILTER_MB}.png"
 # ==========================================
 
 

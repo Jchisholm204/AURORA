@@ -10,18 +10,21 @@ import numpy as np
 # Input Benchmark files (e.g., baseline vs. optimized)
 TESTS_VERSION = "0.0.2-3"
 RESULTS_DIR = f"./results/{TESTS_VERSION}"
-INPUT_CSV_1 = f"{RESULTS_DIR}/heatdis_aurora_final_times.csv"
-INPUT_CSV_2 = f"{RESULTS_DIR}/heatdis_veloc_final_times.csv"
+INPUT_CSV_1 = f"{RESULTS_DIR}/heatdis_aurora_restore_times.csv"
+INPUT_CSV_2 = f"{RESULTS_DIR}/heatdis_veloc_restore_times.csv"
+# INPUT_CSV_3 = f"{RESULTS_DIR}/heatdis_orig_final_times.csv"
+INPUT_CSV_3 = f"{RESULTS_DIR}/none.csv"
 
 LABEL_CSV_1 = "AURORA"
 LABEL_CSV_2 = "VELOC"
+LABEL_CSV_3 = "Original"
 
 # Filters for the plot
-TARGET_MPI_PROCS = 64
+TARGET_MPI_PROCS = 128
 TARGET_BACKEND_PROCS = 16
 
 OUTPUT_IMAGE = f"{
-    RESULTS_DIR}/mpi{TARGET_MPI_PROCS}_backend{TARGET_BACKEND_PROCS}_runtime_vs_mem.png"
+    RESULTS_DIR}/mpi{TARGET_MPI_PROCS}_backend{TARGET_BACKEND_PROCS}_restore_vs_mem.png"
 
 # ==========================================
 
@@ -98,9 +101,10 @@ def generate_runtime_comparison_plot():
     # Load and process both datasets
     df1 = load_and_filter_dataset(INPUT_CSV_1, LABEL_CSV_1)
     df2 = load_and_filter_dataset(INPUT_CSV_2, LABEL_CSV_2)
+    df3 = load_and_filter_dataset(INPUT_CSV_3, LABEL_CSV_3)
 
     # Combine valid datasets
-    datasets_to_plot = [df for df in [df1, df2] if df is not None]
+    datasets_to_plot = [df for df in [df1, df2, df3] if df is not None]
 
     if not datasets_to_plot:
         print("Error: No valid data available to plot.")

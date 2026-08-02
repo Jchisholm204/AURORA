@@ -22,7 +22,7 @@ LABEL_CSV_2 = "VELOC"
 TARGET_METRIC = "Checkpoint"
 
 # 2. Filters for MPI and Backend configurations
-TARGET_MPI_PROCS = 128
+TARGET_MPI_PROCS = 64
 TARGET_BACKEND_PROCS = None  # Set to an integer (e.g., 16) or None to ignore
 
 # Generate dynamic output name based on filters
