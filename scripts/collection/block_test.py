@@ -7,8 +7,8 @@ import pandas as pd
 # CONFIGURATION: Set your path here
 # ==========================================
 
-VERSION = '0.0.2-3'
-TEST = 'block_test_aurora'
+VERSION = '0.0.3'
+TEST = 'block_test_aurora_heatmap'
 DATA_ROOT_FOLDER = f"./results/{VERSION}/{TEST}/"
 OUTPUT_FILE = f"./results/{VERSION}/{TEST}_times.csv"
 # ==========================================

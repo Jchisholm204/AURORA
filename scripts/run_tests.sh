@@ -55,154 +55,55 @@ function submit_test(){
 #     '16' \ # extra parameters -> heatdis mpi procs
 #     '8' # extra parameters -> headis server threads
 
-# submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '64' \
-#     '64' \
-#     '16'
+HEATDIS_MEM_MIN=64
+HEATDIS_MEM_MAX=1024
+for ((i = $HEATDIS_MEM_MIN; i <= $HEATDIS_MEM_MAX; i=i*2)); do
+    echo "$i"
+    # Run AURORA Tests
+    submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
+        'heatdis_aurora' \
+        10 \
+        "$i" \
+        '64' \
+        '16'
 
-# submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '128' \
-#     '64' \
-#     '16'
-#
-# submit_test 'heat_distribution_aurora.zsh' '8:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '256' \
-#     '64' \
-#     '16'
+    submit_test 'heat_distribution_aurora.zsh' '08:00:00' '2' \
+        'heatdis_aurora' \
+        10 \
+        "$i" \
+        '128' \
+        '16'
 
-# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '64' \
-#     '128' \
-#     '16'
+    # Run VeloC Tests
+    submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+        'heatdis_veloc' \
+        10 \
+        "$i" \
+        '64'
 
-# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '128' \
-#     '128' \
-#     '16'
+    submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+        'heatdis_veloc' \
+        10 \
+        "$i" \
+        '128'
 
-# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '256' \
-#     '128' \
-#     '16'
+    # Run Original (unmodified) heatdis benchmark
+    submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+        'heatdis_orig' \
+        10 \
+        "$i" \
+        '64' 
 
-# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '512' \
-#     '128' \
-#     '16'
-#
-# submit_test 'heat_distribution_aurora.zsh' '10:00:00' '2' \
-#     'heatdis_aurora' \
-#     10 \
-#     '512' \
-#     '128' \
-#     '8'
-
-# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '64' \
-#     '64' 
-
-# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '128' \
-#     '64' 
-#
-# submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '256' \
-#     '64' 
-#
-# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '64' \
-#     '128'
-
-# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '128' \
-#     '128'
-
-# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '256' \
-#     '128'
-
-# submit_test 'heat_distribution_veloc.zsh' '10:00:00' '2' \
-#     'heatdis_veloc' \
-#     10 \
-#     '512' \
-#     '128'
-
-
-
-# Baseline Test
-
-# submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '64' \
-#     '64' 
-#
-# submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '128' \
-#     '64' 
-#
-# submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '256' \
-#     '64' 
-#
-# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '64' \
-#     '128'
-#
-# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '128' \
-#     '128'
-#
-# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '256' \
-#     '128'
-#
-# submit_test 'heat_distribution.zsh' '10:00:00' '2' \
-#     'heatdis_orig' \
-#     10 \
-#     '512' \
-#     '128'
-
-
+    submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+        'heatdis_orig' \
+        10 \
+        "$i" \
+        '64' 
+done
 
 
 # Heatmap Tests
+# Mem in MB
 HEATMAP_MEM='16384'
 HEATMAP_PROCS='128'
 submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
@@ -225,134 +126,3 @@ submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
     "${HEATMAP_MEM}" \
     "${HEATMAP_PROCS}" \
     '32'
-
-# Synthetic
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '2048' \
-#     '128' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '2048' \
-#     '64' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '4096' \
-#     '128' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '4096' \
-#     '64' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '16384' \
-#     '128' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '16384' \
-#     '64' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '32768' \
-#     '128' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '32768' \
-#     '64' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '65536' \
-#     '128' \
-#     '16'
-#
-# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-#     'block_test_aurora' \
-#     10 \
-#     '65536' \
-#     '64' \
-#     '16'
-
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '1024' \
-#     '128' 
-
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '1024' \
-#     '64' 
-
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '2048' \
-#     '128' 
-#
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '2048' \
-#     '64' 
-#
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '4096' \
-#     '128' 
-#
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '4096' \
-#     '64' 
-
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '16384' \
-#     '128' 
-#
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '16384' \
-#     '64' 
-
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '32768' \
-#     '128' 
-#
-# submit_test 'block_test_veloc.zsh' '4:00:00' '2' \
-#     'block_test_veloc' \
-#     10 \
-#     '32768' \
-#     '64' 
