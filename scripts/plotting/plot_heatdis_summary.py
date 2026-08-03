@@ -15,6 +15,7 @@ OUTPUT_DIR = f"{RESULTS_DIR}/figures"
 INPUT_DATASETS = [
     {"path": f"{RESULTS_DIR}/heatdis_aurora_summary_times.csv", "label": "AURORA"},
     {"path": f"{RESULTS_DIR}/heatdis_veloc_summary_times.csv", "label": "VELOC"},
+    {"path": f"{RESULTS_DIR}/heatdis_orig_summary_times.csv", "label": "Baseline"},
 ]
 
 # 2. TARGET THREAD FILTERING:

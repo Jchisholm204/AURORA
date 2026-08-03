@@ -7,7 +7,7 @@ import pandas as pd
 # CONFIGURABLE VARIABLES
 # ==========================================
 VERSION = "0.0.3"
-TEST = "heatdis_aurora"
+TEST = "heatdis_orig"
 INPUT_LOG_DIR = f"./results/{VERSION}/{TEST}/"
 OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_summary_times.csv"
 # ==========================================
