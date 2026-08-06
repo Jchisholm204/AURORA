@@ -14,7 +14,7 @@ TARGET_METRICS = ["ckpt_total", "restart", "ckpt_app_block"]
 
 # DATA FILTERING
 TARGET_PROC_COUNT = 128  # Options: 64, 128
-MEM_FILTER_MB = 16384  # Options: 1024, 4096, 16384, 32768
+MEM_FILTER_MB = 2048  # Options: 1024, 4096, 16384, 32768
 MAX_RANKS = 128  # Filter up to a certain rank
 
 # OUTPUT OPTIONS

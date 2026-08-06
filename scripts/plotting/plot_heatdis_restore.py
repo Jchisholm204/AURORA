@@ -186,7 +186,7 @@ def render_plot_variant(data_df, core_mode_label):
     ax.legend(title="Configuration", loc='best', fontsize=FONT_SIZE_LEGEND)
 
     # Save output
-    output_filename = f"scaling_total_runtime_sec_t{
+    output_filename = f"scaling_restore_sec_t{
         TARGET_SERVER_THREADS}_{core_mode_label}.png"
     output_path = os.path.join(OUTPUT_DIR, output_filename)
 

@@ -32,8 +32,8 @@ TEST_B = "veloc"
 VARS = ["Mean", "StdDev", "Min", "Q1", "Median", "Q3", "Max"]
 
 # 4. DATA FILTERING
-TARGET_PROC_COUNT = 128  # Options in CSVs: 64, 128
-MEM_FILTER_MB = 1024  # Options in CSVs: 64, 128, 256, 512, 1024
+TARGET_PROC_COUNT = 64  # Options in CSVs: 64, 128
+MEM_FILTER_MB = 64  # Options in CSVs: 64, 128, 256, 512, 1024
 TARGET_SERVER_THREADS = [
     0,
     # 8,
@@ -55,7 +55,7 @@ STAT_SUFFIXES = ["_mean", "_median", "_min", "_max"]
 
 # 7. OUTPUT OPTIONS
 EXPORT_COMBINED_CSV = True
-EXPORT_PER_METRIC_CSV = True
+EXPORT_PER_METRIC_CSV = False
 # ==========================================
 
 
@@ -155,7 +155,8 @@ def generate_statistical_summary():
         if plot_df.empty:
             print("\n" + "=" * 80)
             print(
-                f"Warning: No rows matched filter choice for metric '{target_metric}'."
+                f"Warning: No rows matched filter choice for metric '{
+                    target_metric}'."
             )
             print("=" * 80)
             continue
@@ -163,7 +164,8 @@ def generate_statistical_summary():
         print("\n" + "=" * 80)
         print(f"STATISTICAL SUMMARY & COMPARISON FOR METRIC: {target_metric}")
         print(
-            f"Configuration: {MEM_FILTER_MB} MB Checkpoint | {TARGET_PROC_COUNT} MPI Procs"
+            f"Configuration: {MEM_FILTER_MB} MB Checkpoint | {
+                TARGET_PROC_COUNT} MPI Procs"
         )
         print(f"Comparison Pair: TEST_A='{TEST_A}' vs TEST_B='{TEST_B}'")
         print("=" * 80)
@@ -216,7 +218,8 @@ def generate_statistical_summary():
                 print(f"  {col:<35} : {sign}{val:,.3f} {unit}")
 
         if EXPORT_PER_METRIC_CSV:
-            out_path = f"{OUTPUT_DIR}/summary_{target_metric}.csv"
+            out_path = f"{
+                OUTPUT_DIR}/summary_{target_metric}_{MEM_FILTER_MB}mb_{TARGET_PROC_COUNT}p.csv"
             summary_df.to_csv(out_path, index=False)
             print(f"\nSaved metric summary to: {out_path}")
 
@@ -224,7 +227,8 @@ def generate_statistical_summary():
 
     if EXPORT_COMBINED_CSV and all_summaries:
         combined_df = pd.concat(all_summaries, ignore_index=True)
-        combined_out_path = f"{OUTPUT_DIR}/summary_all_metrics.csv"
+        combined_out_path = f"{
+            OUTPUT_DIR}/summary_all_metrics_{MEM_FILTER_MB}mb_{TARGET_PROC_COUNT}p.csv"
         combined_df.to_csv(combined_out_path, index=False)
         print("\n" + "=" * 80)
         print(f"Master summary CSV saved to: {combined_out_path}")
