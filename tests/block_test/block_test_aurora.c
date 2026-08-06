@@ -52,6 +52,9 @@ int main(int argc, char **argv) {
     cfg.opt_group_id = rank;
     cfg.opt_group_size = n_ranks;
     cfg.persistent_path = argv[2];
+    if (argc >= 4) {
+        cfg.opt_hostname = argv[3];
+    }
     int aul_status = AUL_Init(&cfg);
 
     if (aul_status != 0) {

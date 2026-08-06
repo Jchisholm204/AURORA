@@ -19,5 +19,6 @@ const aul_configuration_t AUL_CONFIG_DEFAULT = {
     .use_error_correction = false,
     .connection_mode = eAULCModeAuto,
     .opt_ip = NULL,
+    .opt_hostname = NULL,
     .opt_log_file = NULL,
 };
