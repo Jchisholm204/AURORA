@@ -58,7 +58,7 @@ function run_block_test(){
     ath_launch_test \
         "${JOB_NAME}_p${PROCS}_i${ITERATION}_m${MEM_MB}_b${BACKEND_PROCS}_dry" \
         "${LOG_DIR}" \
-        "${TEST_BUILD_DIR}/tests/block_test_aurora ${MEM_MB} ${CHECKPOINT_DIR}" \
+        "${TEST_BUILD_DIR}/tests/block_test_aurora ${MEM_MB} ${CHECKPOINT_DIR} ${BACKEND_NODES}" \
         "${TEST_NODES}" \
         ${PROCS} \
         "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
@@ -69,7 +69,7 @@ function run_block_test(){
     ath_launch_test \
         "${JOB_NAME}_p${PROCS}_i${ITERATION}_m${MEM_MB}_b${BACKEND_PROCS}" \
         "${LOG_DIR}" \
-        "${TEST_BUILD_DIR}/tests/block_test_aurora ${MEM_MB} ${CHECKPOINT_DIR}" \
+        "${TEST_BUILD_DIR}/tests/block_test_aurora ${MEM_MB} ${CHECKPOINT_DIR} ${BACKEND_NODES}" \
         "${TEST_NODES}" \
         ${PROCS} \
         "${BACKEND_BUILD_DIR}/server/aurora_remote_engine" \
