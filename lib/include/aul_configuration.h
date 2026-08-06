@@ -19,9 +19,9 @@
 // Aurora Connection Mode
 enum eAULConnMode {
     eAULCModeAuto,
-    eAULCModeBF,
-    eAULCModeHost,
-    eAULCModeTarget,
+    eAULCModeHostName,
+    eAULCModeLocalHost,
+    eAULCModeTargetIP,
 
     // Final member
     eACMode_N
@@ -40,6 +40,7 @@ typedef struct {
     // Connection
     enum eAULConnMode connection_mode;
     char *opt_ip;
+    char *opt_hostname;
 
     // Logging
     char *opt_log_file;

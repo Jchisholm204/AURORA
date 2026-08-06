@@ -17,11 +17,12 @@
 #define MEM_SIZE 4
 
 int main(int argc, char **argv) {
-    (void) argc;
-    (void) argv;
 
     aul_configuration_t cfg = AUL_CONFIG_DEFAULT;
     // cfg.connection_mode = eAULCModeHost;
+    if (argc >= 2) {
+        cfg.opt_hostname = argv[1];
+    }
     int ini_s = AUL_Init(&cfg);
 
     printf("AUL Initialized %d\n", ini_s);
