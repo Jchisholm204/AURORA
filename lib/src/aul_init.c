@@ -22,20 +22,21 @@
 
 static char *find_host_name_ip(char *hostname) {
     if (!hostname) {
-        log_warn("NULL Parameter");
+        log_trace("NULL Parameter");
         return NULL;
     }
-    static char target_name[256];
+
+    log_trace("Server Hostname: %s", hostname);
     struct hostent *he;
 
-    he = gethostbyname(target_name);
+    he = gethostbyname(hostname);
     if (he) {
         struct in_addr in_addr;
         (void) memcpy(&in_addr, he->h_addr_list[0], sizeof(struct in_addr));
         return inet_ntoa(in_addr);
     }
 
-    log_trace("BF hostname not found");
+    log_warn("Hostname %s not found", hostname);
 
     return NULL;
 }
@@ -146,6 +147,8 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         ads_data_rx = NULL;
         if (ads_conf.opt_server_ip) {
             ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
+        } else {
+            log_warn("NULL");
         }
         if (ads_data_rx || pCFG->connection_mode == eAULCModeHostName) {
             break;
