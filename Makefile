@@ -15,6 +15,7 @@ gen_cmake_host:
 		-B${BUILD_DIR} \
 		-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DBUILD_TESTING=ON \
 		-G "Unix Makefiles" 
 
 gen_cmake_bf:
