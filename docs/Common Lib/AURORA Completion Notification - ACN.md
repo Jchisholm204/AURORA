@@ -3,36 +3,36 @@ The AURORA Completion Notification module acts as a sync mechanism to keep track
 - Both the client and server maintain a `completion_notification_memory` union/structure.
 - These structures are shared between the client/server over RDMA such that both can access the structure of the other.
 - RDMA Access should *only* be performed in a read only manner.
-- The sync mechanism is performed using [[#Standard Interface|ticks]].
+- The sync mechanism is performed using [#Standard Interface|ticks](%23Standard%20Interface%7Cticks).
 - Requires:
-	- [[AURORA Connection Instance - ACI]]
-	- [[AURORA Blob]]
+	- [AURORA Connection Instance - ACI](AURORA%20Connection%20Instance%20-%20ACI)
+	- [AURORA Blob](AURORA%20Blob)
 	- UCP
 
 ## Initialization
-- Uses the same initialization structure as the [[AURORA Connection Instance - ACI]]
+- Uses the same initialization structure as the [AURORA Connection Instance - ACI](AURORA%20Connection%20Instance%20-%20ACI)
 - Requires:
-	- [[AURORA Connection Instance - ACI]] (Instance, not connected)
-	- Empty [[AURORA Blob]] from the [[ADS]]
+	- [AURORA Connection Instance - ACI](AURORA%20Connection%20Instance%20-%20ACI) (Instance, not connected)
+	- Empty [AURORA Blob](AURORA%20Blob) from the [ADS](ADS)
 ### Instance Creation
 - Allocates the internal data structures used for RDMA and the ACN instance.
 - Will hold/use the ACI handle internally
 - Requires:
-	- [[AURORA Connection Instance - ACI#Instance Creation|ACI Instance Creation]]  to have successfully completed
-	- An empty [[AURORA Blob]] structure
+	- [AURORA Connection Instance - ACI#Instance Creation|ACI Instance Creation](AURORA%20Connection%20Instance%20-%20ACI%23Instance%20Creation%7CACI%20Instance%20Creation)  to have successfully completed
+	- An empty [AURORA Blob](AURORA%20Blob) structure
 - Returns:
 	- An unconnected ACN instance
-	- Filled out exchange data ([[AURORA Blob]], return by parameter)
+	- Filled out exchange data ([AURORA Blob](AURORA%20Blob), return by parameter)
 
 ```c
 acn_hndl *acn_create_instance(aci_hndl *pACI, aurora_blob_t *conn_info);
 ```
 ### Instance Connection
 - Connects an ACN instance with the remote instance.
-- This function also frees data from [[#Instance Creation]]
+- This function also frees data from [#Instance Creation](%23Instance%20Creation)
 - Requires:
-	- An existing ACN ([[#Instance Creation]])
-	- The [[AURORA Discovery Service - ADS]] remote exchange to have successfully completed
+	- An existing ACN ([#Instance Creation](%23Instance%20Creation))
+	- The [AURORA Discovery Service - ADS](AURORA%20Discovery%20Service%20-%20ADS) remote exchange to have successfully completed
 - Returns: An `eACN_error` type, `eACN_OK=0`
 
 ```c

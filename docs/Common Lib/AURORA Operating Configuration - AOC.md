@@ -4,7 +4,7 @@ The AURORA Operating Configuration structure defines all high-level client-serve
 - Must be allocated as a single block. Use its internal allocation function
 	- Can be sent over the network without being packed
 	- Use `size_t aoc_size(const opconf_t*)` to get the size of the block
-- Options here are linked to a subset of the options in the [[AURORA Client Configuration]]
+- Options here are linked to a subset of the options in the [AURORA Client Configuration](AURORA%20Client%20Configuration)
 
 ## Initialization
 - AOC must be a contiguous block of memory
@@ -13,7 +13,7 @@ The AURORA Operating Configuration structure defines all high-level client-serve
 	- The persistent checkpoint path location
 - Returns:
 	- A configuration struct pointer, filled with default values + the persistent path argument 
-	- (only free returned memory using [[#Deconstruction]])
+	- (only free returned memory using [#Deconstruction](%23Deconstruction))
 
 ```c
 static inline opconf_t *aoc_alloc(char *persistent_path);
