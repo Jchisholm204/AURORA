@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.21)
 
 project(AURORA VERSION 0.0.3)
 
+# Install Configuration
+include(GNUInstallDirs REQUIRED)
+include(CMakePackageConfigHelpers REQUIRED)
+
 # Language Options
 enable_language(C)
 set(CMAKE_C_STANDARD 11)
@@ -46,9 +50,14 @@ set(COMMON_LIBRARIES
     pthread
 )
 
+# Add All Subprojects
 add_subdirectory(common)
 add_subdirectory(server)
 add_subdirectory(lib)
 if(BUILD_TESTING)
+    # Adds all test Subprojects
     add_subdirectory(tests)
 endif()
+
+
+
