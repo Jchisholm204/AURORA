@@ -19,8 +19,8 @@ if(veloc_FOUND AND MPI_FOUND)
     add_executable(heatdis_veloc_file ${HEATDIS_WORKING_DIR}/heatdis_file.c)
 
     target_link_libraries(heatdis_veloc_file PRIVATE 
-        # veloc::client
         ${CMAKE_PROJECT_NAME}::mpi 
+        # veloc::client - described in FindVeLOC.cmake
         ${CMAKE_PROJECT_NAME}::veloc
         m
     )
