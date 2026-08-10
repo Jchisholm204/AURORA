@@ -1,9 +1,9 @@
 The AURORA Discovery Service module exists only to perform the discovery and connection logic between the client and server.
 - The "server" component hosts the "Discovery Service" by calling `ads_init`
-- Both the client and server can call `ads_request_exchange` to exchange a list of [[AURORA Blob]]s
+- Both the client and server can call `ads_request_exchange` to exchange a list of [AURORA Blob](AURORA%20Blob.md)s
 - The exchange list is fixed within the `ads_exchange_data_t` type
 - Requires:
-	- [[AURORA Blob]]
+	- [AURORA Blob](AURORA%20Blob.md)
 	- MDNS (statically linked)
 ## Initialization
 - The client side does **not** need to perform initialization.
@@ -46,17 +46,17 @@ struct aurora_discovery_service_conf {
 ## Standard Usage
 Standard Usage/Sub-Components present within the ADS.
 ### Exchanging Data `request_exchange`
-- Client side component for [[#Exchanging Data `exchange`]] and [[#Accepting Exchanges]]
+- Client side component for [#Exchanging Data `exchange`](#Exchanging%20Data%20`exchange`) and [#Accepting Exchanges](#Accepting%20Exchanges)
 - Requires:
-	- A completed [[#Configuration]] struct
-	- Local copy of `exchange_data` (from [[AURORA Connection Instance - ACI|ACI]] and [[AURORA Completion Notification - ACN|ACN]]) 
+	- A completed [#Configuration](#Configuration) struct
+	- Local copy of `exchange_data` (from [ACI](AURORA%20Connection%20Instance%20-%20ACI.md) and [ACN](AURORA%20Completion%20Notification%20-%20ACN.md)) 
 	- No additional initialization
 - Can be called multiple times (does not maintain/use internal context)
 - Usage:
 	1. Allocate an `exchange_data` structure
-	2. Initialize [[AURORA Connection Instance - ACI|ACI]] and [[AURORA Completion Notification - ACN|ACN]] with the `exchange_data` [[AURORA Blob|blobs]]
+	2. Initialize [ACI](AURORA%20Connection%20Instance%20-%20ACI.md) and [ACN](AURORA%20Completion%20Notification%20-%20ACN.md) with the `exchange_data` [blobs](AURORA%20Blob.md)
 	3. Call on `ads_request_exchange`
-	4. Connect [[AURORA Connection Instance - ACI|ACI]] and [[AURORA Completion Notification - ACN|ACN]] with the `exchange_data` [[AURORA Blob|blobs]] returned by the exchange function
+	4. Connect [ACI](AURORA%20Connection%20Instance%20-%20ACI.md) and [ACN](AURORA%20Completion%20Notification%20-%20ACN.md) with the `exchange_data` [blobs](AURORA%20Blob.md) returned by the exchange function
 	5. Free the pointer returned by this function
 - Returns a completed `exchange_data` type, or `NULL` upon failure
 ```c
@@ -67,7 +67,7 @@ extern ads_exchange_data_t *ads_request_exchange(
 ### Accepting Exchanges
 - Blocking function to poll the ADS instance for a new connection
 - Requires:
-	- ADS to be initialized ([[#Initialization]])
+	- ADS to be initialized ([#Initialization](#Initialization))
 - Can be called multiple times (uses the ADS instance context)
 - Usage:
 	- Run this as a singleton to connect to a single client
@@ -78,11 +78,11 @@ extern ads_exchange_data_t *ads_request_exchange(
 int ads_accept_any(ads_hndl *pHndl);
 ```
 ### Exchanging Data `exchange`
-- Server side (part 2) component for [[#Exchanging Data `request_exchange`]]
+- Server side (part 2) component for [#Exchanging Data `request_exchange`](#Exchanging%20Data%20`request_exchange`)
 - Can only be called once per socket descriptor
 - Requires:
-	- ADS to be initialized ([[#Initialization]])
-	- A Socket File Descriptor returned from [[#Accepting Exchanges]]
+	- ADS to be initialized ([#Initialization](#Initialization))
+	- A Socket File Descriptor returned from [#Accepting Exchanges](#Accepting%20Exchanges)
 - Returns a completed `exchange_data` type, or `NULL` upon failure
 
 ```c
@@ -91,6 +91,6 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
 ```
 
 ## Notes
-- All exchange data should follow the [[AURORA Blob]] format.
+- All exchange data should follow the [AURORA Blob](AURORA%20Blob.md) format.
 - Current implementation uses TCP sockets and an MDNS server to perform the exchange.
 - This could/should be migrated to use the same key-store-value as MPI to initialize the system.

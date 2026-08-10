@@ -1,9 +1,9 @@
 # ACR
 The AURORA Command runner is a server side component that handles thread dispatch for all client processing threads.
-- Each thread is granted a thread context, containing the [[AURORA Instance Manager - AIM|AIM]] instance and an entry.
+- Each thread is granted a thread context, containing the [AIM](AURORA%20Instance%20Manager%20-%20AIM.md) instance and an entry.
 	- The instance allows the thread to return the entry to the instance upon task completion
 	- The entry is the AIM client to perform the task on.
-- [[#ACR]] threads are also given a "`flags`" parameter that can be used on a per command basis
+- [#ACR](#ACR) threads are also given a "`flags`" parameter that can be used on a per command basis
 - Each thread is given a memory scratchpad
 	- A pre-allocated block of memory that the thread can use however it likes
 	- The size is determined in `acr.h` and is defined as `ACR_CMD_CTX_SCRATCH_SIZE`
@@ -16,7 +16,7 @@ The AURORA Command runner is a server side component that handles thread dispatc
 
 ## Initialization
 - Requires:
-	- [[AURORA Instance Manager - AIM||AIM]] (Connected)
+	- [AIM](AURORA%20Instance%20Manager%20-%20AIM.md) (Connected)
 	- Number of concurrent workers (threads) to allow active at once
 - This function pre-allocates nearly all of the memory needed for the ACR.
 - It may have high overhead due to a number of large `malloc` invocations
@@ -50,14 +50,14 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
                    ACR_cmd_fn cmd_function);
 ```
 ### Command Thread Options
-- Options for the `ACR_cmd_fn` argument within [[#Dispatch Command Thread]]
+- Options for the `ACR_cmd_fn` argument within [#Dispatch Command Thread](#Dispatch%20Command%20Thread)
 - All of these options should always be launched directly through the ACR
 - Failure to launch these options through the ACR is undefined behavior
 #### NOP
 - NOPs the AIM entry
 - Simply does nothing
 - Does not even spawn a thread to handle the command.
-- Simply returns the [[AURORA Instance Manager - AIM|AIM]] entry back to the queue
+- Simply returns the [AIM](AURORA%20Instance%20Manager%20-%20AIM.md) entry back to the queue
 #### Checkpoint
 - Performs a checkpoint operation on the instance
 - Flags = 0 (ignored)
@@ -66,8 +66,8 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 - Flags = 0 (ignored)
 #### Connection Up
 - Only be called to add a new connection to the server
-- Precursor to [[#Connection Down]]
-- Flags = socket opened by [[AURORA Connection Listener - ACL]]
+- Precursor to [#Connection Down](#Connection%20Down)
+- Flags = socket opened by [AURORA Connection Listener - ACL](AURORA%20Connection%20Listener%20-%20ACL.md)
 - Instance = NULL (special case)
 #### Connection Down
 - Only be called to delete/clean up a connection
@@ -80,12 +80,12 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 ### Context Release
 - Must be called by all threads/commands to release the pre-allocated context upon cleanup
 - This function may fail if the server is busy. (Issue #27)
-- Use [[#Context Release Retry]] for more consistent results
+- Use [#Context Release Retry](#Context%20Release%20Retry) for more consistent results
 ```c
 eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx);
 ```
 ### Context Release Retry
-- [[#Context Release]], but with an auto retry mechanism to ensure the release follows through
+- [#Context Release](#Context%20Release), but with an auto retry mechanism to ensure the release follows through
 - `count` - The number of times to retry before giving up.
 ```c
 eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count);

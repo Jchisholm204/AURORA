@@ -1,8 +1,8 @@
 Before installing AURORA, ensure all system level dependencies are installed:
-![[Building#External Dependencies]]
+![](Building.md#External%20Dependencies)
 
 Optional dependencies are not needed to install AURORA as tests are not installed to the system.
-To install AURORA, first read the [[Building#Build Options|build configuration options]].
+To install AURORA, first read the [](Building.md#Build%20Options|build%20configuration%20options).
 Then, utilize CMake's Install framework to specify the installation directory.
 
 1. Generate the CMake Configuration
@@ -32,7 +32,7 @@ cmake --install /tmp/aurora_build
 
 ## Build Artifacts:
 ### Binaries
-- `aurora_remote_engine` - AURORA's back-end executable. See [[Server Docs/Running ARE|Running ARE]]
+- `aurora_remote_engine` - AURORA's back-end executable. See [Running ARE](Server%20Docs/Running%20ARE.md)
 ### Includes
 - `aul/aul.h` - Main AURORA User Library Include
 - `aul/aul_configuration.h` - Configuration structures used for the AUL

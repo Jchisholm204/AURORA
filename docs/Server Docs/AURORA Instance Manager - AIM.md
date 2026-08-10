@@ -1,18 +1,18 @@
 # AIM
-The AURORA Instance Manager is a lock free FIFO queue that emulates a mutex for [[AURORA Connection Instance - ACI]]'s on the server.
+The AURORA Instance Manager is a lock free FIFO queue that emulates a mutex for [AURORA Connection Instance - ACI](../Common%20Lib/AURORA%20Connection%20Instance%20-%20ACI.md)'s on the server.
 - AIM entries group ACI's with related entities
-	- [[AURORA Connection Instance - ACI|ACI's]] can only be accessed by one thread at a time, only one thread can hold an AIM entry at a time
+	- [ACI's](../Common%20Lib/AURORA%20Connection%20Instance%20-%20ACI.md) can only be accessed by one thread at a time, only one thread can hold an AIM entry at a time
 	- AIM entries can be popped or returned to the instance manager to "get/release" the mutex
 - Separate memory is used for the queue and handles
 	- The handle memory is unaffected by queue operations
 - Does not access internal entry memory/Entry data is never automatically freed
 - Requires:
-	- Structures from [[AURORA Connection Instance - ACI|ACI]], [[AURORA Region Manager - ARM|ARM]], and[[AURORA Completion Notification - ACN|ACN]]
+	- Structures from [ACI](../Common%20Lib/AURORA%20Connection%20Instance%20-%20ACI.md), [ARM](../Common%20Lib/AURORA%20Region%20Manager%20-%20ARM.md), and[ACN](../Common%20Lib/AURORA%20Completion%20Notification%20-%20ACN.md)
 
 ## Initialization
 - Initializes internal queue and handle memory
 - All internal memory is fixed on initialization
-- Does not initialize any entry memory (see [[AURORA Connection Listener - ACL#Connection Acceptance Thread|ACL Connection Acceptance]])
+- Does not initialize any entry memory (see [](AURORA%20Connection%20Listener%20-%20ACL.md#Connection%20Acceptance%20Thread|ACL%20Connection%20Acceptance))
 - Requires:
 	- `max_workers`: The maximum number of connections the server can handle simultaneously 
 - Returns: An AIM handle or NULL on error
@@ -37,7 +37,7 @@ int aim_finalize(aim_hndl **ppHndl);
 ## Standard Interface
 - Describes all functions related to AIM entries
 - `__reserved` portion may be used internally by AIM. This memory should not be accessed externally
-- Contains an [[AURORA Connection Instance - ACI]] handle + all associated connection objects
+- Contains an [AURORA Connection Instance - ACI](../Common%20Lib/AURORA%20Connection%20Instance%20-%20ACI.md) handle + all associated connection objects
 - Used only in server side components
 
 ```c
@@ -58,9 +58,9 @@ struct aurora_instance_manager_entry {
 ```
 ### Add Entry
 - Uses a new slot within the entries list
-- Memory returned by this function should only be deallocated with [[#Remove Entry]]
+- Memory returned by this function should only be deallocated with [#Remove Entry](#Remove%20Entry)
 - Multithreaded safe (do not need to use mutex)
-- Entries must be [[#Enqueue Entry|Enqueued]] after creation for them to enter the progress mechanism
+- Entries must be [Enqueued](#Enqueue%20Entry) after creation for them to enter the progress mechanism
 - Requires:
 	- An initialized AIM handle
 - Returns: An uninitialized AIM entry
@@ -69,12 +69,12 @@ struct aurora_instance_manager_entry {
 aim_entry_t *aim_add_entry(aim_hndl *pHndl);
 ```
 ### Remove Entry
-- Free function for the memory returned by [[#Add Entry]]
+- Free function for the memory returned by [#Add Entry](#Add%20Entry)
 - Does not free internal entry data
 - Returns the entry memory back to an internal pool
 - Requires:
 	- An initialized AIM handle
-	- A previously allocated handle from [[#Add Entry]]
+	- A previously allocated handle from [#Add Entry](#Add%20Entry)
 - Returns: 0 or NULL parameter error
 
 ```c

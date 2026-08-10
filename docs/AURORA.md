@@ -15,19 +15,19 @@ Through experimental microbenchmarks, we show that AURORA dramatically reduces h
 > For the latest updates on what is broken, check the issues page.
 ## Documentation
 All relevant documentation can be found under [`./docs`](./docs). 
-Instructions on dependencies and building can be found in [[Building]].
-Server usage can be found under the [[Server Docs]], while user API documentation is under [[Client Lib]]
-Internal documentation, and documentation for the [[Common Lib]] is also under [[Common Lib]].
-Finally, [[Research/CheckpointRestart/AURORA/Testing/Testing|Docs/Testing]] contains documentation on how to run the testing scripts and reproduce paper results.
+Instructions on dependencies and building can be found in [Building](Building.md).
+Server usage can be found under the [Server Docs](Server%20Docs/Server%20Docs.md), while user API documentation is under [Client Lib](Client%20Lib/Client%20Lib.md)
+Internal documentation, and documentation for the [Common Lib](Common%20Lib/Common%20Lib.md) is also under [Common Lib](Common%20Lib/Common%20Lib.md).
+Finally, [Docs/Testing](Testing/Testing.md) contains documentation on how to run the testing scripts and reproduce paper results.
 ### Building, Installation & Releases
-Steps and instructions for building the code can be found under [[Building]].
-Installation is handled via CMake packaging, see [[Installing]] for further details.
+Steps and instructions for building the code can be found under [Building](Building.md).
+Installation is handled via CMake packaging, see [Installing](Installing.md) for further details.
 Prepackaged releases, along with test logs, are published on the [releases page](https://github.com/Jchisholm204/AURORA/releases). 
 
 ### Bindings
 The user library binds were chosen to mimic that of [VeloC](https://github.com/ECP-VeloC/VELOC/tree/main).
 Therefore, this project is, in theory, "compatible" with any codebase currently using the VeloC Checkpoint Restore mechanism.
-For further details on the AURORA User Library, and usage, see the [[Client Lib]] Docs.
+For further details on the AURORA User Library, and usage, see the [Client Lib](Client%20Lib/Client%20Lib.md) Docs.
 
 ## Contributing/Forking
 This code was developed as research project for [Queen's University CAESAR Lab](https://caesar.engineering.queensu.ca/).

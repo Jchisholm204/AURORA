@@ -59,9 +59,9 @@ const aul_configuration_t AUL_CONFIG_DEFAULT = {
     - `eAULCModeLocalHost` - Connects to `127.0.0.1` (localhost)
     - `eAULCModeTargetIP` - Connects to the server running at `opt_ip`
 ### Backend Server IP
-- Optional, set to the IP of the machine [[Running ARE]].
+- Optional, set to the IP of the machine [Running ARE](../Server%20Docs/Running%20ARE.md).
 ### Backend Server Hostname
-- Optional, set to the hostname of the machine [[Running ARE]].
+- Optional, set to the hostname of the machine [Running ARE](../Server%20Docs/Running%20ARE.md).
 ### Log File Output
 - Optional, set to `NULL` to ignore
 - Directory to save the rank's log file

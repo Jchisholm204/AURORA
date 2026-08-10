@@ -6,12 +6,12 @@ The AURORA Region Manager asynchronously manages a list of locally and remotely 
 - No internal local/remote sync system, everything is assumed to instantly execute through AM callbacks.
 ## Initialization
 - Requires:
-	- [[AURORA Connection Instance - ACI]] (Connected)
+	- [AURORA Connection Instance - ACI](AURORA%20Connection%20Instance%20-%20ACI.md) (Connected)
 ### Instance Creation
 - Sets up the UCP active message handlers
 - Will hold/use the ACI handle internally
 - Requires:
-	- [[AURORA Connection Instance - ACI#Instance Creation|ACI Instance Creation]]  to have successfully completed
+	- [ACI Instance Creation](AURORA%20Connection%20Instance%20-%20ACI.md#Instance%20Creation|ACI%20Instance%20Creation)  to have successfully completed
 - Returns: an ARM instance or NULL
 
 ```c
@@ -19,7 +19,7 @@ arm_hndl *arm_create_instance(aci_hndl *pACI);
 ```
 ## Deconstruction
 - Can be called at any point to destroy an ARM instance
-- Must be called before [[AURORA Connection Instance - ACI#Deconstruction]]
+- Must be called before [ACI - Deconstruction](AURORA%20Connection%20Instance%20-%20ACI.md#Deconstruction)
 - Will invoke the `free(void*)` functions for all stored regions.
 - Returns: An `eACN_error` type, `eACN_OK=0`
 
@@ -45,7 +45,7 @@ eARM_error arm_add(arm_hndl *pHndl, const amr_hndl *pAMR);
 ```
 
 ### Remove Region
-- Opposite function to [[#Add Region]]
+- Opposite function to [#Add Region](#Add%20Region)
 - Will be executed instantly on the remote side (or when the worker is polled)
 - Uses a "remove" AM callback to complete the remote operation
 - Attempts to use "best guess" for region removal
@@ -96,7 +96,7 @@ const amr_hndl *arm_get_local_regions(arm_hndl *pHndl);
 
 ### Remote Write
 - Wrapper around RDMA writes
-- Unfolds to [[AURORA Connection Instance - ACI]] RDMA Write -> RDMA Write
+- Unfolds to [AURORA Connection Instance - ACI](AURORA%20Connection%20Instance%20-%20ACI.md) RDMA Write -> RDMA Write
 ```c
 /**
  * @brief RDMA Write to a region (shadow or active)
@@ -116,7 +116,7 @@ eARM_error arm_write(arm_hndl *pHndl, const amr_hndl *pAMR,
 
 ### Remote Read
 - Wrapper around RDMA reads
-- Unfolds to [[AURORA Connection Instance - ACI]] RDMA Read -> RDMA Read
+- Unfolds to [AURORA Connection Instance - ACI](AURORA%20Connection%20Instance%20-%20ACI.md) RDMA Read -> RDMA Read
 ```c
 /**
  * @brief RDMA Read from a region (shadow or active)
