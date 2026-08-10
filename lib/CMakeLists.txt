@@ -8,11 +8,48 @@ file(GLOB_RECURSE LIB_TARG_SOURCES FOLLOW_SYMLINKS
 add_library(${LIB_TARG} SHARED ${LIB_TARG_SOURCES})
 add_library(${CMAKE_PROJECT_NAME}::${LIB_TARG} ALIAS ${LIB_TARG})
 
-target_include_directories(${LIB_TARG} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(${LIB_TARG} PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
 target_compile_options(${LIB_TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
 target_link_libraries(${LIB_TARG} PRIVATE 
-    aurora_common 
+    ${CMAKE_PROJECT_NAME}::aroc
     ${COMMON_LIBRARIES}
+)
+
+install(TARGETS ${LIB_TARG}
+    EXPORT ${LIB_TARG}Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+# Installation
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT ${LIB_TARG}Targets
+    FILE ${LIB_TARG}Targets.cmake
+    NAMESPACE ${CMAKE_PROJECT_NAME}::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIB_TARG}
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_TARG}ConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/${LIB_TARG}Config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_TARG}Config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIB_TARG}
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_TARG}Config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${LIB_TARG}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${LIB_TARG}
 )

@@ -26,5 +26,5 @@ endif()
 target_link_libraries(${TARG} PRIVATE
     ${COMMON_LIBRARIES}
     ${CMAKE_PROJECT_NAME}::ucx
-    aurora_common 
+    ${CMAKE_PROJECT_NAME}::aroc
 )
