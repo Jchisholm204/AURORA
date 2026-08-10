@@ -1,5 +1,4 @@
-# x86_64 GCC Toolchain
-# Modified From https://github.com/Jchisholm204/Scout/blob/main/src/control_board/firmware/gcc-arm-none-eabi.cmake
+# Host GCC Toolchain
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 

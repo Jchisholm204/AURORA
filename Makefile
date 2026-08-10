@@ -11,7 +11,7 @@ all: build
 
 gen_cmake_host:
 	cmake \
-		-DCMAKE_TOOLCHAIN_FILE=cmake/x86_64-linux-gnu-toolchain.cmake \
+		-DCMAKE_TOOLCHAIN_FILE=cmake/host-linux-gnu-toolchain.cmake \
 		-B${BUILD_DIR} \
 		-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
