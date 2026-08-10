@@ -6,11 +6,9 @@
 #   otherwise it is assumed to be a local directory
 #   offset from the installation directory
 
-
-local AURORA_CHECKPOINT_DIR="checkpoints"
 # local AURORA_CLUSTER_NAME="odp0k"
 local AURORA_CLUSTER_NAME="rome"
-local AURORA_LOG_DIR="results/0.0.2-1"
+local AURORA_LOG_DIR="results/0.0.3"
 
 # -- END User Environment Variables -- 
 
@@ -64,11 +62,6 @@ function ath_setup_env(){
     AURORA_TESTS_DIR="${AURORA_SCRIPT_DIR}/tests"
     AURORA_LAUNCH_DIR="${AURORA_SCRIPT_DIR}/launch"
     AURORA_CLUSTER_DIR="${AURORA_SCRIPT_DIR}/clusters/${AURORA_CLUSTER_NAME}"
-    AURORA_CHECKPOINT_DIR=$(_ath_finddir_abspath "$AURORA_CHECKPOINT_DIR")
-    mkdir -p $AURORA_CHECKPOINT_DIR
-    if [[ $? -ne 0 ]]; then
-        printf "Warning: Invalid Checkpoint Directory.\n" >& 2
-    fi
     AURORA_LOG_DIR=$(_ath_finddir_abspath "$AURORA_LOG_DIR")
     mkdir -p $AURORA_LOG_DIR
     if [[ $? -ne 0 ]]; then
@@ -81,7 +74,6 @@ function ath_setup_env(){
         'AURORA_TESTS_DIR'
         'AURORA_LAUNCH_DIR'
         'AURORA_CLUSTER_DIR'
-        'AURORA_CHECKPOINT_DIR'
         'AURORA_LOG_DIR'
         # Slurm Exports
         'SBATCH_PARTITION'

@@ -1,12 +1,22 @@
-# Example test executable
-add_executable(block_test block_test/block_test.c)
+# AURORA Block Test
+add_executable(block_test_aurora block_test/block_test_aurora.c)
 
-# Link against the objects directly for "white-box" testing 
-# OR link against barf_client for "black-box" API testing
-target_link_libraries(block_test PRIVATE 
-    aul
+target_link_libraries(block_test_aurora PRIVATE 
+    ${CMAKE_PROJECT_NAME}::aul
     ${CMAKE_PROJECT_NAME}::mpi
-    # gtest # (If you decide to use GoogleTest later)
 )
 
+if(veloc_FOUND AND MPI_FOUND)
+
+    # VeLOC Block Test
+    add_executable(block_test_veloc block_test/block_test_veloc.c)
+
+    target_link_libraries(block_test_veloc PRIVATE 
+        ${CMAKE_PROJECT_NAME}::mpi
+        # veloc::client - described in FindVeLOC.cmake
+        ${CMAKE_PROJECT_NAME}::veloc
+    )
+else()
+    message(WARNING "VELOC Missing - Cannot Build VeLOC Block Test")
+endif()
 

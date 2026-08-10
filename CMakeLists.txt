@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(AURORA VERSION 0.1)
+project(AURORA VERSION 0.0.3)
+
+# Install Configuration
+include(GNUInstallDirs REQUIRED)
+include(CMakePackageConfigHelpers REQUIRED)
 
 # Language Options
 enable_language(C)
@@ -31,12 +35,14 @@ set(GENERIC_COMPILE_OPTIONS
     -O2
 )
 
-option(BUILD_TESTING "Enable Compilation of Test Files" ON)
+option(BUILD_TESTING "Enable Compilation of Test Files" OFF)
 
 # Libraries
 include(${CMAKE_SOURCE_DIR}/cmake/FindUCX.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/FindMPI.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/FindThreads.cmake)
+# Requires - Threads, MPI
+include(${CMAKE_SOURCE_DIR}/cmake/FindVeLOC.cmake)
 
 
 set(COMMON_LIBRARIES
@@ -44,10 +50,32 @@ set(COMMON_LIBRARIES
     pthread
 )
 
+# Add All Subprojects
 add_subdirectory(common)
 add_subdirectory(server)
 add_subdirectory(lib)
 if(BUILD_TESTING)
-    enable_testing()
+    # Adds all test Subprojects
     add_subdirectory(tests)
 endif()
+
+
+# Install
+
+write_basic_package_version_file(
+    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}ConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_SOURCE_DIR}/cmake/${CMAKE_PROJECT_NAME}Config.cmake.in"
+    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
+)
+
+install(FILES
+    "${CMAKE_BINARY_DIR}/AURORAConfig.cmake"
+    "${CMAKE_BINARY_DIR}/AURORAConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AURORA
+)

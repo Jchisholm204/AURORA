@@ -2,9 +2,9 @@
  * @file aul_init.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief AURORA User Library - Initialization
- * @version 0.2
+ * @version 0.3
  * @date Created: 2026-04-02
- * @modified Last Modified: 2026-04-02
+ * @modified Last Modified: 2026-08-10
  *
  * @copyright Copyright (c) 2026
  */
@@ -17,42 +17,27 @@
 #include "log.h"
 
 #include <arpa/inet.h>
-#include <ctype.h>
 #include <netdb.h>
 #include <unistd.h>
 
-static char *find_host_bf(void) {
-    static char hostname[256];
-    static char target_name[256];
+// Returns NULL on failure
+static char *find_host_name_ip(char *hostname) {
+    if (!hostname) {
+        log_trace("NULL Parameter");
+        return NULL;
+    }
+
+    log_trace("Server Hostname: %s", hostname);
     struct hostent *he;
 
-    if (gethostname(hostname, sizeof(hostname)) != 0) {
-        return NULL;
+    he = gethostbyname(hostname);
+    if (he) {
+        struct in_addr in_addr;
+        (void) memcpy(&in_addr, he->h_addr_list[0], sizeof(struct in_addr));
+        return inet_ntoa(in_addr);
     }
 
-    char *digits = hostname;
-    while (*digits && !isdigit(*digits)) {
-        digits++;
-    }
-    if (*digits == '\0') {
-        return NULL;
-    }
-
-    const int versions[] = {3, 2, 1};
-    for (size_t i = 0; i < sizeof(versions) / sizeof(int); i++) {
-        int version = versions[i];
-        (void) snprintf(target_name, sizeof(target_name), "romebf%da%s",
-                        version, digits);
-        log_debug("Looking for BF%d @ %s", version, target_name);
-        he = gethostbyname(target_name);
-        if (he) {
-            struct in_addr in_addr;
-            (void) memcpy(&in_addr, he->h_addr_list[0], sizeof(struct in_addr));
-            return inet_ntoa(in_addr);
-        }
-    }
-
-    log_trace("BF hostname not found");
+    log_warn("Hostname %s not found", hostname);
 
     return NULL;
 }
@@ -149,7 +134,7 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     // Use ADS to finalize ACI
     ads_conf_t ads_conf = {
         .timeout_ms = 15000,
-        .opt_server_ip = pCFG->opt_ip,
+        .opt_server_ip = NULL,
     };
     switch (pCFG->connection_mode) {
     default:
@@ -157,27 +142,35 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     case eAULCModeAuto:
         log_trace("Automatic Connection Enabled");
         /* fallthrough */
-    case eAULCModeBF:
+    case eAULCModeHostName:
         // Find BF through hostname search
-        ads_conf.opt_server_ip = find_host_bf();
-        ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
-        if (ads_data_rx || pCFG->connection_mode == eAULCModeBF) {
+        // Returns NULL on Failure or if Hostname is NULL
+        ads_conf.opt_server_ip = find_host_name_ip(pCFG->opt_hostname);
+        ads_data_rx = NULL;
+        // Check to see if a valid IP was returned
+        if (ads_conf.opt_server_ip) {
+            // Request an exchange with the IP(opt_hostname)
+            ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
+        } else {
+            log_warn("IP Lookup Failed");
+        }
+        if (ads_data_rx || pCFG->connection_mode == eAULCModeHostName) {
             break;
         }
-        log_warn("Connection to BF Internal Failed");
+        log_warn("Connection to Hostname Failed");
         /* fallthrough */
-    case eAULCModeHost:
+    case eAULCModeLocalHost:
         ads_conf.opt_server_ip = "127.0.0.1";
         ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
-        if (ads_data_rx || pCFG->connection_mode == eAULCModeHost) {
+        if (ads_data_rx || pCFG->connection_mode == eAULCModeLocalHost) {
             break;
         }
-        log_warn("Connection to Host Server Failed");
+        log_warn("Connection to LocalHost Failed");
         /* fallthrough */
-    case eAULCModeTarget:
+    case eAULCModeTargetIP:
         ads_conf.opt_server_ip = pCFG->opt_ip;
         ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
-        if (ads_data_rx || pCFG->connection_mode == eAULCModeTarget) {
+        if (ads_data_rx || pCFG->connection_mode == eAULCModeTargetIP) {
             break;
         }
         log_warn("Connection to Target Server Failed");

@@ -1,0 +1,32 @@
+{
+	"nodes":[
+		{"id":"24f5d97f0ba782b6","type":"group","x":-420,"y":840,"width":980,"height":735,"label":"NEW"},
+		{"id":"91fa7bff5f13db19","type":"group","x":-379,"y":-195,"width":669,"height":735,"label":"OLD"},
+		{"id":"a5c43887e84a3008","type":"text","text":"`run_tests.sh`","x":-359,"y":-175,"width":250,"height":60},
+		{"id":"174a02757af6834c","type":"text","text":"`env.sh`","x":20,"y":-175,"width":250,"height":60},
+		{"id":"62ebc5609c6d2399","type":"text","text":"`launch/launch.batch`","x":-222,"y":285,"width":250,"height":60},
+		{"id":"c9aa15845c0e385f","type":"text","text":"srun","x":-97,"y":460,"width":250,"height":60},
+		{"id":"89cfc5a190bcb4f7","type":"text","text":"`launch/launch.sh`","x":-260,"y":120,"width":250,"height":60},
+		{"id":"67fa268e917a4a74","type":"text","text":"`tests/discovery.sh ${NUMBER_OF_TRIALS}`","x":-359,"y":-40,"width":250,"height":60},
+		{"id":"b3f85c3f3cc84895","type":"text","text":"`env.sh` \n- Setup directory paths\n- Sanitise User ENVs\n- Source launch scripts\n- Source cluster configuration","x":80,"y":860,"width":250,"height":250},
+		{"id":"21705b02f15336a5","x":260,"y":1213,"width":250,"height":155,"type":"text","text":"`clusters/${cluster_name}`\n- Slurm Launch Options\n- Node Hostnames"},
+		{"id":"33a2a1a56fb34d38","type":"text","text":"`tests/${TEST_NAME}.sh ${RUNS}\n- Runs test suite `RUNS` times\n- Varies parameters\n- Generates executable format\n- Sets/Cleans up test runs","x":-384,"y":1123,"width":399,"height":180},
+		{"id":"ac02a8f4df3cf6be","type":"text","text":"`run_tests.sh`","x":-310,"y":860,"width":250,"height":60},
+		{"id":"e48a1daf031e1774","type":"text","text":"`launch/launch.batch`\n- Runs backend on BF\n- `srun`'s  test executable","x":-309,"y":1380,"width":250,"height":140}
+	],
+	"edges":[
+		{"id":"37223a7085ac9b4d","fromNode":"a5c43887e84a3008","fromSide":"right","toNode":"174a02757af6834c","toSide":"left","label":"source"},
+		{"id":"f77c4c7e11270515","fromNode":"a5c43887e84a3008","fromSide":"bottom","toNode":"67fa268e917a4a74","toSide":"top"},
+		{"id":"5bb6a4a63898df20","fromNode":"67fa268e917a4a74","fromSide":"right","toNode":"174a02757af6834c","toSide":"bottom","label":"source"},
+		{"id":"4501bc6178b45498","fromNode":"67fa268e917a4a74","fromSide":"bottom","toNode":"89cfc5a190bcb4f7","toSide":"top"},
+		{"id":"6d35c237073306da","fromNode":"89cfc5a190bcb4f7","fromSide":"bottom","toNode":"62ebc5609c6d2399","toSide":"top","label":"sbatch"},
+		{"id":"2a2fa3e097d2d862","fromNode":"62ebc5609c6d2399","fromSide":"bottom","toNode":"c9aa15845c0e385f","toSide":"top"},
+		{"id":"0409c298caa14065","fromNode":"62ebc5609c6d2399","fromSide":"right","toNode":"174a02757af6834c","toSide":"bottom","label":"source"},
+		{"id":"5486d5543c5b57be","fromNode":"ac02a8f4df3cf6be","fromSide":"bottom","toNode":"33a2a1a56fb34d38","toSide":"top","label":"sbatch"},
+		{"id":"0b02514dcc1bf129","fromNode":"ac02a8f4df3cf6be","fromSide":"right","toNode":"b3f85c3f3cc84895","toSide":"left","label":"source"},
+		{"id":"931f71819e163730","fromNode":"33a2a1a56fb34d38","fromSide":"right","toNode":"b3f85c3f3cc84895","toSide":"bottom","label":"source"},
+		{"id":"1a04fdeae889f126","fromNode":"e48a1daf031e1774","fromSide":"right","toNode":"b3f85c3f3cc84895","toSide":"bottom","label":"source"},
+		{"id":"ebb12f23a7daf173","fromNode":"33a2a1a56fb34d38","fromSide":"bottom","toNode":"e48a1daf031e1774","toSide":"top"},
+		{"id":"a0ded7a049c722bf","fromNode":"b3f85c3f3cc84895","fromSide":"right","toNode":"21705b02f15336a5","toSide":"top","label":"source"}
+	]
+}

@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
     double wtime, *h, *g, memSize, localerror, globalerror = 1;
 
     if (argc < 3) {
-        printf("Usage: <mem_in_mb> <checkpoint_dir>\n");
-        for(int i = 1; i < argc; i++){
+        printf("Usage: <mem_in_mb> <checkpoint_dir> <opt_server_hostname>\n");
+        for (int i = 1; i < argc; i++) {
             printf("\t%s", argv[i]);
         }
         printf("\n");
@@ -106,6 +106,9 @@ int main(int argc, char *argv[]) {
     aul_conf.opt_group_id = 0;
     aul_conf.opt_group_size = nbProcs;
     aul_conf.persistent_path = strdup(argv[2]);
+    if (argc >= 4) {
+        aul_conf.opt_hostname = argv[3];
+    }
 
     TIME_REGION("Init", rank) {
         if (AUL_Init(&aul_conf) != 0) {

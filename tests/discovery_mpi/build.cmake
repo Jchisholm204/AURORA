@@ -1,10 +1,10 @@
-# Example test executable
-add_executable(test_discovery_mpi discovery_mpi/test_discovery.c)
+# Test Discovery MPI (build.cmake):
+# Compiles a sample program to verify lib-server connection and proper runtime (using MPI)
 
-# Link against the objects directly for "white-box" testing 
-# OR link against barf_client for "black-box" API testing
+add_executable(test_discovery_mpi discovery_mpi/test_discovery.c)
 target_link_libraries(test_discovery_mpi PRIVATE 
-    aul
+    ${CMAKE_PROJECT_NAME}::aul
+    # Link against project MPI
     ${CMAKE_PROJECT_NAME}::mpi
     # gtest # (If you decide to use GoogleTest later)
 )

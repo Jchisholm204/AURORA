@@ -1,6 +1,6 @@
 # FindMPI.cmake
 
-find_package(MPI COMPONENTS C)
+find_package(MPI COMPONENTS C QUIET)
 
 if(NOT MPI_FOUND OR DEFINED ENV{MPI_HOME})
     message(STATUS "find_package(MPI) Failed")
@@ -31,6 +31,7 @@ if(NOT MPI_FOUND OR DEFINED ENV{MPI_HOME})
         message(STATUS "Found MPI")
         message(STATUS ${MPI_INCLUDE_DIR})
         message(STATUS ${MPI_LIB})
+        set(MPI_FOUND True)
     else()
         message(WARNING "Failed to find MPI" ${MPI_INCLUDE_DIR} ${MPI_LIB})
     endif()

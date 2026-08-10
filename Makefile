@@ -11,10 +11,11 @@ all: build
 
 gen_cmake_host:
 	cmake \
-		-DCMAKE_TOOLCHAIN_FILE=cmake/x86_64-linux-gnu-toolchain.cmake \
+		-DCMAKE_TOOLCHAIN_FILE=cmake/host-linux-gnu-toolchain.cmake \
 		-B${BUILD_DIR} \
 		-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DBUILD_TESTING=ON \
 		-G "Unix Makefiles" 
 
 gen_cmake_bf:
@@ -36,6 +37,19 @@ SRCS := $(shell find . -name '*.[ch]' -or -name '*.[ch]pp')
 %.format: %
 	clang-format -i $<
 format: $(addsuffix .format, ${SRCS})
+
+install:
+	cmake \
+		-S . \
+		-DCMAKE_TOOLCHAIN_FILE=cmake/host-linux-gnu-toolchain.cmake \
+		-B${BUILD_DIR} \
+		-DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+		-DBUILD_TESTING=ON \
+		-DCMAKE_INSTALL_PREFIX=/tmp/aurora_install \
+		-G "Unix Makefiles"
+	cmake --build ${BUILD_DIR}
+	cmake --install ${BUILD_DIR}
 
 clean:
 	rm -rf $(BUILD_DIR)
