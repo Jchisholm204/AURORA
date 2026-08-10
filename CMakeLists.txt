@@ -60,4 +60,22 @@ if(BUILD_TESTING)
 endif()
 
 
+# Install
 
+write_basic_package_version_file(
+    "${CMAKE_BINARY_DIR}/AURORAConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    "${CMAKE_SOURCE_DIR}/cmake/AURORAConfig.cmake.in"
+    "${CMAKE_BINARY_DIR}/AURORAConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AURORA
+)
+
+install(FILES
+    "${CMAKE_BINARY_DIR}/AURORAConfig.cmake"
+    "${CMAKE_BINARY_DIR}/AURORAConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AURORA
+)
