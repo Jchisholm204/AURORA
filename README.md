@@ -31,4 +31,4 @@ For further details on the AURORA User Library, and usage, see the [Client Lib](
 
 ## Contributing/Forking
 This code was developed as research project for [Queen's University CAESAR Lab](https://caesar.engineering.queensu.ca/).
-All contributions are welcome. See the LICENCE for 
+All contributions are welcome. See the LICENCE.
