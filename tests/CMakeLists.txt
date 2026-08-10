@@ -1,3 +1,4 @@
+# Include all test subprojects here
 include(discovery/build.cmake)
 include(discovery_mpi/build.cmake)
 include(heatdis/build.cmake)

@@ -1,10 +1,8 @@
-# Example test executable
-add_executable(test_discovery discovery/test_discovery.c)
+# Test Discovery (build.cmake):
+# Compiles a sample program to verify lib-server connection and proper runtime
 
-# Link against the objects directly for "white-box" testing 
-# OR link against barf_client for "black-box" API testing
+add_executable(test_discovery discovery/test_discovery.c)
 target_link_libraries(test_discovery PRIVATE 
-    aul
-    # gtest # (If you decide to use GoogleTest later)
+    ${CMAKE_PROJECT_NAME}::aul
 )
 
