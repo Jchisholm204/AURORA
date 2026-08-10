@@ -63,15 +63,15 @@ endif()
 # Install
 
 write_basic_package_version_file(
-    "${CMAKE_BINARY_DIR}/AURORAConfigVersion.cmake"
+    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}ConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
 
 configure_package_config_file(
-    "${CMAKE_SOURCE_DIR}/cmake/AURORAConfig.cmake.in"
-    "${CMAKE_BINARY_DIR}/AURORAConfig.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/AURORA
+    "${CMAKE_SOURCE_DIR}/cmake/${CMAKE_PROJECT_NAME}Config.cmake.in"
+    "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
 )
 
 install(FILES
