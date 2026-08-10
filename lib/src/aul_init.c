@@ -2,9 +2,9 @@
  * @file aul_init.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief AURORA User Library - Initialization
- * @version 0.2
+ * @version 0.3
  * @date Created: 2026-04-02
- * @modified Last Modified: 2026-04-02
+ * @modified Last Modified: 2026-08-10
  *
  * @copyright Copyright (c) 2026
  */
