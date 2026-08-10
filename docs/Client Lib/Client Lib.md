@@ -3,7 +3,7 @@ The client library binds were chosen to mimic that of [VeloC](https://github.com
 Therefore, this project is, in theory, "compatible" with any codebase currently using the VeloC Checkpoint Restore mechanism.
 
 ## Initialization
-- AURORA is initialized using the [AURORA Client Configuration](AURORA%20Client%20Configuration) structure
+- AURORA is initialized using the [[AURORA Client Configuration]] structure
 - Initialization of AURORA should take place after MPI initialization
 	- The MPI initialization is independent of AURORA
 	- AURORA may be initialized without MPI
@@ -25,8 +25,8 @@ int AUL_Init(const aul_configuration_t *pCFG);
 	- Length of saved memory block
 - Returns:
 	- `0` if OK
-	- Positive value for [AURORA Completion Notification - ACN](AURORA%20Completion%20Notification%20-%20ACN) errors
-	- Negative value for [AURORA Region Manager - ARM](AURORA%20Region%20Manager%20-%20ARM) errors
+	- Positive value for [[AURORA Completion Notification - ACN]] errors
+	- Negative value for [[AURORA Region Manager - ARM]] errors
 
 ```c
 int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
@@ -40,8 +40,8 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 	- The Unique ID of the added region
 - Returns:
 	- `0` if OK
-	- Positive value for [AURORA Completion Notification - ACN](AURORA%20Completion%20Notification%20-%20ACN) errors
-	- Negative value for [AURORA Region Manager - ARM](AURORA%20Region%20Manager%20-%20ARM) errors
+	- Positive value for [[AURORA Completion Notification - ACN]] errors
+	- Negative value for [[AURORA Region Manager - ARM]] errors
 
 ```c
 int AUL_Mem_unprotect(const uint64_t mem_id);

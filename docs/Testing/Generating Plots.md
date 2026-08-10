@@ -4,7 +4,7 @@
 - The `TEST` name variable must be set to the name of test to collect data from, matching the names set in `run_tests.sh` and the results folder.
 - Always ensure all paths are correct before attempting to run a collection script.
 ## Block Test Heatmaps
-The `plot_heatmap.py` script can be used to plot sorted heatmaps of target metrics captured by the [Collecting Results#Block Tests](Collecting%20Results%23Block%20Tests).
+The `plot_heatmap.py` script can be used to plot sorted heatmaps of target metrics captured by the [[Collecting Results#Block Tests]].
 When run, the file will output seperate heatmaps for each of the metrics specified in `TARGET_METRICS`.
 Before plotting, values are sorted smallest to largest to produce a gradient scale rather than a scattered plot.
 All heatmaps will be stored in the `OUTPUT_DIR` directory.
@@ -16,7 +16,7 @@ python3 ./scripts/plotting/plot_heatmap.py
 ## Heat Distribution Benchmark
 
 ### Checkpoint Benchmarks
-The `plot_heatdis_summary.py` script can be used to generate plots from the data recorded by [Collecting Results#Summary Times](Collecting%20Results%23Summary%20Times).
+The `plot_heatdis_summary.py` script can be used to generate plots from the data recorded by [[Collecting Results#Summary Times]].
 When run, the script will generate seperate and combined plots of the 64 and 128 core benchmarks.
 Each metric specified by `TARGET_METRIC_KEYS` will be placed in its own plot.
 The datasets being plotted can be changed by adding or removing the input files from the `INPUT_DATASETS` list.
@@ -28,7 +28,7 @@ python3 ./scripts/plotting/plot_heatdis_summary.py
 ```
 
 ### Restart Time
-The `plot_heatdis_restore.py` script plots data captured by [Collecting Results#Final/Restart Times](Collecting%20Results%23Final%2FRestart%20Times).
+The `plot_heatdis_restore.py` script plots data captured by [[Collecting Results#Final/Restart Times]].
 `TESTS_VERSION`,  `INPUT_DATASETS`, and the output directory can be specified at the top of the file.
 By defult, they output to `results/$TESTS_VERSION/figures`.
 When run, the script will generate seperate and combined plots of the 64 and 128 core benchmarks.

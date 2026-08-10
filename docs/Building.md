@@ -21,9 +21,9 @@ This code has been optimized for NVIDIA BlueField-2/3 DPUs, but will run on any 
 
 # Building from Source
 1. Install Dependencies
-2. Examine the [#Build Options](%23Build%20Options)
-3. [#Build with CMake (x86_64)](%23Build%20with%20CMake%20(x86_64))
-4. [#AArch64 (BlueField) Cross Compilation](%23AArch64%20(BlueField)%20Cross%20Compilation)
+2. Examine the [[#Build Options]]
+3. [[#Build with CMake (x86_64)]]
+4. [[#AArch64 (BlueField) Cross Compilation]]
 ## Build Options
 ### Building AURORA Tests
 Defaults to `OFF`, set to `ON` to enable compilation of the tests.
@@ -138,4 +138,4 @@ This script sets up the build environment needed to run `make build_bf` using th
 	- Its output can be found under `./build/common`
 	- Its output file is `libaurora_common.a`
 # Running Tests
-See [Research/CheckpointRestart/AURORA/Testing/Testing|Testing](Research%2FCheckpointRestart%2FAURORA%2FTesting%2FTesting%7CTesting).
+See [[Research/CheckpointRestart/AURORA/Testing/Testing|Testing]].

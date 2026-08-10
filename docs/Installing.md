@@ -1,16 +1,8 @@
 Before installing AURORA, ensure all system level dependencies are installed:
-> ## External Dependencies
-> - CMake ($\ge$ v3.21)
-> - UCX
-> 	- UCT
-> 	- UCS
-> 	- UCP
-> - Pthreads
-> - MPI (Optional, Required for tests)
-> - [VeLOC](https://github.com/ECP-VeloC/VELOC/tree/main) (Optional, Required for VeLOC tests)
+![[Building#External Dependencies]]
 
 Optional dependencies are not needed to install AURORA as tests are not installed to the system.
-To install AURORA, first read the [Building#Build Options|build configuration options](Building%23Build%20Options%7Cbuild%20configuration%20options).
+To install AURORA, first read the [[Building#Build Options|build configuration options]].
 Then, utilize CMake's Install framework to specify the installation directory.
 
 1. Generate the CMake Configuration
@@ -40,7 +32,7 @@ cmake --install /tmp/aurora_build
 
 ## Build Artifacts:
 ### Binaries
-- `aurora_remote_engine` - AURORA's back-end executable. See [Running ARE](Running%20ARE)
+- `aurora_remote_engine` - AURORA's back-end executable. See [[Server Docs/Running ARE|Running ARE]]
 ### Includes
 - `aul/aul.h` - Main AURORA User Library Include
 - `aul/aul_configuration.h` - Configuration structures used for the AUL

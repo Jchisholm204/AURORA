@@ -3,11 +3,11 @@ The AURORA Connection Instance (ACI) encapsulates the UCP worker and endpoint st
 - ACI is **NOT** thread safe.
 - Each ACI instance must only be called from one thread at any given time.
 - Requires:
-	- [AURORA Discovery Service - ADS](AURORA%20Discovery%20Service%20-%20ADS) (for key-value exchange)
+	- [[AURORA Discovery Service - ADS]] (for key-value exchange)
 	- UCP
 
 ## Initialization
-The ACI must be initialized in two stages; [#Instance Creation](%23Instance%20Creation) and [#Instance Connection](%23Instance%20Connection).
+The ACI must be initialized in two stages; [[#Instance Creation]] and [[#Instance Connection]].
 ### Instance Creation
 - Create the UCP context and worker.
 - This function will automatically create and manage a single, internal context used by all instances of the ACI.
@@ -16,13 +16,13 @@ The ACI must be initialized in two stages; [#Instance Creation](%23Instance%20Cr
 - Generates the worker connection ID, and places it within the `blob_t`
 	- The memory returned by this function must not be freed
 	- The memory placed within the `blob_t` must also not be freed
-		- This memory must get passed to [#ACI Connection|`aci_connect_instance`](%23ACI%20Connection%7C%60aci_connect_instance%60)
+		- This memory must get passed to [[#ACI Connection|`aci_connect_instance`]]
 		- The Connect Instance function will handle cleanup
 - Requires:
-	- An empty [AURORA Blob](AURORA%20Blob) structure
+	- An empty [[AURORA Blob]] structure
 - Returns: 
 	- Unconnected ACI instance
-	- Filled out exchange data ([AURORA Blob](AURORA%20Blob), return by parameter)
+	- Filled out exchange data ([[AURORA Blob]], return by parameter)
 
 ```c
 aci_hndl *aci_create_instance(aurora_blob_t *conn_info);
@@ -31,8 +31,8 @@ aci_hndl *aci_create_instance(aurora_blob_t *conn_info);
 ### Instance Connection
 - Connects an ACI instance with the remote instance.
 - Requires:
-	- An existing ACI ([#Instance Creation](%23Instance%20Creation))
-	- The [AURORA Discovery Service - ADS](AURORA%20Discovery%20Service%20-%20ADS) remote exchange to have successfully completed
+	- An existing ACI ([[#Instance Creation]])
+	- The [[AURORA Discovery Service - ADS]] remote exchange to have successfully completed
 - Returns: `0` or `ucs_status_t` (as int) on error
 
 ```c
@@ -41,7 +41,7 @@ extern int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
 ```
 ## Deconstruction
 - Any other instances relying on an ACI should be destroyed before before the ACI itself.
-- While ACI destruction is a two part process, [#Instance Destruction](%23Instance%20Destruction) will attempt to perform [#Instance Disconnection](%23Instance%20Disconnection) before destroying the instance.
+- While ACI destruction is a two part process, [[#Instance Destruction]] will attempt to perform [[#Instance Disconnection]] before destroying the instance.
 ### Instance Disconnection
 - Attempts to disconnect the instance from the remote
 - Returns: `0` or error (nullparam is error)
@@ -58,7 +58,7 @@ int aci_destroy_instance(aci_hndl **ppHndl);
 ```
 ## Standard Interface
 - Designed to be a complete abstraction around **all** UCX/S/P datastructures.
-- This layer should be the only/primary layer used outside of the [Common Lib](Common%20Lib)
+- This layer should be the only/primary layer used outside of the [[Common Lib]]
 
 ### Polling
 - This is a wrapper around `ucp_worker_progress`
@@ -78,7 +78,7 @@ void aci_keepalive(bool enable);
 ```
 
 ## Extended Interface
-- Since this module abstracts the UCP worker and endpoint, any UCP functions that require access to these structures are abstracted through the [#Extended Interface](%23Extended%20Interface)
+- Since this module abstracts the UCP worker and endpoint, any UCP functions that require access to these structures are abstracted through the [[#Extended Interface]]
 - All functions in this interface follow the same template as the UCP functions they wrap, but with the endpoint/context replaced with an ACI.
 - The UCP Active Message Send (`ucp_am_send_nbx`) wrapper is provided as an example.
 
