@@ -20,6 +20,7 @@
 #include <netdb.h>
 #include <unistd.h>
 
+// Returns NULL on failure
 static char *find_host_name_ip(char *hostname) {
     if (!hostname) {
         log_trace("NULL Parameter");
@@ -143,12 +144,15 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         /* fallthrough */
     case eAULCModeHostName:
         // Find BF through hostname search
+        // Returns NULL on Failure or if Hostname is NULL
         ads_conf.opt_server_ip = find_host_name_ip(pCFG->opt_hostname);
         ads_data_rx = NULL;
+        // Check to see if a valid IP was returned
         if (ads_conf.opt_server_ip) {
+            // Request an exchange with the IP(opt_hostname)
             ads_data_rx = ads_request_exchange(&ads_conf, &ads_data_tx);
         } else {
-            log_warn("NULL");
+            log_warn("IP Lookup Failed");
         }
         if (ads_data_rx || pCFG->connection_mode == eAULCModeHostName) {
             break;
