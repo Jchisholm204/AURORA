@@ -38,12 +38,6 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
         return UCS_OK;
     }
 
-    size_t shadow_rkey_size = *((size_t *) data);
-    size_t active_rkey_size = data_len - shadow_rkey_size - sizeof(size_t);
-    void *shadow_rkey_buf = ((uint8_t *) data + sizeof(size_t));
-    void *active_rkey_buf =
-        ((uint8_t *) data + sizeof(size_t) + shadow_rkey_size);
-
     if (header_len != sizeof(amr_hndl)) {
         log_error("UCS Error");
         // Return OK to avoid killing UCS
@@ -69,18 +63,14 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
     // Zero out all non-local fields (even const members)
     *((aurora_memory_free_cb_t *) &pInst_AMR->free) = NULL;
     SET_CONST(pInst_AMR->free, aurora_memory_free_cb_t) = NULL;
-    pInst_AMR->active_remote_key = NULL;
-    pInst_AMR->active_mem_hndl = NULL;
-    pInst_AMR->shadow_remote_key = NULL;
-    pInst_AMR->shadow_mem_hndl = NULL;
+    pInst_AMR->remote_key = NULL;
+    pInst_AMR->mem_hndl = NULL;
 
-    {
-        (void) shadow_rkey_size;
+    { // Unpack Rkey/Setup Region
         ucs_status_t ucs_status =
-            aci_rkey_unpack(pHndl->pACI, shadow_rkey_buf,
-                            &pInst_AMR->shadow_remote_key);
+            aci_rkey_unpack(pHndl->pACI, data, &pInst_AMR->remote_key);
 
-        if (ucs_status != UCS_OK || !pInst_AMR->shadow_remote_key) {
+        if (ucs_status != UCS_OK || !pInst_AMR->remote_key) {
             log_error("UCS Error");
             (void) _arl_remove(&pHndl->remote_rgns, pHndl->remote_rgns.size);
             // Return OK to avoid killing UCS
@@ -88,26 +78,8 @@ ucs_status_t _arm_add_rgn_cb(void *arg, const void *header, size_t header_len,
         }
     }
 
-    {
-        (void) active_rkey_size;
-        ucs_status_t ucs_status =
-            aci_rkey_unpack(pHndl->pACI, active_rkey_buf,
-                            &pInst_AMR->active_remote_key);
-
-        if (ucs_status != UCS_OK || !pInst_AMR->active_remote_key) {
-            log_error("UCS Error");
-            if (pInst_AMR->shadow_remote_key) {
-                (void) ucp_rkey_destroy(pInst_AMR->shadow_remote_key);
-            }
-            (void) _arl_remove(&pHndl->remote_rgns, pHndl->remote_rgns.size);
-            // Return OK to avoid killing UCS
-            return UCS_OK;
-        }
-    }
-
-    log_trace("Add: %d %s", pInst_AMR->id, pInst_AMR->name);
-    log_trace("pA=0x%lx pS=0x%lx", pInst_AMR->pActive_memory,
-              pInst_AMR->pShadow_memory);
+    log_trace("Add: %d %s 0x%lx", pInst_AMR->id, pInst_AMR->name,
+              pInst_AMR->pRegion);
 
     return UCS_OK;
 }
@@ -145,19 +117,13 @@ ucs_status_t _arm_rm_rgn_cb(void *arg, const void *header, size_t header_len,
         return UCS_OK;
     }
 
-    log_trace("Remove: %d %s", pInst_AMR->id, pInst_AMR->name);
-    log_trace("pA=0x%lx pS=0x%lx", pInst_AMR->pActive_memory,
-              pInst_AMR->pShadow_memory);
+    log_trace("Remove: %d %s 0x%lx", pInst_AMR->id, pInst_AMR->name,
+              pInst_AMR->pRegion);
 
-    if (pInst_AMR->active_remote_key) {
-        log_trace("destroy rkey 0x%lx", pInst_AMR->active_remote_key);
-        ucp_rkey_destroy(pInst_AMR->active_remote_key);
-        pInst_AMR->active_remote_key = NULL;
-    }
-    if (pInst_AMR->shadow_remote_key) {
-        log_trace("destroy rkey 0x%lx", pInst_AMR->shadow_remote_key);
-        ucp_rkey_destroy(pInst_AMR->shadow_remote_key);
-        pInst_AMR->shadow_remote_key = NULL;
+    if (pInst_AMR->remote_key) {
+        log_trace("destroy rkey 0x%lx", pInst_AMR->remote_key);
+        ucp_rkey_destroy(pInst_AMR->remote_key);
+        pInst_AMR->remote_key = NULL;
     }
 
     (void) _arl_remove(&pHndl->remote_rgns, inst_idx);

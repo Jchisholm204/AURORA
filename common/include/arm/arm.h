@@ -60,8 +60,7 @@ typedef void (*aurora_memory_free_cb_t)(
 
 struct aurora_memory_region_hndl {
     // Store as uint64_t to prevent prefetching
-    const uint64_t pActive_memory;
-    const uint64_t pShadow_memory;
+    const uint64_t pRegion;
     const size_t rgn_size;
     const uint64_t id;
     const aurora_memory_free_cb_t free;
@@ -69,13 +68,11 @@ struct aurora_memory_region_hndl {
     union {
 #ifdef ARM_INTERNAL
         struct {
-            ucp_rkey_h active_remote_key;
-            ucp_mem_h active_mem_hndl;
-            ucp_rkey_h shadow_remote_key;
-            ucp_mem_h shadow_mem_hndl;
+            ucp_rkey_h remote_key;
+            ucp_mem_h mem_hndl;
         };
 #endif
-        uint64_t __reserved[4];
+        uint64_t __reserved[2];
     };
 };
 
