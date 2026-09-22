@@ -29,6 +29,7 @@ afv_metadata_t *afv_create_metadata(size_t n_regions) {
     afv_metadata_t *pMetadata = malloc(metadata_size);
     if (!pMetadata) {
         log_error("Bad Alloc??");
+        return NULL;
     }
 
     memset(pMetadata, 0, sizeof(afv_metadata_t));
@@ -125,8 +126,6 @@ eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata) {
         log_trace("Err");
         status |= eAFV_VERIF_ERR_VERSION;
     }
-
-#warning "TODO: Implement other verifiers"
 
     return status;
 }

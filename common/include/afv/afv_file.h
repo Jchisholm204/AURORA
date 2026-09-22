@@ -2,9 +2,11 @@
  * @file afv_file.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-04-02
- * @modified Last Modified: 2026-04-02
+ * @modified Last Modified: 2026-09-22
+ *
+ * 2026-09-22: Depricated use of afv_file outside of the AFV
  *
  * @copyright Copyright (c) 2026
  */
@@ -16,6 +18,10 @@
 #include <stdio.h>
 
 #define AFV_FNAME_LEN 512
+
+#ifndef AFV_INTERNAL
+#warning "External use of the AFV file methods is depricated"
+#endif
 
 enum aurora_file_versioning_file_error_e {
     eAFV_FILE_OK,
@@ -51,8 +57,8 @@ extern eAFV_file_error afv_file_seek(afv_file_hndl *pHndl, size_t seekptr);
 
 extern eAFV_file_error afv_file_jump(afv_file_hndl *pHndl, int64_t jsize);
 
-extern eAFV_file_error afv_file_write(afv_file_hndl *pHndl, const void *restrict data,
-                                      size_t size);
+extern eAFV_file_error afv_file_write(afv_file_hndl *pHndl,
+                                      const void *restrict data, size_t size);
 
 extern eAFV_file_error afv_file_read(afv_file_hndl *pHndl, void *data,
                                      size_t size);

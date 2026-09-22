@@ -2,9 +2,9 @@
  * @file afv.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
- * @version 0.2
+ * @version 0.3
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-04-02
+ * @modified Last Modified: 2026-09-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -21,6 +21,7 @@ struct aurora_file_versioning_handle
     int64_t group_id;
     char *persistent_path;
     bool use_error_correction;
+    // Open File Pointer
     afv_metadata_t *pMetadata;
 }
 #endif

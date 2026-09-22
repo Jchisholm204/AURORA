@@ -2,9 +2,9 @@
  * @file afv_metadata.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief Metadata included in all AURORA Checkpoint Files
- * @version 0.2
+ * @version 0.3
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-04-02
+ * @modified Last Modified: 2026-08-12
  *
  * @copyright Copyright (c) 2026
  */
@@ -34,7 +34,7 @@
 
 #ifdef AFV_INTERNAL
 #ifndef AFV_METADATA_VERIF_KEY
-#define _AFV_VERSION_ ((int32_t) 1)
+#define _AFV_VERSION_ ((int32_t) 3)
 #define AFV_METADATA_VERIF_KEY                                                 \
     ((uint64_t) ((uint64_t) (-_AFV_VERSION_) << 32) | _AFV_VERSION_)
 // #define AFV_METADATA_VERIF_KEY ((uint64_t) 0xFFFFFFFE00000001ULL)
