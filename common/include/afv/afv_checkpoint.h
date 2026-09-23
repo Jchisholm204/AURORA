@@ -23,42 +23,59 @@
 #define AFV_RESERVED_SIZE 2
 #endif
 
-#if AFV_RESERVED_SIZE < 3
-#error "AFV Checkpoint requires a larger reserved region"
-#endif
-
-struct __attribute__((packed)) aurora_file_versioning_checkpoint {
-#ifdef AFV_INTERNAL
-    afv_hndl *pAFV;
-    uint64_t region_last_accessed;
-    const char file_mode;
-    afv_metadata_t *pMetdata;
-    afv_file_hndl *pFile;
-#endif
+enum aurora_file_versioning_checkpoint_mode {
+    eAFVC_MODE_W,
+    eAFVC_MODE_R,
+    eAFVC_N_MODE,
 };
 
+struct aurora_file_versioning_checkpoint
+#ifdef AFV_INTERNAL
+{
+    afv_hndl *pAFV;
+    const enum aurora_file_versioning_checkpoint_mode file_mode;
+    size_t file_offset;
+    afv_metadata_t *pMetdata;
+    afv_file_hndl *pFile;
+    uint64_t region_last_id;
+    uint64_t region_last_index;
+    size_t region_offset;
+}
+#endif
+;
+
 typedef struct aurora_file_versioning_checkpoint afv_checkpoint_t;
+typedef enum aurora_file_versioning_checkpoint_mode eAFVC_mode;
 
 /**
  * @brief Loads the checkpoint file from its metadata
  *
  * @param pHndl AFV Handle (stored internally)
- * @param pMetadata Checkpoint Metadata (stored internally)
+ * @param version Version of Checkpoint to get
+ * @param name Checkpoint Name or NULL for `*`
+ * @param mode Opening Mode (eAFVC_MODE_R or W)
  * @return
  */
-extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pHndl,
-                                             afv_metadata_t *pMetadata,
-                                             const char mode);
+extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
+                                             const char *name, size_t n_regions,
+                                             const eAFVC_mode mode);
 
 extern size_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
-                                  uint64_t region_id, size_t region_offset,
-                                  void *dst, size_t size);
+                                  const uint64_t region_id,
+                                  const size_t region_offset, void *dst,
+                                  size_t size);
 
-extern afv_checkpoint_t *afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
-                                              uint64_t region_id,
-                                              size_t region_offset, void *src,
-                                              size_t size);
+extern size_t afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
+                                   const uint64_t region_id,
+                                   const size_t region_offset,
+                                   const void *const src, const size_t size);
 
-extern afv_checkpoint_t *afv_checkpoint_close(afv_checkpoint_t *pCheckpoint);
+extern long int afv_checkpoint_add_region(afv_checkpoint_t *pCheckpoint,
+                                          const uint64_t region_id,
+                                          const char name[AFV_RGN_NAME_LEN]);
+
+extern eAFV_file_error afv_checkpoint_close(afv_checkpoint_t **pCheckpoint);
+
+extern void afv_checkpoint_free(afv_checkpoint_t **pCheckpoint);
 
 #endif

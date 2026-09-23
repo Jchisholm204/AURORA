@@ -41,6 +41,10 @@ afv_metadata_t *afv_create_metadata(size_t n_regions) {
     pMetadata->version = 0;
     pMetadata->n_regions = n_regions;
 
+    for (size_t i = 0; i < n_regions; i++){
+        pMetadata->region_ids[i] = (-1);
+    }
+
     return afv_metadata_ptr_init(pMetadata);
 }
 
