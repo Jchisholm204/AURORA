@@ -13,8 +13,11 @@
 #define _AFV_CHECKPOINT_H_
 
 #include "afv/afv.h"
-#include "afv/afv_file.h"
 #include "afv/afv_metadata.h"
+
+#ifdef AFV_INTERNAL
+#include "afv/afv_file.h"
+#endif
 
 #include <stddef.h>
 #include <stdint.h>
@@ -57,7 +60,8 @@ typedef enum aurora_file_versioning_checkpoint_mode eAFVC_mode;
  * @return
  */
 extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
-                                             const char *name, size_t n_regions,
+                                             const char name[AFV_CKPT_NAME_LEN],
+                                             size_t n_regions,
                                              const eAFVC_mode mode);
 
 extern size_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
@@ -74,7 +78,7 @@ extern long int afv_checkpoint_add_region(afv_checkpoint_t *pCheckpoint,
                                           const uint64_t region_id,
                                           const char name[AFV_RGN_NAME_LEN]);
 
-extern eAFV_file_error afv_checkpoint_close(afv_checkpoint_t **pCheckpoint);
+extern int afv_checkpoint_close(afv_checkpoint_t **pCheckpoint);
 
 extern void afv_checkpoint_free(afv_checkpoint_t **pCheckpoint);
 

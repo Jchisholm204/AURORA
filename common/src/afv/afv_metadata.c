@@ -24,7 +24,7 @@ afv_metadata_t *afv_create_metadata(size_t n_regions) {
 
     size_t metadata_size = afv_metadata_size(n_regions);
 
-    log_debug("Metadata size=%d", metadata_size);
+    log_trace("Creating Metadata size=%d", metadata_size);
 
     afv_metadata_t *pMetadata = malloc(metadata_size);
     if (!pMetadata) {
@@ -113,24 +113,37 @@ afv_metadata_t *afv_metadata_ptr_init(void *block_ptr) {
 
 eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata) {
     if (!pMetadata) {
-        log_trace("Err");
+        log_warn("NULL Parameter");
         return eAFV_VERIF_ERR_NULL;
     }
     eAFV_verif status = eAFV_VERIF_OK;
 
     if (pMetadata->metadata_key != AFV_METADATA_VERIF_KEY) {
-        log_trace("Err");
+        log_debug("Metadata Key Verification Failure");
         status |= eAFV_VERIF_ERR_KEY;
     }
 
     if (pMetadata->metadata_size != afv_metadata_size(pMetadata->n_regions)) {
-        log_trace("Err");
+        log_debug("Metadata Size Verification Failure");
         status |= eAFV_VERIF_ERR_SIZE;
     }
 
     if (pMetadata->version < 0) {
-        log_trace("Err");
+        log_debug("Invalid Checkpoint Version");
         status |= eAFV_VERIF_ERR_VERSION;
+    }
+
+    for (size_t i = 0; i < pMetadata->n_regions; i++) {
+        uint64_t id = pMetadata->region_ids[i];
+        uint64_t size = pMetadata->region_sizes[i];
+        if (size == 0) {
+            log_debug("Region %d Verification Size Failure", i);
+            status |= eAFV_VERIF_ERR_RGN_SIZE;
+        }
+        if (((int64_t) id) < 0) {
+            log_debug("Region %d Verification ID Failure", i);
+            status |= eAFV_VERIF_ERR_RGN_IDS;
+        }
     }
 
     return status;

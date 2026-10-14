@@ -266,8 +266,13 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
         return eAFV_VERIF_ERR_NULL;
     }
 
-    log_trace("Wrote Latest Metadata: %s %d", pMetadata->chkpt_name,
-              pMetadata->version);
+    // Verify Metadata
+    eAFV_verif verif_status = afv_metadata_verify(pMetadata);
+    if (verif_status != eAFV_VERIF_OK) {
+        log_error("Verification Failed=0x%lx", verif_status);
+        return verif_status;
+    }
+
     for (size_t i = 0; i < pMetadata->n_regions; i++) {
         log_trace(" -> %d) %s (%d) size=%d", i, pMetadata->region_names[i],
                   pMetadata->region_ids[i], pMetadata->region_sizes[i]);
@@ -283,13 +288,6 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
              pHndl->persistent_path, AFV_CKPT_NAME_LEN, pMetadata->chkpt_name,
              pMetadata->version, pHndl->rank, group_id);
 
-    // Verify Metadata
-
-    eAFV_verif verif_status = afv_metadata_verify(pMetadata);
-    if (verif_status != eAFV_VERIF_OK) {
-        log_error("Verification Failed=0x%lx", verif_status);
-        return verif_status;
-    }
     if (verif_status & eAFV_VERIF_ERR_KEY) {
         pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;
     }
@@ -311,6 +309,9 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
     }
 
     fclose(pFile);
+
+    log_trace("Wrote Latest Metadata: %s %d", pMetadata->chkpt_name,
+              pMetadata->version);
 
     if (pHndl->pMetadata) {
         afv_destroy_metadata(&pHndl->pMetadata);

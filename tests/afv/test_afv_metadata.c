@@ -1,5 +1,5 @@
 /**
- * @file test_afv.c
+ * @file test_afv_metadata.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief
  * @version 0.1
@@ -9,9 +9,8 @@
  * @copyright Copyright (c) 2026
  */
 
-#include "afv//afv_checkpoint.h"
-#include "afv//afv_metadata.h"
 #include "afv/afv.h"
+#include "afv/afv_metadata.h"
 #include "log.h"
 
 #include <memory.h>
@@ -51,7 +50,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    afv_metadata_t *pMetadata = afv_get_metadata_versioned(pAFV, -1, NULL);
+    afv_metadata_t *pMetadata =
+        (afv_metadata_t *) afv_get_metadata_versioned(pAFV, -1, NULL);
 
     if (pMetadata) {
         log_warn("Found Existing Metadata");
@@ -77,15 +77,19 @@ int main(int argc, char **argv) {
     }
 
     // Expect failure on no version
+    log_info("Expect Failure");
     eAFV_verif afv_write_status = afv_write_metadata(pAFV, pMetadata);
 
     if (afv_write_status != eAFV_VERIF_OK) {
-        log_info("AFV refuesed to write corrputed metadata to disk with error "
-                 "eAFV_verif=%d, eAFV_VERIF_ERR_VERSION=%d",
-                 afv_write_status, eAFV_VERIF_ERR_VERSION);
+        log_info(
+            "TEST: AFV refuesed to write corrputed metadata to disk with error "
+            "eAFV_verif=%d, eAFV_VERIF_ERR_VERSION=%d",
+            afv_write_status, eAFV_VERIF_ERR_VERSION);
     } else {
-        log_error("AFV wrote corrupted metadata to disk with eAFV_verif=%d",
-                  afv_write_status);
+        log_error(
+            "TEST: AFV wrote corrupted metadata to disk with eAFV_verif=%d",
+            afv_write_status);
+        log_error("Test Failed");
     }
 
     pMetadata->version = 1;
@@ -95,6 +99,7 @@ int main(int argc, char **argv) {
         pMetadata->region_sizes[i] = 0;
         // Arbitrary ID Generation
         pMetadata->region_ids[i] = RGN_ID(i);
+        pMetadata->region_sizes[i] = test_region_size;
         log_info("\t %s id=%d size=%ld", pMetadata->region_names[i],
                  pMetadata->region_ids[i], pMetadata->region_sizes[i]);
     }
@@ -102,14 +107,15 @@ int main(int argc, char **argv) {
     afv_write_status = afv_write_metadata(pAFV, pMetadata);
 
     if (afv_write_status != eAFV_VERIF_OK) {
-        log_error("AFV failed to write metadata to disk with error "
+        log_error("TEST: AFV failed to write metadata to disk with error "
                   "eAFV_verif=%d",
                   afv_write_status);
+        log_error("Test Failed");
         log_trace("Destroying AFV Instanace");
         afv_destroy_instance(&pAFV);
         return 1;
     } else {
-        log_info("AFV wrote metadata to disk with eAFV_verif=%d",
+        log_info("TEST: AFV wrote metadata to disk with eAFV_verif=%d",
                  afv_write_status);
     }
 

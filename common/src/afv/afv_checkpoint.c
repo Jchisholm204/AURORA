@@ -20,8 +20,8 @@
 #include <memory.h>
 
 afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
-                                      const char *name, size_t n_regions,
-                                      const eAFVC_mode mode) {
+                                      const char name[AFV_CKPT_NAME_LEN],
+                                      size_t n_regions, const eAFVC_mode mode) {
     if (!pAFV) {
         log_error("NULL Parameter");
         return NULL;
@@ -63,6 +63,15 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
         break;
     case eAFVC_MODE_W:
         pCheckpoint->pMetdata = afv_create_metadata(n_regions);
+        if (!pCheckpoint->pMetdata) {
+            log_error("Failed to create metadata");
+            goto CHECKPOINT_OPEN_FILE_FAIL;
+        }
+        pCheckpoint->pMetdata->n_regions = n_regions;
+        pCheckpoint->pMetdata->version = version;
+        pCheckpoint->pMetdata->rank = afv_get_rank(pAFV);
+        (void) memcpy(pCheckpoint->pMetdata->chkpt_name, name,
+                      AFV_CKPT_NAME_LEN);
         pCheckpoint->pFile = afv_file_open_w(pAFV, version, name);
         break;
     case eAFVC_N_MODE:
@@ -226,7 +235,7 @@ long int afv_checkpoint_add_region(afv_checkpoint_t *pCheckpoint,
     return (long int) region_index;
 }
 
-eAFV_file_error afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
+int afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
     if (!ppCheckpoint) {
         log_error("NULL Parameter");
         return eAFV_FILE_NULL;
@@ -236,17 +245,18 @@ eAFV_file_error afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
         log_error("NULL Parameter");
         return eAFV_FILE_NULL;
     }
-    eAFV_file_error afv_status = afv_file_close(&pCheckpoint->pFile);
-    if (afv_status != eAFV_FILE_OK) {
-        log_error("AFV File Error %d", afv_status);
-        return afv_status;
+    eAFV_file_error afv_file_status = afv_file_close(&pCheckpoint->pFile);
+    if (afv_file_status != eAFV_FILE_OK) {
+        log_error("AFV File Error %d", afv_file_status);
+        return afv_file_status;
     }
 
     if (pCheckpoint->file_mode == eAFVC_MODE_W) {
-        afv_write_metadata(pCheckpoint->pAFV, pCheckpoint->pMetdata);
-        if (afv_status != eAFV_FILE_OK) {
-            log_error("AFV File Error %d", afv_status);
-            return afv_status;
+        eAFV_verif afv_md_status =
+            afv_write_metadata(pCheckpoint->pAFV, pCheckpoint->pMetdata);
+        if (afv_md_status != eAFV_VERIF_OK) {
+            log_error("AFV File Error %d", afv_md_status);
+            return afv_md_status;
         }
         pCheckpoint->pMetdata = NULL;
     }

@@ -24,9 +24,9 @@
 #endif
 
 enum aurora_file_versioning_file_error_e {
-    eAFV_FILE_OK,
-    eAFV_FILE_NULL,
-    eAFV_FILE_ERR_RW,
+    eAFV_FILE_OK = 0,
+    eAFV_FILE_NULL = 1,
+    eAFV_FILE_ERR_RW = 2,
 };
 
 struct aurora_file_versioning_file_handle
