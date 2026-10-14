@@ -88,7 +88,7 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
     memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
 
     pCheckpoint->pAFV = pAFV;
-    pCheckpoint->file_mode = eAFVC_MODE_R;
+    pCheckpoint->file_mode = eAFVC_MODE_W;
     pCheckpoint->pMetdata = pMetdata;
     pCheckpoint->pFile = pFile;
 

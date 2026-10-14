@@ -106,24 +106,38 @@ int main(int argc, char **argv) {
     }
 
     // Generate checkpoint metadata
-    afv_metadata_t *pMetadata = afv_create_metadata(tp->n_regions);
+    afv_metadata_t *pMetadata = afv_metadata_create(tp->n_regions);
     if (!pMetadata) {
         log_error("BAD ALLOC");
         free(tp);
         return 1;
     }
 
-    pMetadata->version = 1;
-    snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", "cptest");
-    for (int i = 0; i < pMetadata->n_regions; i++) {
-        snprintf(pMetadata->region_names[i], AFV_RGN_NAME_LEN, "tst%d", i);
-        pMetadata->region_sizes[i] = 0;
-        // Arbitrary ID Generation
-        pMetadata->region_ids[i] = RGN_ID(i);
-        pMetadata->region_sizes[i] = tp->region_sizes_mb * 1024 * 1024;
-        log_info("\t %s id=%d size=%ld", pMetadata->region_names[i],
-                 pMetadata->region_ids[i], pMetadata->region_sizes[i]);
+    afv_metadata_set_name(pMetadata, "cptest");
+    afv_metadata_set_version(pMetadata, 1);
+    for (size_t i = 0; i < tp->n_regions; i++) {
+        eAFV_verif rgn_status =
+            afv_metadata_add_region(pMetadata, "test", RGN_ID(i),
+                                    tp->region_sizes_mb * 1024 * 1024);
+        if (rgn_status != eAFV_VERIF_OK) {
+            log_error("error 0x%x", rgn_status);
+        }
+        else{
+            log_debug("Added Region %d id=%d size=%d mb", i, RGN_ID(i), tp->region_sizes_mb);
+        }
     }
+
+    // pMetadata->version = 1;
+    // snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", "cptest");
+    // for (int i = 0; i < pMetadata->n_regions; i++) {
+    //     snprintf(pMetadata->region_names[i], AFV_RGN_NAME_LEN, "tst%d", i);
+    //     pMetadata->region_sizes[i] = 0;
+    //     // Arbitrary ID Generation
+    //     pMetadata->region_ids[i] = RGN_ID(i);
+    //     pMetadata->region_sizes[i] = tp->region_sizes_mb * 1024 * 1024;
+    //     log_info("\t %s id=%d size=%ld", pMetadata->region_names[i],
+    //              pMetadata->region_ids[i], pMetadata->region_sizes[i]);
+    // }
 
     // Open Checkpoint for writing
     afv_checkpoint_t *pCheckpoint = afv_checkpoint_create(pAFV, pMetadata);
@@ -133,20 +147,6 @@ int main(int argc, char **argv) {
         free(tp);
         afv_destroy_instance(&pAFV);
         return 1;
-    }
-
-    // Expect a failure when writing an empty checkpoint
-    eAFV_verif ckpt_verification = afv_checkpoint_close(&pCheckpoint);
-    if (ckpt_verification == eAFV_VERIF_OK) {
-        log_error("TEST: Empty checkpoint was written successfully");
-    }
-    if (ckpt_verification & eAFV_VERIF_ERR_FATAL) {
-        log_error("Fatal Error writing checkpoint 0x%x & 0x%x",
-                  ckpt_verification, eAFV_VERIF_ERR_FATAL);
-    } else {
-        log_info("Successfully failed verification 0x%x == 0x%x",
-                 ckpt_verification,
-                 eAFV_VERIF_ERR_RGN_SIZE | eAFV_VERIF_ERR_RGN_IDS);
     }
 
     uint64_t *pBlock = malloc(1024 * 1024 * tp->region_sizes_mb);

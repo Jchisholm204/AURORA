@@ -12,6 +12,10 @@
 #ifndef _AFV_METADATA_H_
 #define _AFV_METADATA_H_
 
+#ifndef AFV_NO_COMPAT
+#warning "AFV Compatibilty Mode Enabled"
+#endif
+
 #ifndef AFV_RGN_NAME_LEN
 #define AFV_RGN_NAME_LEN 16
 #endif
@@ -92,16 +96,33 @@ struct aurora_file_versioning_metadata {
 typedef struct aurora_file_versioning_metadata afv_metadata_t;
 typedef enum aurora_file_versioning_metadata_verification_e eAFV_verif;
 
-extern afv_metadata_t *afv_create_metadata(size_t n_regions);
+extern afv_metadata_t *afv_metadata_create(size_t n_regions);
+// Compat layer for old code
+#ifndef AFV_NO_COMPAT
+#define afv_create_metadata(n_regions) afv_metadata_create(n_regions)
+#endif
 
 extern size_t afv_metadata_size(size_t n_regions);
 
-extern void afv_destroy_metadata(afv_metadata_t **ppHndl);
+extern void afv_metadata_destroy(afv_metadata_t **ppHndl);
+// Compat layer for old code
+#ifndef AFV_NO_COMPAT
+#define afv_destroy_metadata(ppHndl) afv_metadata_destroy(ppHndl)
+#endif
 
 extern size_t afv_metadata_ptr_size(void *);
 extern afv_metadata_t *afv_metadata_ptr_init(void *);
 
 extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
+
+// Safe setter functions for checkpoint metadata
+extern eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
+                                        const char *restrict name);
+extern eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
+                                           int64_t version);
+extern eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
+                                          const char *restrict name,
+                                          uint64_t id, size_t size);
 
 // Let this function be included explicitly through a macro,
 //  or implicitly if the ARM is already defined and present in the file

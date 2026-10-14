@@ -20,7 +20,7 @@
 
 // #define USE_EARLY_EXIT
 
-afv_metadata_t *afv_create_metadata(size_t n_regions) {
+afv_metadata_t *afv_metadata_create(size_t n_regions) {
 
     size_t metadata_size = afv_metadata_size(n_regions);
 
@@ -58,7 +58,7 @@ size_t afv_metadata_size(size_t n_regions) {
     return struct_size + rgn_ids_size + rgn_sizes_size + rgn_names_size;
 }
 
-void afv_destroy_metadata(afv_metadata_t **ppHndl) {
+void afv_metadata_destroy(afv_metadata_t **ppHndl) {
     if (ppHndl) {
         if (*ppHndl) {
             free(*ppHndl);
@@ -147,6 +147,72 @@ eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata) {
     }
 
     return status;
+}
+
+eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
+                                 const char *restrict name) {
+    if (!pMetadata) {
+        log_warn("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+    (void) snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", name);
+    return eAFV_VERIF_OK;
+}
+
+eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
+                                    int64_t version) {
+    if (!pMetadata) {
+        log_warn("NULL Parameter");
+    }
+    if (version < 0) {
+        return eAFV_VERIF_ERR_VERSION;
+    }
+    pMetadata->version = version;
+    return eAFV_VERIF_OK;
+}
+
+eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
+                                   const char *restrict name, uint64_t id,
+                                   size_t size) {
+    if (!pMetadata) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+
+    // Check parameters
+    if (size == 0) {
+        return eAFV_VERIF_ERR_RGN_SIZE;
+    }
+    if (id == ((uint64_t) (-1))) {
+        return eAFV_VERIF_ERR_RGN_IDS;
+    }
+
+    // Find next open index
+    size_t index = 0;
+    for (; index < pMetadata->n_regions; index++) {
+        size_t rsize = pMetadata->region_sizes[index];
+        uint64_t rid = pMetadata->region_ids[index];
+        log_debug("id %d size %d", rid, rsize);
+        if (rsize == 0 && rid == ((uint64_t) -1)) {
+            break;
+        }
+        // Assume duplicates overwrite
+        if (rid == id) {
+            log_warn("Overwriting region %d id=%d", index, id);
+            break;
+        }
+    }
+
+    if (index >= pMetadata->n_regions) {
+        log_error("Over Capacity");
+        return eAFV_VERIF_ERR_SIZE;
+    }
+
+    pMetadata->region_ids[index] = id;
+    pMetadata->region_sizes[index] = size;
+    (void) snprintf(pMetadata->region_names[index], AFV_RGN_NAME_LEN, "%s",
+                    name);
+    return eAFV_VERIF_OK;
 }
 
 eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
