@@ -32,13 +32,16 @@ struct aurora_file_versioning_checkpoint
 #ifdef AFV_INTERNAL
 {
     afv_hndl *pAFV;
-    const enum aurora_file_versioning_checkpoint_mode file_mode;
-    // size_t file_offset;
+    enum aurora_file_versioning_checkpoint_mode file_mode;
     afv_metadata_t *pMetdata;
     afv_file_hndl *pFile;
-    // uint64_t region_last_id;
-    // uint64_t region_last_index;
-    // size_t region_offset;
+    // Last Accessed Region Information
+    uint64_t region_id;
+    uint64_t region_index;
+    // Base offset of the last region within the file
+    size_t region_base_offset;
+    // Pointer to the RW head on the file
+    size_t file_offset;
 }
 #endif
 ;
@@ -53,7 +56,7 @@ typedef enum aurora_file_versioning_checkpoint_mode eAFVC_mode;
  * @param version Version to attempt to load (-1 for latest)
  * @param name or NULL for any
  * @param AFV_CKPT_NAME_LEN
- * @return readable checkpoint file or NULL
+ * @return readable checkpoint file or NULL, destroy with afv_checkpoint_destroy
  */
 extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
                                              const char *name);
@@ -65,6 +68,7 @@ extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
  * @param pMetdata Metadata for the new checkpoint (retains ownership on
  * success)
  * @return A new checkpoint or NULL if metadata verification fails
+ * Close with afv_checkpoint_close, or abandon with afv_checkpoint_destroy
  */
 extern afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
                                                afv_metadata_t *pMetdata);

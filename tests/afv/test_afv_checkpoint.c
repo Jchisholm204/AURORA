@@ -105,9 +105,28 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Generate checkpoint metadata
+    afv_metadata_t *pMetadata = afv_create_metadata(tp->n_regions);
+    if (!pMetadata) {
+        log_error("BAD ALLOC");
+        free(tp);
+        return 1;
+    }
+
+    pMetadata->version = 1;
+    snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", "cptest");
+    for (int i = 0; i < pMetadata->n_regions; i++) {
+        snprintf(pMetadata->region_names[i], AFV_RGN_NAME_LEN, "tst%d", i);
+        pMetadata->region_sizes[i] = 0;
+        // Arbitrary ID Generation
+        pMetadata->region_ids[i] = RGN_ID(i);
+        pMetadata->region_sizes[i] = tp->region_sizes_mb * 1024 * 1024;
+        log_info("\t %s id=%d size=%ld", pMetadata->region_names[i],
+                 pMetadata->region_ids[i], pMetadata->region_sizes[i]);
+    }
+
     // Open Checkpoint for writing
-    afv_checkpoint_t *pCheckpoint =
-        afv_checkpoint_open(pAFV, 1, "test", tp->n_regions, eAFVC_MODE_W);
+    afv_checkpoint_t *pCheckpoint = afv_checkpoint_create(pAFV, pMetadata);
 
     if (!pCheckpoint) {
         log_error("Failed to create a new checkpoint");
@@ -134,7 +153,7 @@ int main(int argc, char **argv) {
     if (!pBlock) {
         log_error("Failed to allocate checkpoint memory block");
         free(tp);
-        afv_checkpoint_free(&pCheckpoint);
+        afv_checkpoint_destroy(&pCheckpoint);
         afv_destroy_instance(&pAFV);
         return 1;
     }
@@ -145,7 +164,6 @@ int main(int argc, char **argv) {
 
     // Write out the checkpoint data
     for (size_t i = 1; i <= tp->n_regions; i++) {
-        afv_checkpoint_add_region(pCheckpoint, i, "yeet");
         for (size_t j = 0;
              j < 1024 * 1024 * tp->region_sizes_mb / tp->write_block_size_b;
              j++) {
@@ -158,7 +176,7 @@ int main(int argc, char **argv) {
         log_error("Failed to close the checkpoint with error %d",
                   checkpoint_close_status);
         free(tp);
-        afv_checkpoint_free(&pCheckpoint);
+        afv_checkpoint_close(&pCheckpoint);
         afv_destroy_instance(&pAFV);
         return 1;
     }

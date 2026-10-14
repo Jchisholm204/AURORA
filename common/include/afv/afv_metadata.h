@@ -58,7 +58,7 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_FATAL = BIT(8),
 };
 
-#warn "OPS Marked for deletion"
+#warning "OPS Marked for deletion"
 struct __attribute__((packed)) aurora_file_versioning_metadata_ops {
     union {
         uint64_t __reserved;
