@@ -55,6 +55,7 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_RGN_IDS = BIT(5),
     eAFV_VERIF_ERR_RGN_SIZES = BIT(6),
     eAFV_VERIF_ERR_RGN_NAMES = BIT(7),
+    eAFV_VERIF_ERR_FATAL = BIT(8),
 };
 
 struct __attribute__((packed)) aurora_file_versioning_metadata_ops {

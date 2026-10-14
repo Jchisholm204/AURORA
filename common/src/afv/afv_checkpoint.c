@@ -235,35 +235,44 @@ long int afv_checkpoint_add_region(afv_checkpoint_t *pCheckpoint,
     return (long int) region_index;
 }
 
-int afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
+eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
     if (!ppCheckpoint) {
         log_error("NULL Parameter");
-        return eAFV_FILE_NULL;
+        return eAFV_VERIF_ERR_NULL;
     }
     afv_checkpoint_t *pCheckpoint = *ppCheckpoint;
     if (!pCheckpoint) {
         log_error("NULL Parameter");
-        return eAFV_FILE_NULL;
+        return eAFV_VERIF_ERR_NULL;
     }
+
+    eAFV_verif afv_verif_status = afv_metadata_verify(pCheckpoint->pMetdata);
+    if (afv_verif_status != eAFV_VERIF_OK) {
+        log_error("AFV Verification Error 0x%x", afv_verif_status);
+        return afv_verif_status;
+    }
+
     eAFV_file_error afv_file_status = afv_file_close(&pCheckpoint->pFile);
     if (afv_file_status != eAFV_FILE_OK) {
         log_error("AFV File Error %d", afv_file_status);
-        return afv_file_status;
+        (void) afv_checkpoint_free(ppCheckpoint);
+        return eAFV_VERIF_ERR_FATAL;
     }
 
     if (pCheckpoint->file_mode == eAFVC_MODE_W) {
-        eAFV_verif afv_md_status =
+        afv_verif_status =
             afv_write_metadata(pCheckpoint->pAFV, pCheckpoint->pMetdata);
-        if (afv_md_status != eAFV_VERIF_OK) {
-            log_error("AFV File Error %d", afv_md_status);
-            return afv_md_status;
+        if (afv_verif_status != eAFV_VERIF_OK) {
+            log_error("AFV Metadata Error %d", afv_verif_status);
+            (void) afv_checkpoint_free(ppCheckpoint);
+            return eAFV_VERIF_ERR_FATAL;
         }
         pCheckpoint->pMetdata = NULL;
     }
 
     afv_checkpoint_free(ppCheckpoint);
 
-    return eAFV_FILE_OK;
+    return eAFV_VERIF_OK;
 }
 
 void afv_checkpoint_free(afv_checkpoint_t **ppCheckpoint) {
@@ -274,7 +283,15 @@ void afv_checkpoint_free(afv_checkpoint_t **ppCheckpoint) {
     if (!pCheckpoint) {
         return;
     }
-    if (pCheckpoint->pMetdata) {
-        afv_destroy_metadata(&pCheckpoint->pMetdata);
+
+    if (pCheckpoint->pFile) {
+        (void) afv_file_close(&pCheckpoint->pFile);
     }
+
+    if (pCheckpoint->pMetdata) {
+        (void) afv_destroy_metadata(&pCheckpoint->pMetdata);
+    }
+
+    free(pCheckpoint);
+    *ppCheckpoint = NULL;
 }

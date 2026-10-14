@@ -32,7 +32,7 @@ afv_metadata_t *afv_create_metadata(size_t n_regions) {
         return NULL;
     }
 
-    memset(pMetadata, 0, sizeof(afv_metadata_t));
+    memset(pMetadata, 0, metadata_size);
 
     pMetadata->metadata_size = metadata_size;
     pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;

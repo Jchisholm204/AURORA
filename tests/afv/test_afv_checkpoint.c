@@ -83,20 +83,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    afv_metadata_t *pMetadata = afv_create_metadata(tp->n_regions);
-
-    if (!pMetadata) {
-        log_error("Failed to create test metadata");
-        log_trace("Destroying AFV Instanace");
-        free(tp);
-        afv_destroy_instance(&pAFV);
-        return 1;
-    }
-
-    pMetadata->rank = afv_get_rank(pAFV);
-    pMetadata->n_regions = tp->n_regions;
-    pMetadata->version = 1;
-
     // Open Checkpoint for writing
     afv_checkpoint_t *pCheckpoint =
         afv_checkpoint_open(pAFV, 1, "test", tp->n_regions, eAFVC_MODE_W);
@@ -108,10 +94,20 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Expect a failure when writing an empty checkpoint
+    {
+        int checkpoint_close_status = afv_checkpoint_close(&pCheckpoint);
+        if (checkpoint_close_status == 0) {
+            log_error("TEST: Empty checkpoint was written successfully");
+        }
+    }
+
     int checkpoint_close_status = afv_checkpoint_close(&pCheckpoint);
-    if (checkpoint_close_status != 0){
-        log_error("Failed to close the checkpoint with error %d", checkpoint_close_status);
+    if (checkpoint_close_status != 0) {
+        log_error("Failed to close the checkpoint with error %d",
+                  checkpoint_close_status);
         free(tp);
+        afv_checkpoint_free(&pCheckpoint);
         afv_destroy_instance(&pAFV);
         return 1;
     }

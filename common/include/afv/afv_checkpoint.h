@@ -78,7 +78,7 @@ extern long int afv_checkpoint_add_region(afv_checkpoint_t *pCheckpoint,
                                           const uint64_t region_id,
                                           const char name[AFV_RGN_NAME_LEN]);
 
-extern int afv_checkpoint_close(afv_checkpoint_t **pCheckpoint);
+extern eAFV_verif afv_checkpoint_close(afv_checkpoint_t **pCheckpoint);
 
 extern void afv_checkpoint_free(afv_checkpoint_t **pCheckpoint);
 

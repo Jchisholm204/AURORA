@@ -119,7 +119,11 @@ eAFV_file_error afv_file_close(afv_file_hndl **ppHndl) {
     }
 
     if (pHndl->pFile) {
-        fclose(pHndl->pFile);
+        int close_status = fclose(pHndl->pFile);
+        if (close_status != 0) {
+            log_error("File Close Failure %d", close_status);
+            return eAFV_FILE_ERR_RW;
+        }
     }
 
     pHndl->pFile = NULL;
