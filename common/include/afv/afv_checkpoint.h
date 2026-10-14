@@ -22,10 +22,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#ifndef AFV_RESERVED_SIZE
-#define AFV_RESERVED_SIZE 2
-#endif
-
 enum aurora_file_versioning_checkpoint_mode {
     eAFVC_MODE_W,
     eAFVC_MODE_R,
@@ -51,35 +47,71 @@ typedef struct aurora_file_versioning_checkpoint afv_checkpoint_t;
 typedef enum aurora_file_versioning_checkpoint_mode eAFVC_mode;
 
 /**
- * @brief Loads the checkpoint file from its metadata
+ * @brief Open a checkpoint from disk
  *
- * @param pHndl AFV Handle (stored internally)
- * @param version Version of Checkpoint to get
- * @param name Checkpoint Name or NULL for `*`
- * @param mode Opening Mode (eAFVC_MODE_R or W)
- * @return
+ * @param pAFV File Versioning Handle
+ * @param version Version to attempt to load (-1 for latest)
+ * @param name or NULL for any
+ * @param AFV_CKPT_NAME_LEN
+ * @return readable checkpoint file or NULL
  */
 extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
-                                             const char name[AFV_CKPT_NAME_LEN],
-                                             size_t n_regions,
-                                             const eAFVC_mode mode);
+                                             const char *name);
 
+/**
+ * @brief Create a new checkpoint from a metadata pointer
+ *
+ * @param pAFV File Versioning Handle
+ * @param pMetdata Metadata for the new checkpoint (retains ownership on
+ * success)
+ * @return A new checkpoint or NULL if metadata verification fails
+ */
+extern afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
+                                               afv_metadata_t *pMetdata);
+
+/**
+ * @brief Read a block from a checkpoint (must be opened in read mode)
+ *
+ * @param pCheckpoint Checkpoint to read from
+ * @param region_id Region ID to read
+ * @param region_offset Offset within the region
+ * @param dst Destination pointer
+ * @param size Read block size
+ * @return size read from disk
+ */
 extern size_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
                                   const uint64_t region_id,
                                   const size_t region_offset, void *dst,
                                   size_t size);
 
+/**
+ * @brief Write a block to a checkpoint
+ *
+ * @param pCheckpoint Checkpoint to write to
+ * @param region_id Region ID to write to
+ * @param region_offset Offset within the region to write to
+ * @param src Source Pointer
+ * @param size Size to write into disk
+ * @return Size written to disk
+ */
 extern size_t afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
                                    const uint64_t region_id,
                                    const size_t region_offset,
                                    const void *const src, const size_t size);
 
-extern long int afv_checkpoint_add_region(afv_checkpoint_t *pCheckpoint,
-                                          const uint64_t region_id,
-                                          const char name[AFV_RGN_NAME_LEN]);
-
+/**
+ * @brief Close a checkpoint file (writes to disk, frees all memory)
+ *
+ * @param pCheckpoint Checkpoint to write out
+ * @return Checkpoint verification status
+ */
 extern eAFV_verif afv_checkpoint_close(afv_checkpoint_t **pCheckpoint);
 
-extern void afv_checkpoint_free(afv_checkpoint_t **pCheckpoint);
+/**
+ * @brief Destroy a checkpoint file (frees all memory)
+ *
+ * @param pCheckpoint Checkpoint to free/destroy
+ */
+extern void afv_checkpoint_destroy(afv_checkpoint_t **pCheckpoint);
 
 #endif
