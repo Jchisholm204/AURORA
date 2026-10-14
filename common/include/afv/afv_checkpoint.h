@@ -33,12 +33,12 @@ struct aurora_file_versioning_checkpoint
 {
     afv_hndl *pAFV;
     const enum aurora_file_versioning_checkpoint_mode file_mode;
-    size_t file_offset;
+    // size_t file_offset;
     afv_metadata_t *pMetdata;
     afv_file_hndl *pFile;
-    uint64_t region_last_id;
-    uint64_t region_last_index;
-    size_t region_offset;
+    // uint64_t region_last_id;
+    // uint64_t region_last_index;
+    // size_t region_offset;
 }
 #endif
 ;

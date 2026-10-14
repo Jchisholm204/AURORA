@@ -20,14 +20,23 @@
 #include <memory.h>
 
 afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
-                                      const char name[AFV_CKPT_NAME_LEN],
-                                      size_t n_regions, const eAFVC_mode mode) {
+                                      const char *name) {
     if (!pAFV) {
         log_error("NULL Parameter");
         return NULL;
     }
-    if (mode >= eAFVC_N_MODE) {
-        log_error("Invalid Mode Option");
+
+    afv_metadata_t *pMetdata =
+        (afv_metadata_t *) afv_get_metadata_versioned(pAFV, version, name);
+    if (!pMetdata) {
+        log_error("Unable to find metadata %v %s", version, name);
+        return NULL;
+    }
+
+    afv_file_hndl *pFile = afv_file_open_r(pAFV, pMetdata);
+    if (!pFile) {
+        log_error("Unable to open checkpoint");
+        afv_destroy_metadata(&pMetdata);
         return NULL;
     }
 
@@ -40,53 +49,50 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
     memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
 
     pCheckpoint->pAFV = pAFV;
-    *((char *) &pCheckpoint->file_mode) = mode;
-    pCheckpoint->file_offset = 0;
-    pCheckpoint->region_last_id = ((uint64_t) (-1));
-    pCheckpoint->region_last_index = 0;
-    pCheckpoint->region_offset = 0;
-
-    assert(mode < eAFVC_N_MODE);
-    switch (mode) {
-    case eAFVC_MODE_R:
-        pCheckpoint->pMetdata =
-            (afv_metadata_t *) afv_get_metadata_versioned(pAFV, version, name);
-        if (!pCheckpoint->pMetdata) {
-            log_error("Failed to open checkpoint metadata");
-            goto CHECKPOINT_OPEN_FILE_FAIL;
-        }
-        if (pCheckpoint->pMetdata->n_regions != n_regions) {
-            log_error("Checkpoint Region mismatch");
-            goto CHECKPOINT_OPEN_FILE_FAIL;
-        }
-        pCheckpoint->pFile = afv_file_open_r(pAFV, pCheckpoint->pMetdata);
-        break;
-    case eAFVC_MODE_W:
-        pCheckpoint->pMetdata = afv_create_metadata(n_regions);
-        if (!pCheckpoint->pMetdata) {
-            log_error("Failed to create metadata");
-            goto CHECKPOINT_OPEN_FILE_FAIL;
-        }
-        pCheckpoint->pMetdata->n_regions = n_regions;
-        pCheckpoint->pMetdata->version = version;
-        pCheckpoint->pMetdata->rank = afv_get_rank(pAFV);
-        (void) memcpy(pCheckpoint->pMetdata->chkpt_name, name,
-                      AFV_CKPT_NAME_LEN);
-        pCheckpoint->pFile = afv_file_open_w(pAFV, version, name);
-        break;
-    case eAFVC_N_MODE:
-        break;
-    }
+    *((char *) &pCheckpoint->file_mode) = eAFVC_MODE_R;
+    pCheckpoint->pMetdata = pMetdata;
+    pCheckpoint->pFile = pFile;
 
     return pCheckpoint;
+}
 
-CHECKPOINT_OPEN_FILE_FAIL:
-    afv_destroy_metadata(&pCheckpoint->pMetdata);
-    if (pCheckpoint) {
-        free(pCheckpoint);
-        pCheckpoint = NULL;
+afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
+                                        afv_metadata_t *pMetdata) {
+    if (!pAFV) {
+        log_error("NULL Parameter");
+        return NULL;
     }
-    return NULL;
+    if (!pMetdata) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+    eAFV_verif verification_status = afv_metadata_verify(pMetdata);
+    if (verification_status != eAFV_VERIF_OK) {
+        log_error("Invalid Metadata");
+        return NULL;
+    }
+
+    afv_file_hndl *pFile =
+        afv_file_open_w(pAFV, pMetdata->version, pMetdata->chkpt_name);
+    if (!pFile) {
+        log_error("Filesystem Error");
+        return NULL;
+    }
+
+    afv_checkpoint_t *pCheckpoint = malloc(sizeof(afv_checkpoint_t));
+    if (!pCheckpoint) {
+        log_error("Bad Alloc??");
+        return NULL;
+    }
+
+    memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
+
+    pCheckpoint->pAFV = pAFV;
+    *((char *) &pCheckpoint->file_mode) = eAFVC_MODE_R;
+    pCheckpoint->pMetdata = pMetdata;
+    pCheckpoint->pFile = pFile;
+
+    return pCheckpoint;
 }
 
 eAFV_file_error _afv_checkpoint_autoseek(afv_checkpoint_t *pCheckpoint,
