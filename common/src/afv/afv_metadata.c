@@ -214,6 +214,85 @@ eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
     return eAFV_VERIF_OK;
 }
 
+eAFV_verif afv_metadata_get_region(afv_metadata_t *pMetadata,
+                                   const char *restrict name, uint64_t id,
+                                   size_t size, size_t *pIndex) {
+    if (!pMetadata) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+    // Find region within the list
+    size_t index = 0;
+    for (; index < pMetadata->n_regions; index++) {
+        size_t rsize = pMetadata->region_sizes[index];
+        uint64_t rid = pMetadata->region_ids[index];
+        if (rsize == size && rid == id) {
+            break;
+        } else if (rid == id) {
+            // Found Region but size does not match
+            return eAFV_VERIF_ERR_RGN_SIZE;
+        }
+        // Assume duplicates overwrite
+        if (rid == id) {
+            log_warn("Overwriting region %d id=%d", index, id);
+            break;
+        }
+    }
+
+    // Region not found
+    if (index >= pMetadata->n_regions) {
+        log_error("Over Capacity");
+        return eAFV_VERIF_ERR_SIZE;
+    }
+
+    // Name verification
+    if (name) {
+        size_t name_len = strnlen(name, AFV_RGN_NAME_LEN);
+        char match = 0x00;
+        for (size_t i = 0; i < name_len; i++) {
+            match |= name[i] ^ pMetadata->region_names[index][i];
+        }
+        if (match != 0x00) {
+            return eAFV_VERIF_ERR_RGN_NAMES;
+        }
+    }
+
+    *pIndex = index;
+    return eAFV_VERIF_OK;
+}
+
+eAFV_verif afv_metadata_check(const afv_metadata_t *pMetadata, int64_t version,
+                              char *name, size_t n_regions) {
+    if (!pMetadata) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+
+    log_debug("Regions %d == %d", pMetadata->n_regions, n_regions);
+    if (pMetadata->n_regions != n_regions && n_regions != 0) {
+        return eAFV_VERIF_ERR_SIZE;
+    }
+
+    if (pMetadata->version != version || version < 0 ||
+        pMetadata->version < 0) {
+        return eAFV_VERIF_ERR_VERSION;
+    }
+
+    // Name verification
+    if (name) {
+        size_t name_len = strnlen(name, AFV_RGN_NAME_LEN);
+        char match = 0x00;
+        for (size_t i = 0; i < name_len; i++) {
+            match |= name[i] ^ pMetadata->chkpt_name[i];
+        }
+        if (match != 0x00) {
+            return eAFV_VERIF_ERR_NAME;
+        }
+    }
+
+    return eAFV_VERIF_OK;
+}
+
 eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
                               const amr_hndl *const region_list,
                               size_t n_regions, size_t *match_map_list) {

@@ -28,23 +28,26 @@ enum aurora_file_versioning_checkpoint_mode {
     eAFVC_N_MODE,
 };
 
-struct aurora_file_versioning_checkpoint
+struct aurora_file_versioning_checkpoint {
+    afv_metadata_t *pMetadata;
+    union {
+        uint64_t __reserved[7];
 #ifdef AFV_INTERNAL
-{
-    afv_hndl *pAFV;
-    enum aurora_file_versioning_checkpoint_mode file_mode;
-    afv_metadata_t *pMetdata;
-    afv_file_hndl *pFile;
-    // Last Accessed Region Information
-    uint64_t region_id;
-    uint64_t region_index;
-    // Base offset of the last region within the file
-    size_t region_base_offset;
-    // Pointer to the RW head on the file
-    size_t file_offset;
-}
+        struct {
+            afv_hndl *pAFV;
+            enum aurora_file_versioning_checkpoint_mode file_mode;
+            afv_file_hndl *pFile;
+            // Last Accessed Region Information
+            uint64_t region_id;
+            uint64_t region_index;
+            // Base offset of the last region within the file
+            size_t region_base_offset;
+            // Pointer to the RW head on the file
+            size_t file_offset;
+        };
 #endif
-;
+    };
+};
 
 typedef struct aurora_file_versioning_checkpoint afv_checkpoint_t;
 typedef enum aurora_file_versioning_checkpoint_mode eAFVC_mode;

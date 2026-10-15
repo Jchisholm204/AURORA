@@ -174,6 +174,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    log_info("TEST SUCCESS");
+
     log_trace("Destroying AFV Instanace");
     afv_destroy_instance(&pAFV);
 

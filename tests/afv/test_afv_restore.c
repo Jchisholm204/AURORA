@@ -14,6 +14,7 @@
 #include "afv/afv_metadata.h"
 #include "log.h"
 
+#include <assert.h>
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,6 +117,19 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    eAFV_verif checkpoint_verification =
+        afv_metadata_check(pCheckpoint->pMetadata, 1, "cptest", tp->n_regions);
+    if (checkpoint_verification != eAFV_VERIF_OK) {
+        log_error("Checkpoint Verification Failure 0x%x",
+                  checkpoint_verification);
+        free(tp);
+        afv_checkpoint_destroy(&pCheckpoint);
+        afv_destroy_instance(&pAFV);
+        return 1;
+    } else {
+        log_info("Metadata Verification Succeeded");
+    }
+
     size_t block_size_b = tp->region_sizes_mb * 1024 * 1024;
     uint64_t *pBlock = malloc(block_size_b);
     if (!pBlock) {
@@ -125,21 +139,25 @@ int main(int argc, char **argv) {
         afv_destroy_instance(&pAFV);
         return 1;
     }
-    for (size_t i = 0; i < block_size_b / sizeof(size_t); i++) {
-        pBlock[i] = i;
-    }
 
     // Write out the checkpoint data
     for (size_t i = 0; i < tp->n_regions; i++) {
-        for (size_t j = 0; j < (block_size_b / tp->write_block_size_b); j++) {
-            size_t write_start = tp->write_block_size_b * j;
-            size_t write_end = write_start + tp->write_block_size_b;
-            log_debug("Writing... %d id=%d start=%d end=%d", i, RGN_ID(i),
-                      write_start, write_end);
-            afv_checkpoint_write(pCheckpoint, RGN_ID(i), write_start,
-                                 ((uint8_t *) pBlock) + (write_start),
-                                 tp->write_block_size_b);
+        for (size_t j = 0; j < block_size_b / sizeof(size_t); j++) {
+            pBlock[j] = 0;
         }
+        for (size_t j = 0; j < (block_size_b / tp->write_block_size_b); j++) {
+            size_t read_start = tp->write_block_size_b * j;
+            size_t read_end = read_start + tp->write_block_size_b;
+            log_debug("Reading... %d id=%d start=%d end=%d", i, RGN_ID(i),
+                      read_start, read_end);
+            afv_checkpoint_read(pCheckpoint, RGN_ID(i), read_start,
+                                ((uint8_t *) pBlock) + (read_start),
+                                tp->write_block_size_b);
+        }
+        for (size_t j = 0; j < block_size_b / sizeof(size_t); j++) {
+            assert(pBlock[j] == j);
+        }
+        log_info("Region %d id=%d OK", i, RGN_ID(i));
     }
 
     int checkpoint_close_status = afv_checkpoint_close(&pCheckpoint);
@@ -151,6 +169,8 @@ int main(int argc, char **argv) {
         afv_destroy_instance(&pAFV);
         return 1;
     }
+
+    log_info("Checkpoint Verification Succeeded");
 
     log_trace("Destroying AFV Instanace");
     afv_destroy_instance(&pAFV);

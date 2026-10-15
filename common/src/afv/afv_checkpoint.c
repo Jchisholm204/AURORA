@@ -26,17 +26,17 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
         return NULL;
     }
 
-    afv_metadata_t *pMetdata =
+    afv_metadata_t *pMetadata =
         (afv_metadata_t *) afv_get_metadata_versioned(pAFV, version, name);
-    if (!pMetdata) {
+    if (!pMetadata) {
         log_error("Unable to find metadata %v %s", version, name);
         return NULL;
     }
 
-    afv_file_hndl *pFile = afv_file_open_r(pAFV, pMetdata);
+    afv_file_hndl *pFile = afv_file_open_r(pAFV, pMetadata);
     if (!pFile) {
         log_error("Unable to open checkpoint");
-        afv_destroy_metadata(&pMetdata);
+        afv_destroy_metadata(&pMetadata);
         return NULL;
     }
 
@@ -50,30 +50,30 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
 
     pCheckpoint->pAFV = pAFV;
     pCheckpoint->file_mode = eAFVC_MODE_R;
-    pCheckpoint->pMetdata = pMetdata;
+    pCheckpoint->pMetadata = pMetadata;
     pCheckpoint->pFile = pFile;
 
     return pCheckpoint;
 }
 
 afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
-                                        afv_metadata_t *pMetdata) {
+                                        afv_metadata_t *pMetadata) {
     if (!pAFV) {
         log_error("NULL Parameter");
         return NULL;
     }
-    if (!pMetdata) {
+    if (!pMetadata) {
         log_error("NULL Parameter");
         return NULL;
     }
-    eAFV_verif verification_status = afv_metadata_verify(pMetdata);
+    eAFV_verif verification_status = afv_metadata_verify(pMetadata);
     if (verification_status != eAFV_VERIF_OK) {
         log_error("Invalid Metadata");
         return NULL;
     }
 
     afv_file_hndl *pFile =
-        afv_file_open_w(pAFV, pMetdata->version, pMetdata->chkpt_name);
+        afv_file_open_w(pAFV, pMetadata->version, pMetadata->chkpt_name);
     if (!pFile) {
         log_error("Filesystem Error");
         return NULL;
@@ -89,7 +89,7 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
 
     pCheckpoint->pAFV = pAFV;
     pCheckpoint->file_mode = eAFVC_MODE_W;
-    pCheckpoint->pMetdata = pMetdata;
+    pCheckpoint->pMetadata = pMetadata;
     pCheckpoint->pFile = pFile;
 
     return pCheckpoint;
@@ -105,16 +105,16 @@ eAFV_file_error _afv_checkpoint_autoseek(afv_checkpoint_t *pCheckpoint,
         uint64_t region_index = 0;
         // Block offset inside of file (sum of previous blocks)
         region_file_offset = 0;
-        for (; region_index < pCheckpoint->pMetdata->n_regions;
+        for (; region_index < pCheckpoint->pMetadata->n_regions;
              region_index++) {
-            uint64_t id = pCheckpoint->pMetdata->region_ids[region_index];
+            uint64_t id = pCheckpoint->pMetadata->region_ids[region_index];
             if (id == region_id) {
                 break;
             }
             region_file_offset +=
-                pCheckpoint->pMetdata->region_sizes[region_index];
+                pCheckpoint->pMetadata->region_sizes[region_index];
         }
-        if (region_index >= pCheckpoint->pMetdata->n_regions) {
+        if (region_index >= pCheckpoint->pMetadata->n_regions) {
             log_error("Invalid Region %d", region_id);
             return eAFV_FILE_ERR_RW;
         }
@@ -169,7 +169,7 @@ size_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
     // Handle read overflows
     uint64_t region_base = pCheckpoint->region_base_offset;
     uint64_t region_size =
-        pCheckpoint->pMetdata->region_sizes[pCheckpoint->region_index];
+        pCheckpoint->pMetadata->region_sizes[pCheckpoint->region_index];
     uint64_t region_max = region_base + region_size;
     uint64_t read_start = region_base + region_offset;
     if ((read_start + size) > region_max) {
@@ -213,7 +213,7 @@ size_t afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
     // Handle write overflows
     uint64_t region_base = pCheckpoint->region_base_offset;
     uint64_t region_size =
-        pCheckpoint->pMetdata->region_sizes[pCheckpoint->region_index];
+        pCheckpoint->pMetadata->region_sizes[pCheckpoint->region_index];
     uint64_t region_max = region_base + region_size;
     uint64_t write_start = region_base + region_offset;
     if ((write_start + size) > region_max) {
@@ -246,7 +246,7 @@ eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
         return eAFV_VERIF_ERR_NULL;
     }
 
-    eAFV_verif afv_verif_status = afv_metadata_verify(pCheckpoint->pMetdata);
+    eAFV_verif afv_verif_status = afv_metadata_verify(pCheckpoint->pMetadata);
     if (afv_verif_status != eAFV_VERIF_OK) {
         log_error("AFV Verification Error 0x%x", afv_verif_status);
         return afv_verif_status;
@@ -261,13 +261,13 @@ eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
 
     if (pCheckpoint->file_mode == eAFVC_MODE_W) {
         afv_verif_status =
-            afv_write_metadata(pCheckpoint->pAFV, pCheckpoint->pMetdata);
+            afv_write_metadata(pCheckpoint->pAFV, pCheckpoint->pMetadata);
         if (afv_verif_status != eAFV_VERIF_OK) {
             log_error("AFV Metadata Error %d", afv_verif_status);
             (void) afv_checkpoint_destroy(ppCheckpoint);
             return eAFV_VERIF_ERR_FATAL;
         }
-        pCheckpoint->pMetdata = NULL;
+        pCheckpoint->pMetadata = NULL;
     }
 
     afv_checkpoint_destroy(ppCheckpoint);
@@ -288,8 +288,8 @@ void afv_checkpoint_destroy(afv_checkpoint_t **ppCheckpoint) {
         (void) afv_file_close(&pCheckpoint->pFile);
     }
 
-    if (pCheckpoint->pMetdata) {
-        (void) afv_destroy_metadata(&pCheckpoint->pMetdata);
+    if (pCheckpoint->pMetadata) {
+        (void) afv_destroy_metadata(&pCheckpoint->pMetadata);
     }
 
     free(pCheckpoint);

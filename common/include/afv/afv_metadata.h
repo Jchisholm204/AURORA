@@ -54,12 +54,13 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_NULL = BIT(0),
     eAFV_VERIF_ERR_KEY = BIT(1),
     eAFV_VERIF_ERR_SIZE = BIT(2),
-    eAFV_VERIF_ERR_VERSION = BIT(3),
-    eAFV_VERIF_ERR_RGN_SIZE = BIT(4),
-    eAFV_VERIF_ERR_RGN_IDS = BIT(5),
-    eAFV_VERIF_ERR_RGN_SIZES = BIT(6),
-    eAFV_VERIF_ERR_RGN_NAMES = BIT(7),
-    eAFV_VERIF_ERR_FATAL = BIT(8),
+    eAFV_VERIF_ERR_NAME = BIT(3),
+    eAFV_VERIF_ERR_VERSION = BIT(4),
+    eAFV_VERIF_ERR_RGN_SIZE = BIT(5),
+    eAFV_VERIF_ERR_RGN_IDS = BIT(6),
+    eAFV_VERIF_ERR_RGN_SIZES = BIT(7),
+    eAFV_VERIF_ERR_RGN_NAMES = BIT(8),
+    eAFV_VERIF_ERR_FATAL = BIT(9),
 };
 
 #warning "OPS Marked for deletion"
@@ -121,9 +122,20 @@ extern eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
 
 extern eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
                                            int64_t version);
+
 extern eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
                                           const char *restrict name,
                                           uint64_t id, size_t size);
+
+// Verification functions for metadata
+extern eAFV_verif afv_metadata_get_region(afv_metadata_t *pMetadata,
+                                          const char *restrict name,
+                                          uint64_t id, size_t size,
+                                          size_t *pIndex);
+
+extern eAFV_verif afv_metadata_check(const afv_metadata_t *pMetadata,
+                                     int64_t version, char *name,
+                                     size_t n_regions);
 
 // Let this function be included explicitly through a macro,
 //  or implicitly if the ARM is already defined and present in the file
