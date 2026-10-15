@@ -141,6 +141,7 @@ eAFV_file_error afv_file_seek(afv_file_hndl *pHndl, size_t seekptr) {
         log_error("NULL Parameter");
         return eAFV_FILE_NULL;
     }
+    log_debug("FSEEK");
     int file_status = fseek(pHndl->pFile, seekptr, SEEK_SET);
     if (file_status != 0) {
         return eAFV_FILE_ERR_RW;

@@ -192,7 +192,6 @@ eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
     for (; index < pMetadata->n_regions; index++) {
         size_t rsize = pMetadata->region_sizes[index];
         uint64_t rid = pMetadata->region_ids[index];
-        log_debug("id %d size %d", rid, rsize);
         if (rsize == 0 && rid == ((uint64_t) -1)) {
             break;
         }

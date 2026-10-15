@@ -101,19 +101,21 @@ eAFV_file_error _afv_checkpoint_autoseek(afv_checkpoint_t *pCheckpoint,
     // Load the new region index
     size_t region_file_offset = pCheckpoint->region_base_offset;
     if (pCheckpoint->region_id != region_id) {
+        log_debug("Region ID Change");
         uint64_t region_index = 0;
         // Block offset inside of file (sum of previous blocks)
         region_file_offset = 0;
         for (; region_index < pCheckpoint->pMetdata->n_regions;
              region_index++) {
-            if (pCheckpoint->pMetdata->region_ids[region_index] == region_id) {
+            uint64_t id = pCheckpoint->pMetdata->region_ids[region_index];
+            if (id == region_id) {
                 break;
             }
             region_file_offset +=
                 pCheckpoint->pMetdata->region_sizes[region_index];
         }
         if (region_index >= pCheckpoint->pMetdata->n_regions) {
-            log_error("Invalid Region");
+            log_error("Invalid Region %d", region_id);
             return eAFV_FILE_ERR_RW;
         }
 
@@ -133,6 +135,7 @@ eAFV_file_error _afv_checkpoint_autoseek(afv_checkpoint_t *pCheckpoint,
     }
     // Check for only offset changes
     else if (pCheckpoint->file_offset != (region_file_offset + region_offset)) {
+        log_debug("Region Offset Change");
         size_t seek_ptr = region_file_offset + region_offset;
         eAFV_file_error fstatus = afv_file_seek(pCheckpoint->pFile, seek_ptr);
         if (fstatus != eAFV_FILE_OK) {

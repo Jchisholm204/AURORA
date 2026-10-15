@@ -57,9 +57,10 @@ struct test_params *parse_params(int argc, char **argv) {
     }
     log_trace("Using test regions of size %d mb", test_region_size);
 
-    size_t block_write_size_b = 512;
+    // Default is 512k
+    size_t block_write_size_b = 512 * 1024;
     if (argc < 5) {
-        log_error("Fourth argument is the transfer block size in bytes");
+        log_warn("Fourth argument is the transfer block size in bytes");
     } else {
         block_write_size_b = atoi(argv[4]);
     }
@@ -121,23 +122,11 @@ int main(int argc, char **argv) {
                                     tp->region_sizes_mb * 1024 * 1024);
         if (rgn_status != eAFV_VERIF_OK) {
             log_error("error 0x%x", rgn_status);
-        }
-        else{
-            log_debug("Added Region %d id=%d size=%d mb", i, RGN_ID(i), tp->region_sizes_mb);
+        } else {
+            log_debug("Added Region %d id=%d size=%d mb", i, RGN_ID(i),
+                      tp->region_sizes_mb);
         }
     }
-
-    // pMetadata->version = 1;
-    // snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", "cptest");
-    // for (int i = 0; i < pMetadata->n_regions; i++) {
-    //     snprintf(pMetadata->region_names[i], AFV_RGN_NAME_LEN, "tst%d", i);
-    //     pMetadata->region_sizes[i] = 0;
-    //     // Arbitrary ID Generation
-    //     pMetadata->region_ids[i] = RGN_ID(i);
-    //     pMetadata->region_sizes[i] = tp->region_sizes_mb * 1024 * 1024;
-    //     log_info("\t %s id=%d size=%ld", pMetadata->region_names[i],
-    //              pMetadata->region_ids[i], pMetadata->region_sizes[i]);
-    // }
 
     // Open Checkpoint for writing
     afv_checkpoint_t *pCheckpoint = afv_checkpoint_create(pAFV, pMetadata);
@@ -149,7 +138,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    uint64_t *pBlock = malloc(1024 * 1024 * tp->region_sizes_mb);
+    size_t block_size_b = tp->region_sizes_mb * 1024 * 1024;
+    uint64_t *pBlock = malloc(block_size_b);
     if (!pBlock) {
         log_error("Failed to allocate checkpoint memory block");
         free(tp);
@@ -157,18 +147,21 @@ int main(int argc, char **argv) {
         afv_destroy_instance(&pAFV);
         return 1;
     }
-    for (size_t i = 0; i < 1024 * 1024 * tp->region_sizes_mb / sizeof(size_t);
-         i++) {
+    for (size_t i = 0; i < block_size_b / sizeof(size_t); i++) {
         pBlock[i] = i;
     }
 
     // Write out the checkpoint data
-    for (size_t i = 1; i <= tp->n_regions; i++) {
-        for (size_t j = 0;
-             j < 1024 * 1024 * tp->region_sizes_mb / tp->write_block_size_b;
-             j++) {
+    for (size_t i = 0; i < tp->n_regions; i++) {
+        for (size_t j = 0; j < (block_size_b / tp->write_block_size_b); j++) {
+            size_t write_start = tp->write_block_size_b * j;
+            size_t write_end = write_start + tp->write_block_size_b;
+            log_debug("Writing... %d id=%d start=%d end=%d", i, RGN_ID(i),
+                      write_start, write_end);
+            afv_checkpoint_write(pCheckpoint, RGN_ID(i), write_start,
+                                 ((uint8_t *) pBlock) + (write_start),
+                                 tp->write_block_size_b);
         }
-        afv_checkpoint_write(pCheckpoint, 0, 0, NULL, 0);
     }
 
     int checkpoint_close_status = afv_checkpoint_close(&pCheckpoint);

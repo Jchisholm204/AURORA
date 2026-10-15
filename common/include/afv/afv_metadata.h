@@ -118,6 +118,7 @@ extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
 // Safe setter functions for checkpoint metadata
 extern eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
                                         const char *restrict name);
+
 extern eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
                                            int64_t version);
 extern eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
