@@ -12,9 +12,6 @@
 #ifndef _AFV_METADATA_H_
 #define _AFV_METADATA_H_
 
-#ifndef AFV_NO_COMPAT
-#warning "AFV Compatibilty Mode Enabled"
-#endif
 
 #ifndef AFV_RGN_NAME_LEN
 #define AFV_RGN_NAME_LEN 16
@@ -63,12 +60,10 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_FATAL = BIT(9),
 };
 
-#warning "OPS Marked for deletion"
 struct __attribute__((packed)) aurora_file_versioning_metadata_ops {
     union {
         uint64_t __reserved;
         struct {
-            uint64_t version_tag : 4;
             uint64_t with_ec : 1;
         };
     };
@@ -98,18 +93,10 @@ typedef struct aurora_file_versioning_metadata afv_metadata_t;
 typedef enum aurora_file_versioning_metadata_verification_e eAFV_verif;
 
 extern afv_metadata_t *afv_metadata_create(size_t n_regions);
-// Compat layer for old code
-#ifndef AFV_NO_COMPAT
-#define afv_create_metadata(n_regions) afv_metadata_create(n_regions)
-#endif
 
 extern size_t afv_metadata_size(size_t n_regions);
 
 extern void afv_metadata_destroy(afv_metadata_t **ppHndl);
-// Compat layer for old code
-#ifndef AFV_NO_COMPAT
-#define afv_destroy_metadata(ppHndl) afv_metadata_destroy(ppHndl)
-#endif
 
 extern size_t afv_metadata_ptr_size(void *);
 extern afv_metadata_t *afv_metadata_ptr_init(void *);

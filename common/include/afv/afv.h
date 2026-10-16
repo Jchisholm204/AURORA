@@ -13,16 +13,20 @@
 #define _AVF_AVF_H_
 
 #include "afv_metadata.h"
+#include "afv_compat.h"
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 struct aurora_file_versioning_handle
 #ifdef AFV_INTERNAL
 {
     uint64_t rank;
     int64_t group_id;
+    uint64_t group_size;
     char *persistent_path;
     bool use_error_correction;
-    // Open File Pointer
-    afv_metadata_t *pMetadata;
 }
 #endif
 ;
@@ -42,26 +46,18 @@ extern void afv_destroy_instance(afv_hndl **ppHndl);
  * @param version Version of Checkpoint to get
  * @param name Checkpoint Name or NULL for `*`
  * @returns NULL if the version was not found, free with
- * `afv_destroy_metadata((afv_metadata_t **) &pMetadata);`
+ * `afv_metadata_destroy((afv_metadata_t **) &pMetadata);`
  */
-extern const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
+extern const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl,
                                                         int64_t version,
                                                         const char *name);
 
 /**
- * @brief Gets the internally cached metadata pointer
+ * @brief Writes the metadata out to disk
  *
- * @param pHndl
- * @return
- */
-extern const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl);
-
-/**
- * @brief Writes the metadata out to a file and stores it internally
- *
- * @param pHndl
- * @param pMetadata
- * @return
+ * @param pHndl AFV Handle to write out to
+ * @param pMetadata Metadata to write out
+ * @return Success or Verification Error
  */
 extern eAFV_verif afv_write_metadata(afv_hndl *pHndl,
                                      afv_metadata_t *const pMetadata);

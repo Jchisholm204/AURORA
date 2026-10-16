@@ -38,8 +38,8 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->persistent_path = strdup(persistent_path);
     pHndl->rank = rank;
     pHndl->group_id = group_id;
+    pHndl->group_size = group_size;
     pHndl->use_error_correction = with_ec;
-    pHndl->pMetadata = NULL;
 
     if (!pHndl->persistent_path) {
         log_error("Bad Alloc??");
@@ -64,23 +64,6 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
         return NULL;
     }
 
-    // Need to load metadata from the file
-    pHndl->pMetadata =
-        (afv_metadata_t *) afv_get_metadata_versioned(pHndl, -1, NULL);
-
-    if (!pHndl->pMetadata) {
-        log_info("Unable to find metadata for %d of %d in group %d at path: %s",
-                 rank, group_size, group_id, persistent_path);
-        pHndl->pMetadata = afv_create_metadata(0);
-    }
-
-    if (!pHndl->pMetadata) {
-        log_error("Bad Alloc??");
-        free(pHndl->persistent_path);
-        free(pHndl);
-        return NULL;
-    }
-
     return pHndl;
 }
 
@@ -94,9 +77,6 @@ void afv_destroy_instance(afv_hndl **ppHndl) {
     }
     if (pHndl->persistent_path) {
         free(pHndl->persistent_path);
-    }
-    if (pHndl->pMetadata) {
-        afv_destroy_metadata(&pHndl->pMetadata);
     }
     free(pHndl);
     *ppHndl = NULL;
@@ -161,9 +141,8 @@ int64_t _afv_get_latest_version(afv_hndl *pHndl, const char *name,
     return latest_version;
 }
 
-const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
-                                                 int64_t version,
-                                                 const char *name) {
+const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl, int64_t version,
+                                        const char *name) {
     if (!pHndl) {
         log_error("NULL Parameter");
         return NULL;
@@ -245,15 +224,6 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     return pMetadata;
 }
 
-const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl) {
-    if (!pHndl) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-
-    return pHndl->pMetadata;
-}
-
 eAFV_verif afv_write_metadata(afv_hndl *pHndl,
                               afv_metadata_t *const pMetadata) {
     if (!pHndl) {
@@ -312,11 +282,6 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
 
     log_trace("Wrote Latest Metadata: %s %d", pMetadata->chkpt_name,
               pMetadata->version);
-
-    if (pHndl->pMetadata) {
-        afv_destroy_metadata(&pHndl->pMetadata);
-    }
-    pHndl->pMetadata = pMetadata;
 
     return eAFV_VERIF_OK;
 }
