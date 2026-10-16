@@ -225,7 +225,7 @@ const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl, int64_t version,
 }
 
 eAFV_verif afv_write_metadata(afv_hndl *pHndl,
-                              afv_metadata_t *const pMetadata) {
+                              const afv_metadata_t *pMetadata) {
     if (!pHndl) {
         log_error("NULL Parameter");
         return eAFV_VERIF_ERR_NULL;
@@ -257,10 +257,6 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
     snprintf(filename, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvmeta",
              pHndl->persistent_path, AFV_CKPT_NAME_LEN, pMetadata->chkpt_name,
              pMetadata->version, pHndl->rank, group_id);
-
-    if (verif_status & eAFV_VERIF_ERR_KEY) {
-        pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;
-    }
 
     FILE *pFile = fopen(filename, "w");
     if (!pFile) {

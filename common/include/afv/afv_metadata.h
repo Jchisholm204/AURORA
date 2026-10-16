@@ -97,7 +97,7 @@ extern size_t afv_metadata_size(size_t n_regions);
 
 extern void afv_metadata_destroy(afv_metadata_t **ppHndl);
 
-extern size_t afv_metadata_ptr_size(void *);
+extern size_t afv_metadata_ptr_size(const void *const);
 extern afv_metadata_t *afv_metadata_ptr_init(void *);
 
 extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);

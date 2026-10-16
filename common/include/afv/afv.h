@@ -59,7 +59,7 @@ extern const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl, int64_t version,
  * @return Success or Verification Error
  */
 extern eAFV_verif afv_write_metadata(afv_hndl *pHndl,
-                                     afv_metadata_t *const pMetadata);
+                                     const afv_metadata_t *pMetadata);
 
 extern uint64_t afv_get_rank(afv_hndl *pHndl);
 

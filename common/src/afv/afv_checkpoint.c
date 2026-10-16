@@ -94,7 +94,7 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
         return NULL;
     }
 
-    memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
+    (void) memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
 
     pCheckpoint->pAFV = pAFV;
     pCheckpoint->file_mode = eAFVC_MODE_W;
@@ -107,6 +107,11 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
 eAFV_file_error _afv_checkpoint_autoseek(afv_checkpoint_t *pCheckpoint,
                                          const uint64_t region_id,
                                          const size_t region_offset) {
+    // Internal function, should never be handed a NULL pointer
+    assert(pCheckpoint != NULL);
+    assert(pCheckpoint->pMetadata != NULL);
+    assert(pCheckpoint->pFile != NULL);
+
     // Load the new region index
     size_t region_file_offset = pCheckpoint->region_base_offset;
     if (pCheckpoint->region_id != region_id) {

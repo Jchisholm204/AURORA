@@ -67,12 +67,12 @@ void afv_metadata_destroy(afv_metadata_t **ppHndl) {
     }
 }
 
-size_t afv_metadata_ptr_size(void *block_ptr) {
+size_t afv_metadata_ptr_size(const void *const block_ptr) {
     if (!block_ptr) {
         return 0;
     }
     // Head should always be the struct
-    afv_metadata_t *pMetadata = (void *) block_ptr;
+    const afv_metadata_t *const pMetadata = block_ptr;
 
     // Return Reserved Region
     return pMetadata->metadata_size;
