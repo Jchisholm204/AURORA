@@ -28,26 +28,23 @@ enum aurora_file_versioning_checkpoint_mode {
     eAFVC_N_MODE,
 };
 
-struct aurora_file_versioning_checkpoint {
-    afv_metadata_t *pMetadata;
-    union {
-        uint64_t __reserved[7];
+struct aurora_file_versioning_checkpoint
 #ifdef AFV_INTERNAL
-        struct {
-            afv_hndl *pAFV;
-            enum aurora_file_versioning_checkpoint_mode file_mode;
-            afv_file_hndl *pFile;
-            // Last Accessed Region Information
-            uint64_t region_id;
-            uint64_t region_index;
-            // Base offset of the last region within the file
-            size_t region_base_offset;
-            // Pointer to the RW head on the file
-            size_t file_offset;
-        };
+{
+    const afv_metadata_t *pMetadata;
+    afv_hndl *pAFV;
+    enum aurora_file_versioning_checkpoint_mode file_mode;
+    afv_file_hndl *pFile;
+    // Last Accessed Region Information
+    uint64_t region_id;
+    uint64_t region_index;
+    // Base offset of the last region within the file
+    size_t region_base_offset;
+    // Pointer to the RW head on the file
+    size_t file_offset;
+}
 #endif
-    };
-};
+;
 
 typedef struct aurora_file_versioning_checkpoint afv_checkpoint_t;
 typedef enum aurora_file_versioning_checkpoint_mode eAFVC_mode;
@@ -73,8 +70,8 @@ extern afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
  * @return A new checkpoint or NULL if metadata verification fails
  * Close with afv_checkpoint_close, or abandon with afv_checkpoint_destroy
  */
-extern afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
-                                               afv_metadata_t *pMetdata);
+extern afv_checkpoint_t *afv_checkpoint_create(
+    afv_hndl *pAFV, afv_metadata_t **const ppMetdata);
 
 /**
  * @brief Read a block from a checkpoint (must be opened in read mode)
@@ -105,6 +102,14 @@ extern size_t afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
                                    const uint64_t region_id,
                                    const size_t region_offset,
                                    const void *const src, const size_t size);
+/**
+ * @brief Retrieve a read only copy of the checkpoint's metadata
+ *
+ * @param pCheckpoint Checkpoint to get metadata from
+ * @return
+ */
+extern const afv_metadata_t *afv_checkpoint_metadata(
+    afv_checkpoint_t *pCheckpoint);
 
 /**
  * @brief Close a checkpoint file (writes to disk, frees all memory)

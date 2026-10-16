@@ -12,7 +12,6 @@
 #ifndef _AFV_METADATA_H_
 #define _AFV_METADATA_H_
 
-
 #ifndef AFV_RGN_NAME_LEN
 #define AFV_RGN_NAME_LEN 16
 #endif
@@ -115,7 +114,7 @@ extern eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
                                           uint64_t id, size_t size);
 
 // Verification functions for metadata
-extern eAFV_verif afv_metadata_get_region(afv_metadata_t *pMetadata,
+extern eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
                                           const char *restrict name,
                                           uint64_t id, size_t size,
                                           size_t *pIndex);

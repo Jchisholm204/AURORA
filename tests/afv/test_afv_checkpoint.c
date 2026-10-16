@@ -129,13 +129,17 @@ int main(int argc, char **argv) {
     }
 
     // Open Checkpoint for writing
-    afv_checkpoint_t *pCheckpoint = afv_checkpoint_create(pAFV, pMetadata);
+    afv_checkpoint_t *pCheckpoint = afv_checkpoint_create(pAFV, &pMetadata);
 
     if (!pCheckpoint) {
         log_error("Failed to create a new checkpoint");
         free(tp);
         afv_destroy_instance(&pAFV);
         return 1;
+    }
+
+    if (pMetadata) {
+        log_error("Checkpoint metadata non NULL");
     }
 
     size_t block_size_b = tp->region_sizes_mb * 1024 * 1024;

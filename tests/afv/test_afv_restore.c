@@ -117,8 +117,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    const afv_metadata_t *pMetadata = afv_checkpoint_metadata(pCheckpoint);
     eAFV_verif checkpoint_verification =
-        afv_metadata_check(pCheckpoint->pMetadata, 1, "cptest", tp->n_regions);
+        afv_metadata_check(pMetadata, 1, "cptest", tp->n_regions);
     if (checkpoint_verification != eAFV_VERIF_OK) {
         log_error("Checkpoint Verification Failure 0x%x",
                   checkpoint_verification);

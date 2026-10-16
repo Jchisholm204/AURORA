@@ -26,8 +26,7 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
         return NULL;
     }
 
-    afv_metadata_t *pMetadata =
-        (afv_metadata_t *) afv_get_metadata_versioned(pAFV, version, name);
+    const afv_metadata_t *pMetadata = afv_read_metadata(pAFV, version, name);
     if (!pMetadata) {
         log_error("Unable to find metadata %v %s", version, name);
         return NULL;
@@ -36,7 +35,7 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
     afv_file_hndl *pFile = afv_file_open_r(pAFV, pMetadata);
     if (!pFile) {
         log_error("Unable to open checkpoint");
-        afv_destroy_metadata(&pMetadata);
+        afv_metadata_destroy((afv_metadata_t **) &pMetadata);
         return NULL;
     }
 
@@ -46,7 +45,7 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
         return NULL;
     }
 
-    memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
+    (void) memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
 
     pCheckpoint->pAFV = pAFV;
     pCheckpoint->file_mode = eAFVC_MODE_R;
@@ -57,15 +56,25 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
 }
 
 afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
-                                        afv_metadata_t *pMetadata) {
+                                        afv_metadata_t **const ppMetadata) {
     if (!pAFV) {
         log_error("NULL Parameter");
         return NULL;
     }
+    if (!ppMetadata) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+
+    const afv_metadata_t *pMetadata = *ppMetadata;
     if (!pMetadata) {
         log_error("NULL Parameter");
         return NULL;
     }
+
+    // Invalidate Application pointer
+    *ppMetadata = NULL;
+
     eAFV_verif verification_status = afv_metadata_verify(pMetadata);
     if (verification_status != eAFV_VERIF_OK) {
         log_error("Invalid Metadata");
@@ -235,6 +244,15 @@ size_t afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
     return size;
 }
 
+const afv_metadata_t *afv_checkpoint_metadata(afv_checkpoint_t *pCheckpoint) {
+    if (!pCheckpoint) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+
+    return pCheckpoint->pMetadata;
+}
+
 eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
     if (!ppCheckpoint) {
         log_error("NULL Parameter");
@@ -289,7 +307,8 @@ void afv_checkpoint_destroy(afv_checkpoint_t **ppCheckpoint) {
     }
 
     if (pCheckpoint->pMetadata) {
-        (void) afv_destroy_metadata(&pCheckpoint->pMetadata);
+        (void) afv_metadata_destroy(
+            (afv_metadata_t **) &pCheckpoint->pMetadata);
     }
 
     free(pCheckpoint);

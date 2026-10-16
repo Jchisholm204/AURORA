@@ -12,6 +12,11 @@
 #ifndef __AFV_COMPAT_H__
 #define __AFV_COMPAT_H__
 
+// Do not allow compat functions internally
+#ifdef AFV_INTERNAL
+#define AFV_NO_COMPAT
+#endif
+
 #ifndef AFV_NO_COMPAT
 
 #warning "AFV Compatibilty Mode Enabled"

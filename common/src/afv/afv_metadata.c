@@ -214,7 +214,7 @@ eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
     return eAFV_VERIF_OK;
 }
 
-eAFV_verif afv_metadata_get_region(afv_metadata_t *pMetadata,
+eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
                                    const char *restrict name, uint64_t id,
                                    size_t size, size_t *pIndex) {
     if (!pMetadata) {
