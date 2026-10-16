@@ -132,8 +132,7 @@ def render_plot_variant(data_df, core_mode_label):
         data_df['Series_ID'] = data_df['Framework']
 
     # Custom styling
-    # CUSTOM_PALETTE = ["#1f77b4", "#2ca02c", "#d62728",  "#9467bd", "#17becf"]
-    CUSTOM_PALETTE = ["#1f77b4", "#17becf", "#d62728",  "#d13262"]
+    CUSTOM_PALETTE = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#17becf"]
     CUSTOM_MARKERS = ["o", "D", "^", "s", "*", "P"]
     CUSTOM_DASHES = ["-", "--", ":", "-.", (5, 2, 1, 2)]
 
