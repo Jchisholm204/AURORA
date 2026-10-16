@@ -4,7 +4,7 @@
  * @brief Metadata included in all AURORA Checkpoint Files
  * @version 0.3
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-08-12
+ * @modified Last Modified: 2026-10-15
  *
  * @copyright Copyright (c) 2026
  */

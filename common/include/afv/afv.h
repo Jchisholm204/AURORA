@@ -4,7 +4,7 @@
  * @brief
  * @version 0.3
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-09-22
+ * @modified Last Modified: 2026-10-15
  *
  * @copyright Copyright (c) 2026
  */
@@ -12,8 +12,8 @@
 #ifndef _AVF_AVF_H_
 #define _AVF_AVF_H_
 
-#include "afv_metadata.h"
 #include "afv_compat.h"
+#include "afv_metadata.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -48,9 +48,8 @@ extern void afv_destroy_instance(afv_hndl **ppHndl);
  * @returns NULL if the version was not found, free with
  * `afv_metadata_destroy((afv_metadata_t **) &pMetadata);`
  */
-extern const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl,
-                                                        int64_t version,
-                                                        const char *name);
+extern const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl, int64_t version,
+                                               const char *name);
 
 /**
  * @brief Writes the metadata out to disk
