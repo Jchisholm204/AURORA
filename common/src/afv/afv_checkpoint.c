@@ -52,6 +52,9 @@ afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
     pCheckpoint->pMetadata = pMetadata;
     pCheckpoint->pFile = pFile;
 
+    // Increment AFV reference counter
+    atomic_fetch_add(&pAFV->reference_counter, 1);
+
     return pCheckpoint;
 }
 
@@ -100,6 +103,9 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
     pCheckpoint->file_mode = eAFVC_MODE_W;
     pCheckpoint->pMetadata = pMetadata;
     pCheckpoint->pFile = pFile;
+
+    // Increment AFV reference counter
+    atomic_fetch_add(&pAFV->reference_counter, 1);
 
     return pCheckpoint;
 }
@@ -290,9 +296,9 @@ eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
             (void) afv_checkpoint_destroy(ppCheckpoint);
             return eAFV_VERIF_ERR_FATAL;
         }
-        pCheckpoint->pMetadata = NULL;
     }
 
+    // Decrement counter and destroy memory
     afv_checkpoint_destroy(ppCheckpoint);
 
     return eAFV_VERIF_OK;
@@ -315,6 +321,9 @@ void afv_checkpoint_destroy(afv_checkpoint_t **ppCheckpoint) {
         (void) afv_metadata_destroy(
             (afv_metadata_t **) &pCheckpoint->pMetadata);
     }
+
+    // Decrement AFV reference counter
+    atomic_fetch_sub(&pCheckpoint->pAFV->reference_counter, 1);
 
     free(pCheckpoint);
     *ppCheckpoint = NULL;

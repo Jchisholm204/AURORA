@@ -18,6 +18,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdatomic.h>
+
 
 struct aurora_file_versioning_handle
 #ifdef AFV_INTERNAL
@@ -27,6 +29,7 @@ struct aurora_file_versioning_handle
     uint64_t group_size;
     char *persistent_path;
     bool use_error_correction;
+    atomic_size_t reference_counter;
 }
 #endif
 ;

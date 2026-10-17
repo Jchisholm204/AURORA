@@ -40,6 +40,7 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->group_id = group_id;
     pHndl->group_size = group_size;
     pHndl->use_error_correction = with_ec;
+    atomic_store(&pHndl->reference_counter, 0);
 
     if (!pHndl->persistent_path) {
         log_error("Bad Alloc??");
@@ -71,10 +72,16 @@ void afv_destroy_instance(afv_hndl **ppHndl) {
     if (!ppHndl) {
         return;
     }
+
     afv_hndl *pHndl = *ppHndl;
     if (!pHndl) {
         return;
     }
+
+    if (atomic_load(&pHndl->reference_counter) != 0) {
+        log_error("AFV closed with open references");
+    }
+
     if (pHndl->persistent_path) {
         free(pHndl->persistent_path);
     }
