@@ -119,7 +119,11 @@ eAFV_file_error afv_file_close(afv_file_hndl **ppHndl) {
     }
 
     if (pHndl->pFile) {
-        fclose(pHndl->pFile);
+        int close_status = fclose(pHndl->pFile);
+        if (close_status != 0) {
+            log_error("File Close Failure %d", close_status);
+            return eAFV_FILE_ERR_RW;
+        }
     }
 
     pHndl->pFile = NULL;
@@ -137,7 +141,11 @@ eAFV_file_error afv_file_seek(afv_file_hndl *pHndl, size_t seekptr) {
         log_error("NULL Parameter");
         return eAFV_FILE_NULL;
     }
-    fseek(pHndl->pFile, seekptr, SEEK_SET);
+    log_debug("FSEEK");
+    int file_status = fseek(pHndl->pFile, seekptr, SEEK_SET);
+    if (file_status != 0) {
+        return eAFV_FILE_ERR_RW;
+    }
 
     return eAFV_FILE_OK;
 }
@@ -147,7 +155,10 @@ eAFV_file_error afv_file_jump(afv_file_hndl *pHndl, int64_t jsize) {
         log_error("NULL Parameter");
         return eAFV_FILE_NULL;
     }
-    fseek(pHndl->pFile, jsize, SEEK_CUR);
+    int file_status = fseek(pHndl->pFile, jsize, SEEK_CUR);
+    if (file_status != 0) {
+        return eAFV_FILE_ERR_RW;
+    }
 
     return eAFV_FILE_OK;
 }

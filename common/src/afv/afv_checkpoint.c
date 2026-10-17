@@ -1,0 +1,330 @@
+/**
+ * @file afv_checkpoint.c
+ * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @brief
+ * @version 0.1
+ * @date Created: 2026-09-22
+ * @modified Last Modified: 2026-09-22
+ *
+ * @copyright Copyright (c) 2026
+ */
+
+#define AFV_INTERNAL
+
+#include "afv/afv_checkpoint.h"
+
+#include "log.h"
+
+#include <assert.h>
+#include <malloc.h>
+#include <memory.h>
+
+afv_checkpoint_t *afv_checkpoint_open(afv_hndl *pAFV, int64_t version,
+                                      const char *name) {
+    if (!pAFV) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+
+    const afv_metadata_t *pMetadata = afv_read_metadata(pAFV, version, name);
+    if (!pMetadata) {
+        log_error("Unable to find metadata %v %s", version, name);
+        return NULL;
+    }
+
+    afv_file_hndl *pFile = afv_file_open_r(pAFV, pMetadata);
+    if (!pFile) {
+        log_error("Unable to open checkpoint");
+        afv_metadata_destroy((afv_metadata_t **) &pMetadata);
+        return NULL;
+    }
+
+    afv_checkpoint_t *pCheckpoint = malloc(sizeof(afv_checkpoint_t));
+    if (!pCheckpoint) {
+        log_error("Bad Alloc??");
+        return NULL;
+    }
+
+    (void) memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
+
+    pCheckpoint->pAFV = pAFV;
+    pCheckpoint->file_mode = eAFVC_MODE_R;
+    pCheckpoint->pMetadata = pMetadata;
+    pCheckpoint->pFile = pFile;
+
+    // Increment AFV reference counter
+    atomic_fetch_add(&pAFV->reference_counter, 1);
+
+    return pCheckpoint;
+}
+
+afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV,
+                                        afv_metadata_t **const ppMetadata) {
+    if (!pAFV) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+    if (!ppMetadata) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+
+    const afv_metadata_t *pMetadata = *ppMetadata;
+    if (!pMetadata) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+
+    // Invalidate Application pointer
+    *ppMetadata = NULL;
+
+    eAFV_verif verification_status = afv_metadata_verify(pMetadata);
+    if (verification_status != eAFV_VERIF_OK) {
+        log_error("Invalid Metadata");
+        return NULL;
+    }
+
+    afv_file_hndl *pFile =
+        afv_file_open_w(pAFV, pMetadata->version, pMetadata->chkpt_name);
+    if (!pFile) {
+        log_error("Filesystem Error");
+        return NULL;
+    }
+
+    afv_checkpoint_t *pCheckpoint = malloc(sizeof(afv_checkpoint_t));
+    if (!pCheckpoint) {
+        log_error("Bad Alloc??");
+        return NULL;
+    }
+
+    (void) memset(pCheckpoint, 0, sizeof(afv_checkpoint_t));
+
+    pCheckpoint->pAFV = pAFV;
+    pCheckpoint->file_mode = eAFVC_MODE_W;
+    pCheckpoint->pMetadata = pMetadata;
+    pCheckpoint->pFile = pFile;
+
+    // Increment AFV reference counter
+    atomic_fetch_add(&pAFV->reference_counter, 1);
+
+    return pCheckpoint;
+}
+
+eAFV_file_error _afv_checkpoint_autoseek(afv_checkpoint_t *pCheckpoint,
+                                         const uint64_t region_id,
+                                         const size_t region_offset) {
+    // Internal function, should never be handed a NULL pointer
+    assert(pCheckpoint != NULL);
+    assert(pCheckpoint->pMetadata != NULL);
+    assert(pCheckpoint->pFile != NULL);
+
+    // Load the new region index
+    size_t region_file_offset = pCheckpoint->region_base_offset;
+    if (pCheckpoint->region_id != region_id) {
+        log_debug("Region ID Change");
+        uint64_t region_index = 0;
+        // Block offset inside of file (sum of previous blocks)
+        region_file_offset = 0;
+        for (; region_index < pCheckpoint->pMetadata->n_regions;
+             region_index++) {
+            uint64_t id = pCheckpoint->pMetadata->region_ids[region_index];
+            if (id == region_id) {
+                break;
+            }
+            region_file_offset +=
+                pCheckpoint->pMetadata->region_sizes[region_index];
+        }
+        if (region_index >= pCheckpoint->pMetadata->n_regions) {
+            log_error("Invalid Region %d", region_id);
+            return eAFV_FILE_ERR_RW;
+        }
+
+        // Save position
+        pCheckpoint->region_index = region_index;
+        pCheckpoint->region_id = region_id;
+        pCheckpoint->region_base_offset = region_file_offset;
+
+        // Move active pointer
+        size_t seek_ptr = region_file_offset + region_offset;
+        eAFV_file_error fstatus = afv_file_seek(pCheckpoint->pFile, seek_ptr);
+        if (fstatus != eAFV_FILE_OK) {
+            log_error("File Error");
+            return fstatus;
+        }
+        pCheckpoint->file_offset = seek_ptr;
+    }
+    // Check for only offset changes
+    else if (pCheckpoint->file_offset != (region_file_offset + region_offset)) {
+        log_debug("Region Offset Change");
+        size_t seek_ptr = region_file_offset + region_offset;
+        eAFV_file_error fstatus = afv_file_seek(pCheckpoint->pFile, seek_ptr);
+        if (fstatus != eAFV_FILE_OK) {
+            log_error("File Error");
+            return fstatus;
+        }
+        pCheckpoint->file_offset = seek_ptr;
+    }
+
+    return eAFV_FILE_OK;
+}
+
+size_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
+                           const uint64_t region_id, const size_t region_offset,
+                           void *dst, size_t size) {
+    if (!pCheckpoint) {
+        log_error("NULL Parameter");
+        return 0;
+    }
+
+    assert(pCheckpoint->file_mode == eAFVC_MODE_R);
+
+    // Load the new region index
+    eAFV_file_error afv_status =
+        _afv_checkpoint_autoseek(pCheckpoint, region_id, region_offset);
+    if (afv_status != eAFV_FILE_OK) {
+        log_error("AFV Error %d", afv_status);
+        return 0;
+    }
+
+    // Handle read overflows
+    uint64_t region_base = pCheckpoint->region_base_offset;
+    uint64_t region_size =
+        pCheckpoint->pMetadata->region_sizes[pCheckpoint->region_index];
+    uint64_t region_max = region_base + region_size;
+    uint64_t read_start = region_base + region_offset;
+    if ((read_start + size) > region_max) {
+        log_warn("Read Overflow by %d bytes", (read_start + size) - region_max);
+        size = region_max - read_start;
+    }
+
+    afv_status = afv_file_read(pCheckpoint->pFile, dst, size);
+    if (afv_status != eAFV_FILE_OK) {
+        log_error("AFV Error %d", afv_status);
+        return 0;
+    }
+
+    // Save new offset as read + bytes_read
+    pCheckpoint->file_offset = read_start + size;
+
+    // Return bytes read
+    return size;
+}
+
+size_t afv_checkpoint_write(afv_checkpoint_t *pCheckpoint,
+                            const uint64_t region_id,
+                            const size_t region_offset, const void *const src,
+                            size_t size) {
+
+    if (!pCheckpoint) {
+        log_error("NULL Parameter");
+        return 0;
+    }
+
+    assert(pCheckpoint->file_mode == eAFVC_MODE_W);
+
+    // Load the new region index
+    eAFV_file_error afv_status =
+        _afv_checkpoint_autoseek(pCheckpoint, region_id, region_offset);
+    if (afv_status != eAFV_FILE_OK) {
+        log_error("AFV Error %d", afv_status);
+        return 0;
+    }
+
+    // Handle write overflows
+    uint64_t region_base = pCheckpoint->region_base_offset;
+    uint64_t region_size =
+        pCheckpoint->pMetadata->region_sizes[pCheckpoint->region_index];
+    uint64_t region_max = region_base + region_size;
+    uint64_t write_start = region_base + region_offset;
+    if ((write_start + size) > region_max) {
+        log_warn("Write Overflow by %d bytes",
+                 (write_start + size) - region_max);
+        size = region_max - write_start;
+    }
+
+    afv_status = afv_file_write(pCheckpoint->pFile, src, size);
+    if (afv_status != eAFV_FILE_OK) {
+        log_error("AFV Error %d", afv_status);
+        return 0;
+    }
+
+    // Save new offset as read + bytes_read
+    pCheckpoint->file_offset = write_start + size;
+
+    // Return bytes read
+    return size;
+}
+
+const afv_metadata_t *afv_checkpoint_metadata(afv_checkpoint_t *pCheckpoint) {
+    if (!pCheckpoint) {
+        log_error("NULL Parameter");
+        return NULL;
+    }
+
+    return pCheckpoint->pMetadata;
+}
+
+eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {
+    if (!ppCheckpoint) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+    afv_checkpoint_t *pCheckpoint = *ppCheckpoint;
+    if (!pCheckpoint) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
+    }
+
+    eAFV_verif afv_verif_status = afv_metadata_verify(pCheckpoint->pMetadata);
+    if (afv_verif_status != eAFV_VERIF_OK) {
+        log_error("AFV Verification Error 0x%x", afv_verif_status);
+        return afv_verif_status;
+    }
+
+    eAFV_file_error afv_file_status = afv_file_close(&pCheckpoint->pFile);
+    if (afv_file_status != eAFV_FILE_OK) {
+        log_error("AFV File Error %d", afv_file_status);
+        (void) afv_checkpoint_destroy(ppCheckpoint);
+        return eAFV_VERIF_ERR_FATAL;
+    }
+
+    if (pCheckpoint->file_mode == eAFVC_MODE_W) {
+        afv_verif_status =
+            afv_write_metadata(pCheckpoint->pAFV, pCheckpoint->pMetadata);
+        if (afv_verif_status != eAFV_VERIF_OK) {
+            log_error("AFV Metadata Error %d", afv_verif_status);
+            (void) afv_checkpoint_destroy(ppCheckpoint);
+            return eAFV_VERIF_ERR_FATAL;
+        }
+    }
+
+    // Decrement counter and destroy memory
+    afv_checkpoint_destroy(ppCheckpoint);
+
+    return eAFV_VERIF_OK;
+}
+
+void afv_checkpoint_destroy(afv_checkpoint_t **ppCheckpoint) {
+    if (!ppCheckpoint) {
+        return;
+    }
+    afv_checkpoint_t *pCheckpoint = *ppCheckpoint;
+    if (!pCheckpoint) {
+        return;
+    }
+
+    if (pCheckpoint->pFile) {
+        (void) afv_file_close(&pCheckpoint->pFile);
+    }
+
+    if (pCheckpoint->pMetadata) {
+        (void) afv_metadata_destroy(
+            (afv_metadata_t **) &pCheckpoint->pMetadata);
+    }
+
+    // Decrement AFV reference counter
+    atomic_fetch_sub(&pCheckpoint->pAFV->reference_counter, 1);
+
+    free(pCheckpoint);
+    *ppCheckpoint = NULL;
+}
