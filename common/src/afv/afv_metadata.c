@@ -268,7 +268,10 @@ eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
         }
     }
 
-    *pIndex = index;
+    if (pIndex) {
+        log_trace("Returning Region %d at index %d", id, index);
+        *pIndex = index;
+    }
     return eAFV_VERIF_OK;
 }
 

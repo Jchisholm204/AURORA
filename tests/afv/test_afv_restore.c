@@ -143,6 +143,16 @@ int main(int argc, char **argv) {
 
     // Write out the checkpoint data
     for (size_t i = 0; i < tp->n_regions; i++) {
+        size_t region_index;
+        eAFV_verif region_status =
+            afv_metadata_get_region(pMetadata, NULL, RGN_ID(i), block_size_b,
+                                    &region_index);
+        if (region_status != eAFV_VERIF_OK) {
+            log_error("Failed to find region %d", RGN_ID(i));
+        }
+        else{
+            log_info("Found Region %d at index %d (%d)", RGN_ID(i), region_index, i);
+        }
         for (size_t j = 0; j < block_size_b / sizeof(size_t); j++) {
             pBlock[j] = 0;
         }
