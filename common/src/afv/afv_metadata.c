@@ -155,7 +155,18 @@ eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
         log_warn("NULL Parameter");
         return eAFV_VERIF_ERR_NULL;
     }
-    (void) snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", name);
+    if (!name) {
+        memset(pMetadata->chkpt_name, '\0', AFV_CKPT_NAME_LEN);
+        return eAFV_VERIF_ERR_NULL | eAFV_VERIF_ERR_SIZE;
+    }
+
+    size_t bytes_written =
+        snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", name);
+
+    if (bytes_written == AFV_CKPT_NAME_LEN) {
+        return eAFV_VERIF_ERR_SIZE;
+    }
+
     return eAFV_VERIF_OK;
 }
 
