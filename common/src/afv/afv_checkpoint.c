@@ -12,8 +12,8 @@
 #define AFV_INTERNAL
 
 #include "afv/afv_checkpoint.h"
-#include "afv/afv_metadata.h"
 
+#include "afv/afv_metadata.h"
 #include "log.h"
 
 #include <assert.h>
@@ -124,6 +124,25 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV, int64_t version,
     atomic_fetch_add(&pAFV->reference_counter, 1);
 
     return pCheckpoint;
+}
+
+const char (*afv_checkpoint_name(afv_checkpoint_t *pCheckpoint))
+    [AFV_CKPT_NAME_LEN] {
+        if (!pCheckpoint) {
+            return NULL;
+        }
+        if (!pCheckpoint->pMetadata) {
+            return NULL;
+        }
+        return &pCheckpoint->pMetadata->chkpt_name;
+    }
+
+int64_t afv_checkpoint_version(afv_checkpoint_t *pCheckpoint) {
+    if (!pCheckpoint) {
+        return -eAFV_VERIF_ERR_NULL;
+    }
+    assert(pCheckpoint->pMetadata != NULL);
+    return pCheckpoint->pMetadata->version;
 }
 
 eAFV_verif afv_checkpoint_close(afv_checkpoint_t **ppCheckpoint) {

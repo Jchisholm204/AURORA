@@ -54,7 +54,8 @@ eAFV_verif afv_checkpoint_find_index(afv_checkpoint_t *pCheckpoint,
     return region_status;
 }
 
-ssize_t _afv_conditional_copy(const void *src, void **pDst, size_t size) {
+static inline ssize_t _afv_conditional_copy(const void *src, void **pDst,
+                                            size_t size) {
     // No Destination Supplied
     if (!pDst) {
         return eAFV_VERIF_OK;

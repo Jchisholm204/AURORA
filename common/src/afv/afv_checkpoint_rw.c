@@ -82,7 +82,7 @@ ssize_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
                             size_t size) {
     if (!pCheckpoint) {
         log_error("NULL Parameter");
-        return 0;
+        return -eAFV_VERIF_ERR_NULL;
     }
 
     assert(pCheckpoint->file_mode == eAFVC_MODE_R);
@@ -92,7 +92,7 @@ ssize_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
         _afv_checkpoint_autoseek(pCheckpoint, region_id, region_offset);
     if (afv_status != eAFV_FILE_OK) {
         log_error("AFV Error %d", afv_status);
-        return 0;
+        return -eAFV_VERIF_ERR_FATAL;
     }
 
     // Handle read overflows
@@ -109,7 +109,7 @@ ssize_t afv_checkpoint_read(afv_checkpoint_t *pCheckpoint,
     afv_status = afv_file_read(pCheckpoint->pFile, dst, size);
     if (afv_status != eAFV_FILE_OK) {
         log_error("AFV Error %d", afv_status);
-        return 0;
+        return -eAFV_VERIF_ERR_FATAL;
     }
 
     // Save new offset as read + bytes_read

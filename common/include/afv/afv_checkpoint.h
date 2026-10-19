@@ -78,6 +78,23 @@ extern afv_checkpoint_t *afv_checkpoint_create(
     size_t n_regions);
 
 /**
+ * @brief Get the name of the checkpoint
+ *
+ * @param pCheckpoint
+ * @returns read only pointer, do not free
+ */
+extern const char (*afv_checkpoint_name(
+    afv_checkpoint_t *pCheckpoint))[AFV_CKPT_NAME_LEN];
+
+/**
+ * @brief Get the version of the checkpoint
+ *
+ * @param pCheckpoint
+ * @return
+ */
+extern int64_t afv_checkpoint_version(afv_checkpoint_t *pCheckpoint);
+
+/**
  * @brief Close a checkpoint file (writes to disk, frees all memory)
  *
  * @param pCheckpoint Checkpoint to write out
@@ -140,6 +157,9 @@ extern eAFV_verif afv_checkpoint_find_index(afv_checkpoint_t *pCheckpoint,
 extern ssize_t afv_checkpoint_regions(afv_checkpoint_t *pCheckpoint,
                                       uint64_t **pID_list, size_t **pSize_list,
                                       char **pName_list);
+
+#define afv_checkpoint_n_regions(pCheckpoint)                                  \
+    afv_checkpoint_regions(pCheckpoint, NULL, NULL, NULL)
 
 /**
  * @brief Read a block from a checkpoint (must be opened in read mode)
