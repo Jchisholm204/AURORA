@@ -83,8 +83,7 @@ extern afv_checkpoint_t *afv_checkpoint_create(
  * @param pCheckpoint
  * @returns read only pointer, do not free
  */
-extern const char (*afv_checkpoint_name(
-    afv_checkpoint_t *pCheckpoint))[AFV_CKPT_NAME_LEN];
+extern const char *afv_checkpoint_name(afv_checkpoint_t *pCheckpoint);
 
 /**
  * @brief Get the version of the checkpoint

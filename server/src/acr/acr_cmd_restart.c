@@ -31,9 +31,10 @@
 #endif
 
 #define ASSERT_INSTANCE(pInstance) assert(pInstance != NULL);
-// assert(((aim_entry_t *) pInstance)->pACI != NULL);                         \
-// assert(((aim_entry_t *) pInstance)->pACN != NULL);                         \
-// assert(((aim_entry_t *) pInstance)->pARM != NULL);                         \
+
+// assert(((aim_entry_t *) pInstance)->pACI != NULL);
+// assert(((aim_entry_t *) pInstance)->pACN != NULL);
+// assert(((aim_entry_t *) pInstance)->pARM != NULL);
 // assert(((aim_entry_t *) pInstance)->pAFV != NULL);
 
 afv_checkpoint_t *_acr_cmd_restart_init(aim_entry_t *pInstance);
@@ -194,12 +195,11 @@ void *acr_cmd_restart(void *arg) {
 
     { // BEGIN Notify Client of Completion
         // Nofree
-        const char (*pCheckpoint_name)[AFV_CKPT_NAME_LEN] =
-            afv_checkpoint_name(pCheckpoint);
+        const char *checkpoint_name = afv_checkpoint_name(pCheckpoint);
         char _checkpoint_name[AFV_CKPT_NAME_LEN] = "\0";
-        if (!pCheckpoint_name) {
+        if (!checkpoint_name) {
             // catch nofree with stack
-            pCheckpoint_name = &_checkpoint_name;
+            checkpoint_name = _checkpoint_name;
         }
         int64_t checkpoint_version = afv_checkpoint_version(pCheckpoint);
         eACN_error acn_status = eACN_OK;
@@ -207,7 +207,7 @@ void *acr_cmd_restart(void *arg) {
         if (acn_status != eACN_OK) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
-        acn_status = acn_set_name(pInstance->pACN, *pCheckpoint_name);
+        acn_status = acn_set_name(pInstance->pACN, checkpoint_name);
         if (acn_status != eACN_OK) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
@@ -220,7 +220,7 @@ void *acr_cmd_restart(void *arg) {
         }
 
         log_info("Completion %d: %.*s %d", afv_get_rank(pInstance->pAFV),
-                 ACN_NAME_LEN, *pCheckpoint_name, checkpoint_version);
+                 ACN_NAME_LEN, checkpoint_name, checkpoint_version);
     } // END Notify Client of Completion
 
     restart_fail = false;

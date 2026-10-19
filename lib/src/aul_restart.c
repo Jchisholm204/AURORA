@@ -15,6 +15,7 @@
 #include "afv/afv.h"
 #include "aul.h"
 #include "aul_internal.h"
+#include "afv/afv_compat.h"
 #include "limits.h"
 #include "log.h"
 

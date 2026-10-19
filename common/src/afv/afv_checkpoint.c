@@ -126,16 +126,15 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV, int64_t version,
     return pCheckpoint;
 }
 
-const char (*afv_checkpoint_name(afv_checkpoint_t *pCheckpoint))
-    [AFV_CKPT_NAME_LEN] {
-        if (!pCheckpoint) {
-            return NULL;
-        }
-        if (!pCheckpoint->pMetadata) {
-            return NULL;
-        }
-        return &pCheckpoint->pMetadata->chkpt_name;
+const char *afv_checkpoint_name(afv_checkpoint_t *pCheckpoint) {
+    if (!pCheckpoint) {
+        return NULL;
     }
+    if (!pCheckpoint->pMetadata) {
+        return NULL;
+    }
+    return pCheckpoint->pMetadata->chkpt_name;
+}
 
 int64_t afv_checkpoint_version(afv_checkpoint_t *pCheckpoint) {
     if (!pCheckpoint) {

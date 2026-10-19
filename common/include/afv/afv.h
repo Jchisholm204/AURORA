@@ -12,14 +12,12 @@
 #ifndef _AVF_AVF_H_
 #define _AVF_AVF_H_
 
-#include "afv_compat.h"
 #include "afv_metadata.h"
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdatomic.h>
-
 
 struct aurora_file_versioning_handle
 #ifdef AFV_INTERNAL
