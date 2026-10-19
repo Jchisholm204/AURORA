@@ -66,6 +66,11 @@ void *acr_cmd_restart(void *arg) {
     amr_hndl const *const arm_region_list =
         arm_get_remote_regions(pInstance->pARM);
 
+    if (arm_n_regions == 0 || arm_region_list == NULL) {
+        log_fatal("Attempted Restore with no active regions");
+        goto RESTART_FAIL;
+    }
+
     const ssize_t checkpoint_n_regions = afv_checkpoint_n_regions(pCheckpoint);
     if (checkpoint_n_regions < 0) {
         log_error("Failed to get checkpoint region list 0x%x",
