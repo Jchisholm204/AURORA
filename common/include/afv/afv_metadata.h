@@ -52,11 +52,10 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_SIZE = BIT(2),
     eAFV_VERIF_ERR_NAME = BIT(3),
     eAFV_VERIF_ERR_VERSION = BIT(4),
-    eAFV_VERIF_ERR_RGN_SIZE = BIT(5),
-    eAFV_VERIF_ERR_RGN_IDS = BIT(6),
-    eAFV_VERIF_ERR_RGN_SIZES = BIT(7),
-    eAFV_VERIF_ERR_RGN_NAMES = BIT(8),
-    eAFV_VERIF_ERR_FATAL = BIT(9),
+    eAFV_VERIF_ERR_RGN_IDS = BIT(5),
+    eAFV_VERIF_ERR_RGN_SIZES = BIT(6),
+    eAFV_VERIF_ERR_RGN_NAMES = BIT(7),
+    eAFV_VERIF_ERR_FATAL = BIT(8),
 };
 
 struct __attribute__((packed)) aurora_file_versioning_metadata_ops {
@@ -106,6 +105,13 @@ extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
 extern eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
                                         const char *restrict name);
 
+/**
+ * @brief Set the checkpoint Version, checks before writing
+ *
+ * @param pMetadata Optional: Metadata to set version of
+ * @param version Checkpoint Version
+ * @return 
+ */
 extern eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
                                            int64_t version);
 

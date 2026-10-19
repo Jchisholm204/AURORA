@@ -138,7 +138,7 @@ eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata) {
         uint64_t size = pMetadata->region_sizes[i];
         if (size == 0) {
             log_debug("Region %d Verification Size Failure", i);
-            status |= eAFV_VERIF_ERR_RGN_SIZE;
+            status |= eAFV_VERIF_ERR_RGN_SIZES;
         }
         if (((int64_t) id) < 0) {
             log_debug("Region %d Verification ID Failure", i);
@@ -172,11 +172,12 @@ eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
 
 eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
                                     int64_t version) {
-    if (!pMetadata) {
-        log_warn("NULL Parameter");
-    }
     if (version < 0) {
         return eAFV_VERIF_ERR_VERSION;
+    }
+    if (!pMetadata) {
+        log_warn("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
     }
     pMetadata->version = version;
     return eAFV_VERIF_OK;
@@ -185,17 +186,18 @@ eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
 eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
                                    const char *restrict name, uint64_t id,
                                    size_t size) {
-    if (!pMetadata) {
-        log_error("NULL Parameter");
-        return eAFV_VERIF_ERR_NULL;
-    }
 
     // Check parameters
     if (size == 0) {
-        return eAFV_VERIF_ERR_RGN_SIZE;
+        return eAFV_VERIF_ERR_RGN_SIZES;
     }
     if (id == ((uint64_t) (-1))) {
         return eAFV_VERIF_ERR_RGN_IDS;
+    }
+
+    if (!pMetadata) {
+        log_error("NULL Parameter");
+        return eAFV_VERIF_ERR_NULL;
     }
 
     // Find next open index
@@ -220,8 +222,10 @@ eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
 
     pMetadata->region_ids[index] = id;
     pMetadata->region_sizes[index] = size;
-    (void) snprintf(pMetadata->region_names[index], AFV_RGN_NAME_LEN, "%s",
-                    name);
+    if (name) {
+        (void) snprintf(pMetadata->region_names[index], AFV_RGN_NAME_LEN, "%s",
+                        name);
+    }
     return eAFV_VERIF_OK;
 }
 
@@ -232,16 +236,21 @@ eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
         log_error("NULL Parameter");
         return eAFV_VERIF_ERR_NULL;
     }
+
+    // Verification Status Collector
+    eAFV_verif verification = eAFV_VERIF_OK;
+
     // Find region within the list
     size_t index = 0;
     for (; index < pMetadata->n_regions; index++) {
         size_t rsize = pMetadata->region_sizes[index];
         uint64_t rid = pMetadata->region_ids[index];
-        if (rsize == size && rid == id) {
+        if ((rsize == size || size == 0) && rid == id) {
             break;
         } else if (rid == id) {
             // Found Region but size does not match
-            return eAFV_VERIF_ERR_RGN_SIZE;
+            verification |= eAFV_VERIF_ERR_RGN_SIZES;
+            break;
         }
         // Assume duplicates overwrite
         if (rid == id) {
@@ -253,7 +262,7 @@ eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
     // Region not found
     if (index >= pMetadata->n_regions) {
         log_error("Over Capacity");
-        return eAFV_VERIF_ERR_SIZE;
+        return eAFV_VERIF_ERR_RGN_IDS;
     }
 
     // Name verification
@@ -264,7 +273,8 @@ eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
             match |= name[i] ^ pMetadata->region_names[index][i];
         }
         if (match != 0x00) {
-            return eAFV_VERIF_ERR_RGN_NAMES;
+            // Collect Status
+            verification |= eAFV_VERIF_ERR_RGN_NAMES;
         }
     }
 
@@ -272,7 +282,7 @@ eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
         log_trace("Returning Region %d at index %d", id, index);
         *pIndex = index;
     }
-    return eAFV_VERIF_OK;
+    return verification;
 }
 
 eAFV_verif afv_metadata_check(const afv_metadata_t *pMetadata, int64_t version,
