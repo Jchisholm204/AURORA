@@ -13,11 +13,11 @@
 #define AFV_METADATA_INC_MATCH
 #include "acr/acr.h"
 #include "afv/afv.h"
-#include "afv/afv_file.h"
-#include "afv/afv_metadata.h"
+#include "afv/afv_checkpoint.h"
 #include "aim.h"
 #include "log.h"
 
+#include <assert.h>
 #include <memory.h>
 #include <unistd.h>
 
@@ -29,10 +29,10 @@
 #if ACN_NAME_LEN != AFV_CKPT_NAME_LEN
 #error "ACN Name Length Must Match AFV Checkpoint Name Length"
 #endif
-eACN_error _acr_cmd_restart_init(aim_entry_t *pInstance);
-const afv_metadata_t *_acr_cmd_restore_gen_metadata(aim_entry_t *pInstance);
-size_t *_acr_cmd_restart_gen_mapping(aim_entry_t *pInstance,
-                                     const afv_metadata_t *pMetadata);
+
+#define ASSERT_INSTANCE(pInstance) assert(pInstance != NULL);
+
+afv_checkpoint_t *_acr_cmd_restart_init(aim_entry_t *pInstance);
 
 void *acr_cmd_restart(void *arg) {
     if (!arg) {
@@ -43,52 +43,56 @@ void *acr_cmd_restart(void *arg) {
 
     // All variables in RESTART_FAIL must be declared here
     aim_entry_t *pInstance = pCtx->pInstance;
-    const afv_metadata_t *pMetadata = NULL;
-    afv_file_hndl *pCkpt_file = NULL;
-    size_t *meta_cli_hash_map = NULL;
+    ASSERT_INSTANCE(pInstance);
+    afv_checkpoint_t *pCheckpoint = NULL;
+    size_t *amr_restore_order = NULL;
+    bool restart_fail = true;
 
-    eACN_error acn_status = _acr_cmd_restart_init(pInstance);
-    if (acn_status != eACN_OK) {
-        log_error("ACN Error %d", acn_status);
+    // Load the checkpoint from disk
+    pCheckpoint = _acr_cmd_restart_init(pInstance);
+    if (!pCheckpoint) {
+        log_error("Checkpoint Load Failure");
         goto RESTART_FAIL;
     }
 
-    pMetadata = _acr_cmd_restore_gen_metadata(pInstance);
-    if (!pMetadata) {
-        log_error("Metadata Failure");
+    const size_t arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
+
+    // Read only pointer, do not free
+    amr_hndl const *const arm_region_list =
+        arm_get_remote_regions(pInstance->pARM);
+
+    const ssize_t checkpoint_n_regions = afv_checkpoint_n_regions(pCheckpoint);
+    if (checkpoint_n_regions < 0) {
+        log_error("Failed to get checkpoint region list 0x%x",
+                  -checkpoint_n_regions);
         goto RESTART_FAIL;
     }
 
-    log_debug("Restore Triggered -> %d: %.*s (%d)", pMetadata->rank,
-              ACN_NAME_LEN, pMetadata->chkpt_name, pMetadata->version);
-
-    meta_cli_hash_map = _acr_cmd_restart_gen_mapping(pInstance, pMetadata);
-    if (!meta_cli_hash_map) {
-        log_error("Metadata Verification Failure");
+    if ((size_t) checkpoint_n_regions != arm_n_regions) {
+        log_warn("checkpoint_regions (%ld) != (%ld) active memory regions",
+                 checkpoint_n_regions, arm_n_regions);
         goto RESTART_FAIL;
     }
 
-    // Setup checkpoint file
-    // Call can fail due to FS lock errors
-    pCkpt_file = afv_file_open_r(pInstance->pAFV, pMetadata);
-    if (!pCkpt_file) {
-        log_warn("Bad Alloc??");
-        // Retry the FS lock
-        pCkpt_file = afv_file_open_r(pInstance->pAFV, pMetadata);
-        if (!pCkpt_file) {
-            // Repeated Failure indicates hard failure
-            log_error("Bad Alloc??");
+    amr_restore_order = calloc(arm_n_regions, sizeof(size_t));
+    if (!amr_restore_order) {
+        log_error("Bad Alloc?");
+        goto RESTART_FAIL;
+    }
+    for (size_t i = 0; i < arm_n_regions; i++) {
+        amr_hndl const *const pAMR = &arm_region_list[i];
+        size_t index = 0;
+        eAFV_verif status =
+            afv_checkpoint_find_index(pCheckpoint, pAMR->id, pAMR->rgn_size,
+                                      pAMR->name, &index);
+        if (status != eAFV_VERIF_OK) {
+            log_error("No Such Region: id=%d status=0x%x", pAMR->id, status);
             goto RESTART_FAIL;
+        } else {
+            log_debug("Region: id=%ld size=%ld order=%d", pAMR->id,
+                      pAMR->rgn_size, index);
         }
-    }
-
-    // Read Only Pointer
-    // Do not Free
-    const amr_hndl *const arm_regions = arm_get_remote_regions(pInstance->pARM);
-    if (!arm_regions) {
-        log_error("ARM Error");
-        (void) afv_file_close(&pCkpt_file);
-        goto RESTART_FAIL;
+        amr_restore_order[index] = i;
     }
 
     // Setup Copy Regions
@@ -96,35 +100,30 @@ void *acr_cmd_restart(void *arg) {
     uint8_t *pRgn_A = pCtx->pScratch;
     uint8_t *pRgn_B = pCtx->pScratch + cpy_rgn_size;
 
-    // Complete the checkpoint
-    for (size_t i = 0; i < pMetadata->n_regions; i++) { // BEGIN Region Loop
+    // Complete the Restore
+    for (size_t i = 0; i < (size_t) checkpoint_n_regions;
+         i++) { // BEGIN Region Loop
         // Index into the ARM through the hash map
-        const size_t cli_amr_index = meta_cli_hash_map[i];
-        const amr_hndl *pAMR = &arm_regions[cli_amr_index];
+        const size_t amr_index = amr_restore_order[i];
+        const amr_hndl *const pAMR = &arm_region_list[amr_index];
 
-        // Setup Region Metadata
-        pMetadata->region_ids[i] = pAMR->id;
-        pMetadata->region_sizes[i] = pAMR->rgn_size;
-        memcpy(pMetadata->region_names[i], pAMR->name, ARM_NAME_LEN);
-
-        log_trace("rgn: %d -> rgnid: %d (%d) (%d)", i, pAMR->id, pAMR->rgn_size,
-                  pMetadata->rank);
-
-        size_t rgn_write_remaining = pAMR->rgn_size;
         size_t rgn_read_remaining = pAMR->rgn_size;
+        size_t rgn_write_remaining = pAMR->rgn_size;
 
         arm_op arm_operation = {0};
         { // File Read for A=region[x]
             const size_t read_cpy_size = rgn_read_remaining >= cpy_rgn_size
                                              ? cpy_rgn_size
                                              : rgn_read_remaining;
-            eAFV_file_error afv_status =
-                afv_file_read(pCkpt_file, pRgn_A, read_cpy_size);
-            if (afv_status != eAFV_FILE_OK) {
-                log_error("AFV Error: %d", afv_status);
+            const ssize_t bytes_read =
+                afv_checkpoint_read(pCheckpoint, pAMR->id,
+                                    pAMR->rgn_size - rgn_read_remaining, pRgn_A,
+                                    read_cpy_size);
+            if (bytes_read < 0) {
+                log_error("Checkpoint Read Error: %d", -bytes_read);
                 goto RESTART_FAIL;
             }
-            rgn_read_remaining -= read_cpy_size;
+            rgn_read_remaining -= bytes_read;
         }
 
         while (rgn_read_remaining > 0) { // BEGIN Block Copies
@@ -151,13 +150,15 @@ void *acr_cmd_restart(void *arg) {
             const size_t read_cpy_size = rgn_read_remaining >= cpy_rgn_size
                                              ? cpy_rgn_size
                                              : rgn_read_remaining;
-            eAFV_file_error afv_status =
-                afv_file_read(pCkpt_file, pRgn_A, read_cpy_size);
-            if (afv_status != eAFV_FILE_OK) {
-                log_error("AFV Error: %d", afv_status);
+            const ssize_t bytes_read =
+                afv_checkpoint_read(pCheckpoint, pAMR->id,
+                                    pAMR->rgn_size - rgn_read_remaining, pRgn_A,
+                                    read_cpy_size);
+            if (bytes_read < 0) {
+                log_error("Checkpoint Read Error: %d", -bytes_read);
                 goto RESTART_FAIL;
             }
-            rgn_read_remaining -= read_cpy_size;
+            rgn_read_remaining -= bytes_read;
 
             // Wait for RDMA copy to finish
             { // Wait for previous RDMA read to finish
@@ -187,20 +188,21 @@ void *acr_cmd_restart(void *arg) {
 
     } // END Region Loop
 
-    eAFV_file_error file_close_status = eAFV_FILE_OK;
-    file_close_status = afv_file_close(&pCkpt_file);
-    if (file_close_status != eAFV_FILE_OK) {
-        log_error("FS Error: 0x%x", file_close_status);
-        goto RESTART_FAIL;
-    }
-
     { // BEGIN Notify Client of Completion
+        // Nofree
+        const char *checkpoint_name = afv_checkpoint_name(pCheckpoint);
+        char _checkpoint_name[AFV_CKPT_NAME_LEN] = "\0";
+        if (!checkpoint_name) {
+            // catch nofree with stack
+            checkpoint_name = _checkpoint_name;
+        }
+        int64_t checkpoint_version = afv_checkpoint_version(pCheckpoint);
         eACN_error acn_status = eACN_OK;
-        acn_status = acn_set(pInstance->pACN, eACN_version, pMetadata->version);
+        acn_status = acn_set(pInstance->pACN, eACN_version, checkpoint_version);
         if (acn_status != eACN_OK) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
-        acn_status = acn_set_name(pInstance->pACN, pMetadata->chkpt_name);
+        acn_status = acn_set_name(pInstance->pACN, checkpoint_name);
         if (acn_status != eACN_OK) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
@@ -212,20 +214,23 @@ void *acr_cmd_restart(void *arg) {
             log_warn("ACN Abnormal 0x%x", acn_status);
         }
 
-        log_info("Completion %d: %.*s %d", pMetadata->rank, ACN_NAME_LEN,
-                 pMetadata->chkpt_name, pMetadata->version);
+        log_info("Completion %d: %.*s %d", afv_get_rank(pInstance->pAFV),
+                 ACN_NAME_LEN, checkpoint_name, checkpoint_version);
     } // END Notify Client of Completion
 
+    restart_fail = false;
 RESTART_FAIL:
-    if (meta_cli_hash_map) {
-        free(meta_cli_hash_map);
-        meta_cli_hash_map = NULL;
+
+    if (amr_restore_order) {
+        free(amr_restore_order);
+        amr_restore_order = NULL;
     }
 
-    afv_destroy_metadata((afv_metadata_t **) &pMetadata);
+    afv_checkpoint_destroy(&pCheckpoint);
 
-    if(pCkpt_file){
-        afv_file_close(&pCkpt_file);
+    // Log Failure in the instance counter
+    if (restart_fail) {
+        pInstance->error_counter++;
     }
 
     // Deal with AIM
@@ -242,31 +247,31 @@ RESTART_FAIL:
     return NULL;
 }
 
-eACN_error _acr_cmd_restart_init(aim_entry_t *pInstance) {
+afv_checkpoint_t *_acr_cmd_restart_init(aim_entry_t *pInstance) {
     if (!pInstance) {
         log_warn("NULL Parameter");
-        return eACN_ERR_NULL;
+        return NULL;
     }
+
+    ASSERT_INSTANCE(pInstance);
+
+    // Wait for memory operations to complete
     eACN_error acn_status = eACN_OK;
     do {
         acn_status = acn_await(pInstance->pACN, eACN_memory);
         usleep(1000);
     } while (acn_status == eACN_ERR_TIMEOUT);
-    return acn_status;
-}
-
-const afv_metadata_t *_acr_cmd_restore_gen_metadata(aim_entry_t *pInstance) {
-    if (!pInstance) {
-        log_warn("NULL Parameter");
+    if (acn_status != eACN_OK) {
+        log_error("ACN Memory Error 0x%lx", acn_status);
         return NULL;
     }
-    eACN_error acn_status = eACN_OK;
-    int64_t cli_req_version = -1;
-    char cli_req_name[AFV_CKPT_NAME_LEN];
+
+    int64_t checkpoint_version = -1;
+    char checkpoint_name[AFV_CKPT_NAME_LEN] = "NULL\0";
 
     do {
         acn_status = acn_get(pInstance->pACN, eACN_version,
-                             (uint64_t *) &cli_req_version);
+                             (uint64_t *) &checkpoint_version);
         usleep(1000);
     } while (acn_status == eACN_ERR_TIMEOUT);
     if (acn_status != eACN_OK) {
@@ -275,7 +280,7 @@ const afv_metadata_t *_acr_cmd_restore_gen_metadata(aim_entry_t *pInstance) {
     }
 
     do {
-        acn_status = acn_get_name(pInstance->pACN, cli_req_name);
+        acn_status = acn_get_name(pInstance->pACN, checkpoint_name);
         usleep(1000);
     } while (acn_status == eACN_ERR_TIMEOUT);
     if (acn_status != eACN_OK) {
@@ -283,59 +288,15 @@ const afv_metadata_t *_acr_cmd_restore_gen_metadata(aim_entry_t *pInstance) {
         return NULL;
     }
 
-    // Can fail due to transient FS errors and/or lock errors
-    // Catch with a NULL retry mechanim
-    const afv_metadata_t *pMetadata =
-        afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
-                                   cli_req_name);
-    if (!pMetadata) {
-        log_warn("Bad Alloc??");
-        // Retry intermitent failure
-        pMetadata = afv_get_metadata_versioned(pInstance->pAFV, cli_req_version,
-                                               cli_req_name);
-        // Repeated fail indicates hard fault
-        if (!pMetadata) {
-            log_error("Bad Metadata Lookup %s %d", cli_req_name,
-                      cli_req_version);
-            return NULL;
-        }
-    }
+    afv_checkpoint_t *pCheckpoint =
+        afv_checkpoint_open(pInstance->pAFV, checkpoint_version,
+                            checkpoint_name);
 
-    return pMetadata;
-}
-
-size_t *_acr_cmd_restart_gen_mapping(aim_entry_t *pInstance,
-                                     const afv_metadata_t *pMetadata) {
-    if (!pInstance || !pMetadata) {
-        log_warn("NULL Parameter");
+    if (!pCheckpoint) {
+        log_error("Failed to open Checkpoint name='%s' version=%d",
+                  checkpoint_name, checkpoint_version);
         return NULL;
     }
 
-    // Read only PTR -> DO NOT FREE
-    const amr_hndl *const cli_arm_regions =
-        arm_get_remote_regions(pInstance->pARM);
-    if (!cli_arm_regions) {
-        log_error("Bad Alloc??");
-        return NULL;
-    }
-
-    size_t *meta_cli_hash_map = malloc(sizeof(size_t) * pMetadata->n_regions);
-    if (!meta_cli_hash_map) {
-        log_error("Bad Alloc??");
-        return NULL;
-    }
-
-    const size_t cli_arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
-
-    eAFV_verif afv_status = eAFV_VERIF_OK;
-    afv_status = afv_metadata_match(pMetadata, cli_arm_regions,
-                                    cli_arm_n_regions, meta_cli_hash_map);
-    if (afv_status != eAFV_VERIF_OK) {
-        log_error("Verification 0x%lx", afv_status);
-        free(meta_cli_hash_map);
-        meta_cli_hash_map = NULL;
-        return NULL;
-    }
-
-    return meta_cli_hash_map;
+    return pCheckpoint;
 }

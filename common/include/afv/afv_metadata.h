@@ -2,9 +2,9 @@
  * @file afv_metadata.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief Metadata included in all AURORA Checkpoint Files
- * @version 0.2
+ * @version 0.3
  * @date Created: 2026-04-01
- * @modified Last Modified: 2026-04-02
+ * @modified Last Modified: 2026-10-15
  *
  * @copyright Copyright (c) 2026
  */
@@ -34,7 +34,7 @@
 
 #ifdef AFV_INTERNAL
 #ifndef AFV_METADATA_VERIF_KEY
-#define _AFV_VERSION_ ((int32_t) 1)
+#define _AFV_VERSION_ ((int32_t) 3)
 #define AFV_METADATA_VERIF_KEY                                                 \
     ((uint64_t) ((uint64_t) (-_AFV_VERSION_) << 32) | _AFV_VERSION_)
 // #define AFV_METADATA_VERIF_KEY ((uint64_t) 0xFFFFFFFE00000001ULL)
@@ -50,18 +50,18 @@ enum aurora_file_versioning_metadata_verification_e {
     eAFV_VERIF_ERR_NULL = BIT(0),
     eAFV_VERIF_ERR_KEY = BIT(1),
     eAFV_VERIF_ERR_SIZE = BIT(2),
-    eAFV_VERIF_ERR_VERSION = BIT(3),
-    eAFV_VERIF_ERR_RGN_SIZE = BIT(4),
+    eAFV_VERIF_ERR_NAME = BIT(3),
+    eAFV_VERIF_ERR_VERSION = BIT(4),
     eAFV_VERIF_ERR_RGN_IDS = BIT(5),
     eAFV_VERIF_ERR_RGN_SIZES = BIT(6),
     eAFV_VERIF_ERR_RGN_NAMES = BIT(7),
+    eAFV_VERIF_ERR_FATAL = BIT(8),
 };
 
 struct __attribute__((packed)) aurora_file_versioning_metadata_ops {
     union {
         uint64_t __reserved;
         struct {
-            uint64_t version_tag : 4;
             uint64_t with_ec : 1;
         };
     };
@@ -90,16 +90,44 @@ struct aurora_file_versioning_metadata {
 typedef struct aurora_file_versioning_metadata afv_metadata_t;
 typedef enum aurora_file_versioning_metadata_verification_e eAFV_verif;
 
-extern afv_metadata_t *afv_create_metadata(size_t n_regions);
+extern afv_metadata_t *afv_metadata_create(size_t n_regions);
 
 extern size_t afv_metadata_size(size_t n_regions);
 
-extern void afv_destroy_metadata(afv_metadata_t **ppHndl);
+extern void afv_metadata_destroy(afv_metadata_t **ppHndl);
 
-extern size_t afv_metadata_ptr_size(void *);
+extern size_t afv_metadata_ptr_size(const void *const);
 extern afv_metadata_t *afv_metadata_ptr_init(void *);
 
 extern eAFV_verif afv_metadata_verify(const afv_metadata_t *pMetadata);
+
+// Safe setter functions for checkpoint metadata
+extern eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
+                                        const char *restrict name);
+
+/**
+ * @brief Set the checkpoint Version, checks before writing
+ *
+ * @param pMetadata Optional: Metadata to set version of
+ * @param version Checkpoint Version
+ * @return 
+ */
+extern eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
+                                           int64_t version);
+
+extern eAFV_verif afv_metadata_add_region(afv_metadata_t *pMetadata,
+                                          const char *restrict name,
+                                          uint64_t id, size_t size);
+
+// Verification functions for metadata
+extern eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
+                                          const char *restrict name,
+                                          uint64_t id, size_t size,
+                                          size_t *pIndex);
+
+extern eAFV_verif afv_metadata_check(const afv_metadata_t *pMetadata,
+                                     int64_t version, char *name,
+                                     size_t n_regions);
 
 // Let this function be included explicitly through a macro,
 //  or implicitly if the ARM is already defined and present in the file

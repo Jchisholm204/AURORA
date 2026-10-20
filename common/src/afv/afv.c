@@ -38,8 +38,9 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->persistent_path = strdup(persistent_path);
     pHndl->rank = rank;
     pHndl->group_id = group_id;
+    pHndl->group_size = group_size;
     pHndl->use_error_correction = with_ec;
-    pHndl->pMetadata = NULL;
+    atomic_store(&pHndl->reference_counter, 0);
 
     if (!pHndl->persistent_path) {
         log_error("Bad Alloc??");
@@ -64,23 +65,6 @@ afv_hndl *afv_create_instance(uint64_t rank, uint64_t group_id,
         return NULL;
     }
 
-    // Need to load metadata from the file
-    pHndl->pMetadata =
-        (afv_metadata_t *) afv_get_metadata_versioned(pHndl, -1, NULL);
-
-    if (!pHndl->pMetadata) {
-        log_info("Unable to find metadata for %d of %d in group %d at path: %s",
-                 rank, group_size, group_id, persistent_path);
-        pHndl->pMetadata = afv_create_metadata(0);
-    }
-
-    if (!pHndl->pMetadata) {
-        log_error("Bad Alloc??");
-        free(pHndl->persistent_path);
-        free(pHndl);
-        return NULL;
-    }
-
     return pHndl;
 }
 
@@ -88,15 +72,18 @@ void afv_destroy_instance(afv_hndl **ppHndl) {
     if (!ppHndl) {
         return;
     }
+
     afv_hndl *pHndl = *ppHndl;
     if (!pHndl) {
         return;
     }
+
+    if (atomic_load(&pHndl->reference_counter) != 0) {
+        log_error("AFV closed with open references");
+    }
+
     if (pHndl->persistent_path) {
         free(pHndl->persistent_path);
-    }
-    if (pHndl->pMetadata) {
-        afv_destroy_metadata(&pHndl->pMetadata);
     }
     free(pHndl);
     *ppHndl = NULL;
@@ -161,9 +148,8 @@ int64_t _afv_get_latest_version(afv_hndl *pHndl, const char *name,
     return latest_version;
 }
 
-const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
-                                                 int64_t version,
-                                                 const char *name) {
+const afv_metadata_t *afv_read_metadata(afv_hndl *pHndl, int64_t version,
+                                        const char *name) {
     if (!pHndl) {
         log_error("NULL Parameter");
         return NULL;
@@ -245,17 +231,8 @@ const afv_metadata_t *afv_get_metadata_versioned(afv_hndl *pHndl,
     return pMetadata;
 }
 
-const afv_metadata_t *afv_get_metadata(afv_hndl *pHndl) {
-    if (!pHndl) {
-        log_error("NULL Parameter");
-        return NULL;
-    }
-
-    return pHndl->pMetadata;
-}
-
 eAFV_verif afv_write_metadata(afv_hndl *pHndl,
-                              afv_metadata_t *const pMetadata) {
+                              const afv_metadata_t *pMetadata) {
     if (!pHndl) {
         log_error("NULL Parameter");
         return eAFV_VERIF_ERR_NULL;
@@ -266,8 +243,13 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
         return eAFV_VERIF_ERR_NULL;
     }
 
-    log_trace("Wrote Latest Metadata: %s %d", pMetadata->chkpt_name,
-              pMetadata->version);
+    // Verify Metadata
+    eAFV_verif verif_status = afv_metadata_verify(pMetadata);
+    if (verif_status != eAFV_VERIF_OK) {
+        log_error("Verification Failed=0x%lx", verif_status);
+        return verif_status;
+    }
+
     for (size_t i = 0; i < pMetadata->n_regions; i++) {
         log_trace(" -> %d) %s (%d) size=%d", i, pMetadata->region_names[i],
                   pMetadata->region_ids[i], pMetadata->region_sizes[i]);
@@ -282,17 +264,6 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
     snprintf(filename, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvmeta",
              pHndl->persistent_path, AFV_CKPT_NAME_LEN, pMetadata->chkpt_name,
              pMetadata->version, pHndl->rank, group_id);
-
-    // Verify Metadata
-
-    eAFV_verif verif_status = afv_metadata_verify(pMetadata);
-    if (verif_status != eAFV_VERIF_OK) {
-        log_error("Verification Failed=0x%lx", verif_status);
-        return verif_status;
-    }
-    if (verif_status & eAFV_VERIF_ERR_KEY) {
-        pMetadata->metadata_key = AFV_METADATA_VERIF_KEY;
-    }
 
     FILE *pFile = fopen(filename, "w");
     if (!pFile) {
@@ -312,10 +283,8 @@ eAFV_verif afv_write_metadata(afv_hndl *pHndl,
 
     fclose(pFile);
 
-    if (pHndl->pMetadata) {
-        afv_destroy_metadata(&pHndl->pMetadata);
-    }
-    pHndl->pMetadata = pMetadata;
+    log_trace("Wrote Latest Metadata: %s %d", pMetadata->chkpt_name,
+              pMetadata->version);
 
     return eAFV_VERIF_OK;
 }
