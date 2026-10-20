@@ -32,11 +32,6 @@
 
 #define ASSERT_INSTANCE(pInstance) assert(pInstance != NULL);
 
-// assert(((aim_entry_t *) pInstance)->pACI != NULL);
-// assert(((aim_entry_t *) pInstance)->pACN != NULL);
-// assert(((aim_entry_t *) pInstance)->pARM != NULL);
-// assert(((aim_entry_t *) pInstance)->pAFV != NULL);
-
 afv_checkpoint_t *_acr_cmd_restart_init(aim_entry_t *pInstance);
 
 void *acr_cmd_restart(void *arg) {
