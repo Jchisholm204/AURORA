@@ -52,6 +52,11 @@ void *acr_cmd_checkpoint(void *arg) {
         goto CHECKPOINT_FAIL;
     }
 
+    if (arm_n_regions == 0) {
+        log_error("No regions to checkpoint");
+        goto CHECKPOINT_FAIL;
+    }
+
     // Setup Copy Regions
     const size_t cpy_rgn_size = (ACR_CMD_CTX_SCRATCH_SIZE >> 1);
     uint8_t *pRgn_A = pCtx->pScratch;
@@ -217,6 +222,11 @@ afv_checkpoint_t *_acr_cmd_checkpoint_init(aim_entry_t *pInstance) {
 
     // Get the number of operations
     size_t arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
+
+    if (arm_n_regions == 0) {
+        log_error("No regions to checkpoint");
+        return NULL;
+    }
 
     int64_t checkpoint_version = -1;
     char checkpoint_name[AFV_CKPT_NAME_LEN] = "NULL\0";

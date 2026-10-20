@@ -93,8 +93,6 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV, int64_t version,
     eAFV_verif metadata_status = eAFV_VERIF_OK;
     metadata_status |= afv_metadata_set_version(pMetadata, version);
     metadata_status |= afv_metadata_set_name(pMetadata, name);
-    // Ignore size verification errors
-    metadata_status &= ~eAFV_VERIF_ERR_SIZE;
     if (metadata_status != eAFV_VERIF_OK) {
         log_error("Metadata Verification Failure 0x%x", metadata_status);
         afv_metadata_destroy(&pMetadata);
@@ -128,9 +126,11 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV, int64_t version,
 
 const char *afv_checkpoint_name(afv_checkpoint_t *pCheckpoint) {
     if (!pCheckpoint) {
+        log_error("NULL Parameter");
         return NULL;
     }
     if (!pCheckpoint->pMetadata) {
+        log_fatal("NULL Parameter");
         return NULL;
     }
     return pCheckpoint->pMetadata->chkpt_name;
@@ -138,9 +138,15 @@ const char *afv_checkpoint_name(afv_checkpoint_t *pCheckpoint) {
 
 int64_t afv_checkpoint_version(afv_checkpoint_t *pCheckpoint) {
     if (!pCheckpoint) {
+        log_error("NULL Parameter");
         return -eAFV_VERIF_ERR_NULL;
     }
-    assert(pCheckpoint->pMetadata != NULL);
+    if (!pCheckpoint->pMetadata) {
+        // External pointer should never exist without an internal metadata
+        // object
+        log_fatal("NULL Parameter");
+        return -eAFV_VERIF_ERR_FATAL;
+    }
     return pCheckpoint->pMetadata->version;
 }
 

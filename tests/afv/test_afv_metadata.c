@@ -11,6 +11,8 @@
 
 #include "afv/afv.h"
 #include "afv/afv_metadata.h"
+// #include "afv_test_fillmem.h"
+#include "afv_test_parser.h"
 #include "log.h"
 
 #include <memory.h>
@@ -23,35 +25,23 @@
 int main(int argc, char **argv) {
 
     log_info("Starting AFV Tests");
-
-    if (argc < 2) {
-        log_error("First argument must be test directory");
+    struct test_params *tp = parse_params(argc, argv);
+    if (!tp) {
+        log_error("Failed to initialize test params");
         return 1;
     }
-    char *filepath = argv[1];
 
-    if (argc < 3) {
-        log_warn("Second argument must be number of regions to write");
-    }
-    size_t test_n_regions = atoi(argv[2]);
-    log_trace("Using %d test regions", test_n_regions);
-
-    if (argc < 4) {
-        log_error("Third argument must be size of regions to write");
-        return 1;
-    }
-    size_t test_region_size = atoi(argv[3]);
-    log_trace("Using test regions of size %d", test_region_size);
-
-    afv_hndl *pAFV = afv_create_instance(0, 0, 1, filepath, false);
-
-    if (!pAFV) {
-        log_error("AFV Handle NULL");
-        return 1;
+    afv_hndl *pAFV = NULL;
+    {
+        int rank = 0;
+        int group_size = 1;
+        int group_id = 0;
+        pAFV = afv_create_instance(rank, group_id, group_size, tp->test_dir,
+                                   false);
     }
 
     afv_metadata_t *pMetadata =
-        (afv_metadata_t *) afv_get_metadata_versioned(pAFV, -1, NULL);
+        (afv_metadata_t *) afv_read_metadata(pAFV, -1, NULL);
 
     if (pMetadata) {
         log_warn("Found Existing Metadata");
@@ -62,12 +52,12 @@ int main(int argc, char **argv) {
                      pMetadata->region_ids[i], pMetadata->region_sizes[i]);
         }
         log_trace("Destroying internal pointer before continuing");
-        afv_destroy_metadata(&pMetadata);
+        afv_metadata_destroy(&pMetadata);
     } else {
         log_info("Found No Existing Metadata");
     }
 
-    pMetadata = afv_create_metadata(test_n_regions);
+    pMetadata = afv_metadata_create(tp->n_regions);
 
     if (!pMetadata) {
         log_error("Failed to create test metadata");
@@ -81,10 +71,10 @@ int main(int argc, char **argv) {
     eAFV_verif afv_write_status = afv_write_metadata(pAFV, pMetadata);
 
     if (afv_write_status != eAFV_VERIF_OK) {
-        log_info(
-            "TEST: AFV refuesed to write corrputed metadata to disk with error "
-            "eAFV_verif=%d, eAFV_VERIF_ERR_VERSION=%d",
-            afv_write_status, eAFV_VERIF_ERR_VERSION);
+        log_info("TEST: AFV refuesed to write corrputed metadata to disk "
+                 "with error "
+                 "eAFV_verif=%d, eAFV_VERIF_ERR_VERSION=%d",
+                 afv_write_status, eAFV_VERIF_ERR_VERSION);
     } else {
         log_error(
             "TEST: AFV wrote corrupted metadata to disk with eAFV_verif=%d",
@@ -96,10 +86,9 @@ int main(int argc, char **argv) {
     snprintf(pMetadata->chkpt_name, AFV_CKPT_NAME_LEN, "%s", "Test");
     for (int i = 0; i < pMetadata->n_regions; i++) {
         snprintf(pMetadata->region_names[i], AFV_RGN_NAME_LEN, "tst%d", i);
-        pMetadata->region_sizes[i] = 0;
         // Arbitrary ID Generation
         pMetadata->region_ids[i] = RGN_ID(i);
-        pMetadata->region_sizes[i] = test_region_size;
+        pMetadata->region_sizes[i] = tp->region_sizes_mb * 1024 * 1024;
         log_info("\t %s id=%d size=%ld", pMetadata->region_names[i],
                  pMetadata->region_ids[i], pMetadata->region_sizes[i]);
     }
@@ -119,17 +108,19 @@ int main(int argc, char **argv) {
                  afv_write_status);
     }
 
-    const afv_metadata_t *pCurrentMetadata = afv_get_metadata(pAFV);
-    if (pCurrentMetadata != pMetadata) {
-        log_warn("The Metadata pointer may have been lost (saved to disk?)");
-    }
-    if (pCurrentMetadata->n_regions != test_n_regions) {
+    const afv_metadata_t *pCurrentMetadata =
+        afv_read_metadata(pAFV, -1, pMetadata->chkpt_name);
+
+    if (pCurrentMetadata->n_regions != tp->n_regions) {
         log_error("Current Metadata did not match the saved metadata");
     }
 
-    if (pCurrentMetadata->version != 1) {
+    if (pCurrentMetadata->version != pMetadata->version) {
         log_error("Current Metadata did not match the saved metadata");
     }
+
+    afv_metadata_destroy(&pMetadata);
+    afv_metadata_destroy((afv_metadata_t **) &pCurrentMetadata);
 
     log_trace("Destroying AFV Instanace");
     afv_destroy_instance(&pAFV);
