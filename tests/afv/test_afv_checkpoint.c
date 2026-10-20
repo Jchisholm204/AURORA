@@ -20,9 +20,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Arbitrary ID Generation
-#define RGN_ID(i) ((i + 1) * 2)
-
 int main(int argc, char **argv) {
 
     log_info("Starting AFV Tests");
@@ -48,8 +45,9 @@ int main(int argc, char **argv) {
     }
 
     // Open Checkpoint for writing
+    const char checkpoint_name[AFV_CKPT_NAME_LEN] = "afv_test";
     afv_checkpoint_t *pCheckpoint =
-        afv_checkpoint_create(pAFV, 1, "afv_test", tp->n_regions);
+        afv_checkpoint_create(pAFV, 1, checkpoint_name, tp->n_regions);
 
     if (!pCheckpoint) {
         log_error("Failed to create a new checkpoint");
