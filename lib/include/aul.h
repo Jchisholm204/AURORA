@@ -34,6 +34,16 @@ extern int AUL_Checkpoint(const int version,
 
 extern int AUL_Test(const int version, const char *name);
 
-extern int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]);
+// Compatibility Binding for AURORA<v0.0.3, VeloC Codebases
+#ifndef AUL_DEFAULT_LOCAL
+#define AUL_Restart(version, name) AUL_Restart_remote(version, name)
+#else
+#define AUL_Restart(version, name) AUL_Restart_local(version, name)
+#endif
+
+extern int AUL_Restart_remote(const int version,
+                              const char name[static AUL_NAME_LEN]);
+extern int AUL_Restart_local(const int version,
+                             const char name[static AUL_NAME_LEN]);
 
 #endif
