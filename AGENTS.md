@@ -32,6 +32,55 @@ The prefix identifies the component and is used consistently everywhere:
 - **Types:** handles are `<prefix>_hndl`, error enums are `e<PREFIX>_error`.
 - **Docs:** one file per component, `AURORA <Full Name> - <PREFIX>.md`.
 
+## File headers
+
+Every first-party `.c` and `.h` file must start with this Doxygen block, before
+any `#define`, `#include`, or include guard:
+
+```c
+/**
+ * @file afv.c
+ * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @brief File Versioning System
+ * @version 0.2
+ * @date Created: 2026-04-01
+ * @modified Last Modified: 2026-04-02
+ *
+ * @copyright Copyright (c) 2026
+ */
+```
+
+- If an existing first-party file is missing the block, add it when you next
+  touch that file — do not make a separate sweeping header-only commit.
+- `@file` is the file name; `@brief` is one line describing the file's purpose;
+  `@version` starts at `0.1` for new files; `@date Created:` is the creation date
+  and `@modified Last Modified:` is today's date when editing.
+- `@author` is fixed as `Jacob Chisholm (https://Jchisholm204.github.io)` and
+  `@copyright` as `Copyright (c) 2026`.
+- Exempt: vendored sources under `common/log.c/` and `common/mdns/`. Do not add
+  headers to them or reformat them.
+
+Headers use include guards named `_<UPPER_NAME>_H_`. A header must never define
+a component's internal marker: `#define <PREFIX>_INTERNAL` belongs **only** in
+`.c` files, before the first `#include`, so that internal structs and helpers
+stay private to the implementation.
+
+## Error handling
+
+Read `docs/agent/error-handling.md` before changing any error path. The short
+version:
+
+- Check every fallible return value; use `(void)` only for intentional
+  best-effort cleanup.
+- Return the component's error type (`e<PREFIX>_OK` on success); constructors
+  return `NULL`.
+- Public boundaries validate inputs. Internal functions assume required handles
+  are non-null and use `assert()` for that guarantee.
+- Log every error return with the project log library and the existing message
+  style (`NULL Parameter`, `Bad Alloc??`, `ARM Error: %d`).
+- Translate foreign errors at the boundary, clean up through one failure label,
+  and never call `abort()` or `exit()` in library code.
+
 ## Finding documentation
 
 Start at `docs/AURORA.md`, then open the index for the area you are changing:
