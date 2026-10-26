@@ -56,6 +56,11 @@ any `#define`, `#include`, or include guard:
   `@version` starts at `0.1` for new files; `@date Created:` is the creation date
   and `@modified Last Modified:` is today's date when editing.
 - `@author` is fixed as `Jacob Chisholm (https://Jchisholm204.github.io)` and
+  should include any contributing models on a new line, e.g.:
+  ```c
+  * @author Jacob Chisholm (https://Jchisholm204.github.io)
+  * @author DeepSeek R1-7B
+  ```
   `@copyright` as `Copyright (c) 2026`.
 - Exempt: vendored sources under `common/log.c/` and `common/mdns/`. Do not add
   headers to them or reformat them.
