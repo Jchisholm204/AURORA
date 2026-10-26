@@ -1,6 +1,7 @@
 /**
  * @file ael_cdefs.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @author DeepSeek V4.1 Flash Free
  * @brief Shared AEL packet definitions and helpers.
  * @version 0.1
  * @date Created: 2026-10-25
@@ -12,6 +13,8 @@
 #ifndef _AEL_CDEFS_H_
 #define _AEL_CDEFS_H_
 
+#include "ael/ael.h"
+#include "ael/ael_packet.h"
 #include "log.h"
 
 #include <arpa/inet.h>
@@ -23,43 +26,6 @@
 #include <unistd.h>
 
 #define PORT 8334
-
-enum eAEL_event {
-    eAEL_EVENT_CLI_CONNECT,
-    eAEL_EVENT_CLI_FAILURE,
-    eAEL_EVENT_CLI_DISCONNECT,
-    eAEL_EVENT_START_CHECKPOINT,
-    eAEL_EVENT_START_RESTORE,
-    eAEL_EVENT_END_CHECKPOINT,
-    eAEL_EVENT_END_RESTORE,
-    eAEL_EVENT_REGION_ADD,
-    eAEL_EVENT_REGION_REMOVE,
-    eAEL_N_EVENT
-};
-
-enum eAEL_error {
-    eAEL_OK = 0,
-    eAEL_ERR_NULL,
-    eAEL_ERR_INTR,
-    eAEL_ERR_SEND,
-    eAEL_ERR_RECV,
-    eAEL_ERR_SIZE,
-    eAEL_ERR_EVENT,
-    eAEL_N_ERR,
-};
-
-typedef enum eAEL_error eAEL_error;
-
-struct ael_packet {
-    uint64_t rank;
-    uint64_t group_id;
-    uint64_t group_size;
-    enum eAEL_event event;
-    int64_t checkpoint_version;
-    size_t checkpoint_regions;
-    char checkpoint_name[16];
-    char event_string[256];
-};
 
 struct ael_socket {
     int fd;
@@ -73,7 +39,7 @@ struct ael_socket {
  * @param code Event code to name
  * @return Constant event name string
  */
-static inline const char *ael_event_name(enum eAEL_event code) {
+static inline const char *ael_event_name(eAEL_event code) {
     switch (code) {
     case eAEL_EVENT_CLI_CONNECT:
         return "eAEL_EVENT_CLI_CONNECT";
@@ -81,14 +47,14 @@ static inline const char *ael_event_name(enum eAEL_event code) {
         return "eAEL_EVENT_CLI_FAILURE";
     case eAEL_EVENT_CLI_DISCONNECT:
         return "eAEL_EVENT_CLI_DISCONNECT";
-    case eAEL_EVENT_START_CHECKPOINT:
-        return "eAEL_EVENT_START_CHECKPOINT";
-    case eAEL_EVENT_START_RESTORE:
-        return "eAEL_EVENT_START_RESTORE";
-    case eAEL_EVENT_END_CHECKPOINT:
-        return "eAEL_EVENT_END_CHECKPOINT";
-    case eAEL_EVENT_END_RESTORE:
-        return "eAEL_EVENT_END_RESTORE";
+    case eAEL_EVENT_CHECKPOINT_START:
+        return "eAEL_EVENT_CHECKPOINT_START";
+    case eAEL_EVENT_CHECKPOINT_END:
+        return "eAEL_EVENT_CHECKPOINT_END";
+    case eAEL_EVENT_RESTORE_START:
+        return "eAEL_EVENT_RESTORE_START";
+    case eAEL_EVENT_RESTORE_END:
+        return "eAEL_EVENT_RESTORE_END";
     case eAEL_EVENT_REGION_ADD:
         return "eAEL_EVENT_REGION_ADD";
     case eAEL_EVENT_REGION_REMOVE:
@@ -106,16 +72,12 @@ static inline const char *ael_event_name(enum eAEL_event code) {
  * @param index Sequence index
  * @return Event code for the given index
  */
-static inline enum eAEL_event ael_event_code(unsigned long index) {
-    static const enum eAEL_event codes[] = {
-        eAEL_EVENT_CLI_CONNECT,
-        eAEL_EVENT_CLI_FAILURE,
-        eAEL_EVENT_CLI_DISCONNECT,
-        eAEL_EVENT_START_CHECKPOINT,
-        eAEL_EVENT_START_RESTORE,
-        eAEL_EVENT_END_CHECKPOINT,
-        eAEL_EVENT_END_RESTORE,
-        eAEL_EVENT_REGION_ADD,
+static inline eAEL_event ael_event_code(unsigned long index) {
+    static const eAEL_event codes[] = {
+        eAEL_EVENT_CLI_CONNECT,    eAEL_EVENT_CLI_FAILURE,
+        eAEL_EVENT_CLI_DISCONNECT, eAEL_EVENT_CHECKPOINT_START,
+        eAEL_EVENT_CHECKPOINT_END, eAEL_EVENT_RESTORE_START,
+        eAEL_EVENT_RESTORE_END,    eAEL_EVENT_REGION_ADD,
         eAEL_EVENT_REGION_REMOVE,
     };
     return codes[index % (sizeof(codes) / sizeof(codes[0]))];

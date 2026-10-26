@@ -1,10 +1,11 @@
 /**
  * @file test_ael_server.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @author DeepSeek V4.1 Flash Free
  * @brief AEL UDP server example.
  *
- * Binds a UDP socket to PORT and logs every struct ael_packet received.
- * Datagrams are read directly into struct ael_packet, so no application level
+ * Binds a UDP socket to PORT and logs every ael_packet_t received.
+ * Datagrams are read directly into ael_packet_t, so no application level
  * buffering or reassembly is performed.
  *
  * @version 0.1
@@ -35,9 +36,9 @@ static void _ael_signal_handler(int signal) {
 }
 
 static eAEL_error _ael_server_recv(const struct ael_socket *sock,
-                                   struct ael_packet *packet,
+                                   ael_packet_t *packet,
                                    struct sockaddr_in *peer);
-static void _ael_log_packet(const struct ael_packet *packet,
+static void _ael_log_packet(const ael_packet_t *packet,
                             const struct sockaddr_in *peer);
 
 int main(int argc, char **argv) {
@@ -61,7 +62,7 @@ int main(int argc, char **argv) {
     log_info("AEL UDP server listening on port %d (Ctrl+C to stop)", PORT);
 
     while (!g_stop) {
-        struct ael_packet packet;
+        ael_packet_t packet;
         struct sockaddr_in peer;
 
         eAEL_error rx_status = _ael_server_recv(&sock, &packet, &peer);
@@ -78,7 +79,7 @@ int main(int argc, char **argv) {
 }
 
 static eAEL_error _ael_server_recv(const struct ael_socket *sock,
-                                   struct ael_packet *packet,
+                                   ael_packet_t *packet,
                                    struct sockaddr_in *peer) {
     if (!sock || !packet || !peer) {
         log_error("AEL server recv: NULL parameter");
@@ -100,6 +101,10 @@ static eAEL_error _ael_server_recv(const struct ael_socket *sock,
                  sizeof(*packet));
         return eAEL_ERR_SIZE;
     }
+    if (!ael_packet_verify(packet)) {
+        log_warn("Discarded packet with invalid CRC");
+        return eAEL_ERR_CRC;
+    }
     if ((unsigned) packet->event >= (unsigned) eAEL_N_EVENT) {
         log_warn("Discarded packet with invalid event code %d",
                  (int) packet->event);
@@ -109,16 +114,16 @@ static eAEL_error _ael_server_recv(const struct ael_socket *sock,
     return eAEL_OK;
 }
 
-static void _ael_log_packet(const struct ael_packet *packet,
+static void _ael_log_packet(const ael_packet_t *packet,
                             const struct sockaddr_in *peer) {
     char peer_ip[INET_ADDRSTRLEN] = "unknown";
     if (!inet_ntop(AF_INET, &peer->sin_addr, peer_ip, sizeof(peer_ip))) {
         log_warn("Failed to format peer address: %s", strerror(errno));
     }
 
-    log_info("rx rank=%" PRIu64 " group_id=%" PRIu64
-             " group_size=%" PRIu64 " ev=%s from %s:%u",
-             packet->rank, packet->group_id, packet->group_size,
+    log_info("rx rank=%" PRIu64 " group_id=%" PRIu64 " ts=%" PRIu64
+             " ev=%s from %s:%u",
+             packet->rank, packet->group_id, packet->timestamp,
              ael_event_name(packet->event), peer_ip,
              (unsigned) ntohs(peer->sin_port));
 
@@ -126,19 +131,25 @@ static void _ael_log_packet(const struct ael_packet *packet,
     case eAEL_EVENT_CLI_CONNECT:
     case eAEL_EVENT_CLI_FAILURE:
     case eAEL_EVENT_CLI_DISCONNECT:
+        log_info("  event=\"%.*s\"", (int) sizeof(packet->event_message),
+                 packet->event_message);
+        break;
+    case eAEL_EVENT_CHECKPOINT_START:
+    case eAEL_EVENT_CHECKPOINT_END:
+    case eAEL_EVENT_RESTORE_START:
+    case eAEL_EVENT_RESTORE_END:
+        log_info("  version=%" PRId64 " name=\"%.*s\" regions=%zu",
+                 packet->payload.checkpoint.version,
+                 (int) sizeof(packet->payload.checkpoint.name),
+                 packet->payload.checkpoint.name,
+                 packet->payload.checkpoint.n_regions);
+        break;
     case eAEL_EVENT_REGION_ADD:
     case eAEL_EVENT_REGION_REMOVE:
-        log_info("  event=\"%.*s\"", (int) sizeof(packet->event_string),
-                 packet->event_string);
-        break;
-    case eAEL_EVENT_START_CHECKPOINT:
-    case eAEL_EVENT_START_RESTORE:
-    case eAEL_EVENT_END_CHECKPOINT:
-    case eAEL_EVENT_END_RESTORE:
-        log_info("  version=%" PRId64 " name=\"%.*s\" regions=%zu",
-                 packet->checkpoint_version,
-                 (int) sizeof(packet->checkpoint_name),
-                 packet->checkpoint_name, packet->checkpoint_regions);
+        log_info("  id=%" PRId64 " size=%zu name=\"%.*s\"",
+                 packet->payload.region.id, packet->payload.region.size,
+                 (int) sizeof(packet->payload.region.name),
+                 packet->payload.region.name);
         break;
     default:
         break;

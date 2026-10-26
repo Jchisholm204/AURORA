@@ -1,9 +1,10 @@
 /**
  * @file test_ael_client.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @author DeepSeek V4.1 Flash Free
  * @brief AEL UDP client example.
  *
- * Sends struct ael_packet datagrams to the AEL UDP server. Every packet is
+ * Sends ael_packet_t datagrams to the AEL UDP server. Every packet is
  * handed to the kernel with a single sendto() call, immediately flushing it out
  * of the interface without any application level queueing or batching.
  *
@@ -30,6 +31,7 @@
 #include <unistd.h>
 
 #define AEL_DEFAULT_PACKETS 32
+#define AEL_SAMPLE_REGION_SIZE 4096
 
 struct ael_test_params {
     const char *server_ip;
@@ -38,10 +40,11 @@ struct ael_test_params {
 };
 
 static struct ael_test_params *ael_parse_params(int argc, char **argv);
-static void _ael_packet_init(struct ael_packet *packet, uint64_t rank,
-                             unsigned long index);
+static ael_packet_t *_ael_packet_create(eAEL_event event,
+                                        uint64_t rank,
+                                        unsigned long index);
 static eAEL_error _ael_client_send(const struct ael_socket *sock,
-                                   const struct ael_packet *packet);
+                                   const ael_packet_t *packet);
 
 int main(int argc, char **argv) {
     struct ael_test_params *tp = ael_parse_params(argc, argv);
@@ -60,24 +63,32 @@ int main(int argc, char **argv) {
              tp->packet_count, tp->server_ip, PORT, tp->rank);
 
     for (unsigned long i = 0; i < tp->packet_count; i++) {
-        struct ael_packet packet;
-        _ael_packet_init(&packet, tp->rank, i);
-
-        // One sendto() per packet: the datagram leaves immediately, there is no
-        // userspace send buffer or UDP_CORK batching to flush afterwards.
-        eAEL_error tx_status = _ael_client_send(&sock, &packet);
-        if (tx_status != eAEL_OK) {
-            log_error("Failed to send packet %lu (eAEL_error=%d)", i,
-                      (int) tx_status);
+        eAEL_event event = ael_event_code(i);
+        ael_packet_t *packet = _ael_packet_create(event, tp->rank, i);
+        if (!packet) {
+            log_error("Failed to allocate packet %lu", i);
             ael_socket_close(&sock);
             free(tp);
             return 1;
         }
 
-        log_info("tx rank=%" PRIu64 " group_id=%" PRIu64
-                 " group_size=%" PRIu64 " ev=%s (%zu bytes)",
-                 packet.rank, packet.group_id, packet.group_size,
-                 ael_event_name(packet.event), sizeof(packet));
+        // One sendto() per packet: the datagram leaves immediately, there is no
+        // userspace send buffer or UDP_CORK batching to flush afterwards.
+        eAEL_error tx_status = _ael_client_send(&sock, packet);
+        if (tx_status != eAEL_OK) {
+            log_error("Failed to send packet %lu (eAEL_error=%d)", i,
+                      (int) tx_status);
+            ael_packet_destroy(&packet);
+            ael_socket_close(&sock);
+            free(tp);
+            return 1;
+        }
+
+        log_info("tx rank=%" PRIu64 " group_id=%" PRIu64 " ts=%" PRIu64
+                 " ev=%s (%zu bytes)",
+                 packet->rank, packet->group_id, packet->timestamp,
+                 ael_event_name(packet->event), sizeof(*packet));
+        ael_packet_destroy(&packet);
     }
 
     ael_socket_close(&sock);
@@ -87,7 +98,7 @@ int main(int argc, char **argv) {
 }
 
 static eAEL_error _ael_client_send(const struct ael_socket *sock,
-                                   const struct ael_packet *packet) {
+                                   const ael_packet_t *packet) {
     if (!sock || !packet) {
         log_error("AEL client send: NULL parameter");
         return eAEL_ERR_NULL;
@@ -108,62 +119,44 @@ static eAEL_error _ael_client_send(const struct ael_socket *sock,
     return eAEL_OK;
 }
 
-static void _ael_packet_init(struct ael_packet *packet, uint64_t rank,
-                             unsigned long index) {
-    *packet = (struct ael_packet) {
-        .rank = rank,
-        .group_id = 0,
-        .group_size = 1,
-        .event = ael_event_code(index),
-    };
+static ael_packet_t *_ael_packet_create(eAEL_event event,
+                                        uint64_t rank,
+                                        unsigned long index) {
+    char event_message[AEL_EVENT_MSG_LEN];
+    char name[AEL_NAME_LEN];
 
-    switch (packet->event) {
+    switch (event) {
     case eAEL_EVENT_CLI_CONNECT:
-        snprintf(packet->event_string, sizeof(packet->event_string),
+        snprintf(event_message, sizeof(event_message),
                  "client %" PRIu64 " connect", rank);
-        break;
+        return ael_packet_create_cli(event, rank, 0, event_message);
     case eAEL_EVENT_CLI_FAILURE:
-        snprintf(packet->event_string, sizeof(packet->event_string),
+        snprintf(event_message, sizeof(event_message),
                  "client %" PRIu64 " failure", rank);
-        break;
+        return ael_packet_create_cli(event, rank, 0, event_message);
     case eAEL_EVENT_CLI_DISCONNECT:
-        snprintf(packet->event_string, sizeof(packet->event_string),
+        snprintf(event_message, sizeof(event_message),
                  "client %" PRIu64 " disconnect", rank);
-        break;
-    case eAEL_EVENT_START_CHECKPOINT:
-        packet->checkpoint_version = 1;
-        packet->checkpoint_regions = 4;
-        snprintf(packet->checkpoint_name, sizeof(packet->checkpoint_name),
-                 "checkpoint-start");
-        break;
-    case eAEL_EVENT_START_RESTORE:
-        packet->checkpoint_version = 1;
-        packet->checkpoint_regions = 4;
-        snprintf(packet->checkpoint_name, sizeof(packet->checkpoint_name),
-                 "restore-start");
-        break;
-    case eAEL_EVENT_END_CHECKPOINT:
-        packet->checkpoint_version = 2;
-        packet->checkpoint_regions = 4;
-        snprintf(packet->checkpoint_name, sizeof(packet->checkpoint_name),
-                 "checkpoint-end");
-        break;
-    case eAEL_EVENT_END_RESTORE:
-        packet->checkpoint_version = 2;
-        packet->checkpoint_regions = 4;
-        snprintf(packet->checkpoint_name, sizeof(packet->checkpoint_name),
-                 "restore-end");
-        break;
+        return ael_packet_create_cli(event, rank, 0, event_message);
+    case eAEL_EVENT_CHECKPOINT_START:
+        return ael_packet_create_checkpoint(event, rank, 0, 1, 4,
+                                            "ckpt-start");
+    case eAEL_EVENT_CHECKPOINT_END:
+        return ael_packet_create_checkpoint(event, rank, 0, 2, 4,
+                                            "ckpt-end");
+    case eAEL_EVENT_RESTORE_START:
+        return ael_packet_create_checkpoint(event, rank, 0, 1, 4,
+                                            "restore-start");
+    case eAEL_EVENT_RESTORE_END:
+        return ael_packet_create_checkpoint(event, rank, 0, 2, 4,
+                                            "restore-end");
     case eAEL_EVENT_REGION_ADD:
-        snprintf(packet->event_string, sizeof(packet->event_string),
-                 "region-%lu add", index);
-        break;
     case eAEL_EVENT_REGION_REMOVE:
-        snprintf(packet->event_string, sizeof(packet->event_string),
-                 "region-%lu remove", index);
-        break;
+        snprintf(name, sizeof(name), "rgn-%lu", index);
+        return ael_packet_create_region(event, rank, 0, (int64_t) index,
+                                        AEL_SAMPLE_REGION_SIZE, name);
     default:
-        break;
+        return NULL;
     }
 }
 
