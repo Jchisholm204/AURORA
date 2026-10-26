@@ -4,15 +4,14 @@
  * @author DeepSeek V4.1 Flash Free
  * @brief AEL UDP client example.
  *
- * Sends ael_packet_t datagrams to the AEL UDP server. Every packet is
- * handed to the kernel with a single sendto() call, immediately flushing it out
- * of the interface without any application level queueing or batching.
+ * Sends ael_packet_t datagrams to the AEL UDP server through the public AEL
+ * handle API. Every packet is sent as one datagram per configured peer.
  *
  * Usage: test_ael_client [server_ip] [rank] [packet_count]
  *
  * @version 0.1
  * @date Created: 2026-10-25
- * @modified Last Modified: 2026-10-25
+ * @modified Last Modified: 2026-10-26
  *
  * @copyright Copyright (c) 2026
  */
@@ -20,14 +19,10 @@
 #include "ael_cdefs.h"
 #include "log.h"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #define AEL_DEFAULT_PACKETS 32
@@ -40,11 +35,8 @@ struct ael_test_params {
 };
 
 static struct ael_test_params *ael_parse_params(int argc, char **argv);
-static ael_packet_t *_ael_packet_create(eAEL_event event,
-                                        uint64_t rank,
+static ael_packet_t *_ael_packet_create(eAEL_event event, uint64_t rank,
                                         unsigned long index);
-static eAEL_error _ael_client_send(const struct ael_socket *sock,
-                                   const ael_packet_t *packet);
 
 int main(int argc, char **argv) {
     struct ael_test_params *tp = ael_parse_params(argc, argv);
@@ -53,8 +45,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    struct ael_socket sock;
-    if (ael_socket_open(&sock, tp->server_ip, PORT) < 0) {
+    ael_peer_t peer = {
+        .ip = tp->server_ip,
+        .port = PORT,
+    };
+    ael_hndl *pHndl = ael_create_instance(tp->rank, 0, 1, 0, &peer, 1);
+    if (!pHndl) {
         free(tp);
         return 1;
     }
@@ -67,19 +63,17 @@ int main(int argc, char **argv) {
         ael_packet_t *packet = _ael_packet_create(event, tp->rank, i);
         if (!packet) {
             log_error("Failed to allocate packet %lu", i);
-            ael_socket_close(&sock);
+            ael_destroy_instance(&pHndl);
             free(tp);
             return 1;
         }
 
-        // One sendto() per packet: the datagram leaves immediately, there is no
-        // userspace send buffer or UDP_CORK batching to flush afterwards.
-        eAEL_error tx_status = _ael_client_send(&sock, packet);
+        eAEL_error tx_status = ael_send_packet(pHndl, packet);
         if (tx_status != eAEL_OK) {
             log_error("Failed to send packet %lu (eAEL_error=%d)", i,
                       (int) tx_status);
             ael_packet_destroy(&packet);
-            ael_socket_close(&sock);
+            ael_destroy_instance(&pHndl);
             free(tp);
             return 1;
         }
@@ -89,38 +83,16 @@ int main(int argc, char **argv) {
                  packet->rank, packet->group_id, packet->timestamp,
                  ael_event_name(packet->event), sizeof(*packet));
         ael_packet_destroy(&packet);
+        usleep(10000);
     }
 
-    ael_socket_close(&sock);
+    ael_destroy_instance(&pHndl);
     log_info("AEL UDP client sent %lu packet(s)", tp->packet_count);
     free(tp);
     return 0;
 }
 
-static eAEL_error _ael_client_send(const struct ael_socket *sock,
-                                   const ael_packet_t *packet) {
-    if (!sock || !packet) {
-        log_error("AEL client send: NULL parameter");
-        return eAEL_ERR_NULL;
-    }
-
-    ssize_t tx_bytes = sendto(sock->fd, packet, sizeof(*packet), 0,
-                              (const struct sockaddr *) &sock->addr,
-                              sizeof(sock->addr));
-    if (tx_bytes < 0) {
-        log_error("sendto failed: %s", strerror(errno));
-        return eAEL_ERR_SEND;
-    }
-    if ((size_t) tx_bytes != sizeof(*packet)) {
-        log_error("Short send: %zd of %zu bytes", tx_bytes, sizeof(*packet));
-        return eAEL_ERR_SIZE;
-    }
-
-    return eAEL_OK;
-}
-
-static ael_packet_t *_ael_packet_create(eAEL_event event,
-                                        uint64_t rank,
+static ael_packet_t *_ael_packet_create(eAEL_event event, uint64_t rank,
                                         unsigned long index) {
     char event_message[AEL_EVENT_MSG_LEN];
     char name[AEL_NAME_LEN];
@@ -139,11 +111,9 @@ static ael_packet_t *_ael_packet_create(eAEL_event event,
                  "client %" PRIu64 " disconnect", rank);
         return ael_packet_create_cli(event, rank, 0, event_message);
     case eAEL_EVENT_CHECKPOINT_START:
-        return ael_packet_create_checkpoint(event, rank, 0, 1, 4,
-                                            "ckpt-start");
+        return ael_packet_create_checkpoint(event, rank, 0, 1, 4, "ckpt-start");
     case eAEL_EVENT_CHECKPOINT_END:
-        return ael_packet_create_checkpoint(event, rank, 0, 2, 4,
-                                            "ckpt-end");
+        return ael_packet_create_checkpoint(event, rank, 0, 2, 4, "ckpt-end");
     case eAEL_EVENT_RESTORE_START:
         return ael_packet_create_checkpoint(event, rank, 0, 1, 4,
                                             "restore-start");

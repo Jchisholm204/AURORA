@@ -1,0 +1,244 @@
+/**
+ * @file ael.c
+ * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @author DeepSeek V4.1 Flash Free
+ * @brief AURORA External Logger endpoint implementation.
+ * @version 0.1
+ * @date Created: 2026-10-26
+ * @modified Last Modified: 2026-10-26
+ *
+ * @copyright Copyright (c) 2026
+ */
+
+#define AEL_INTERNAL
+#include "ael/ael.h"
+
+#include "log.h"
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+static void _ael_close_socket(ael_hndl *pHndl) {
+    if (!pHndl || pHndl->socket.fd < 0) {
+        return;
+    }
+
+    close(pHndl->socket.fd);
+    pHndl->socket.fd = -1;
+}
+
+static void _ael_free_handle(ael_hndl *pHndl) {
+    if (!pHndl) {
+        return;
+    }
+
+    _ael_close_socket(pHndl);
+    free(pHndl->send_peers);
+    free(pHndl);
+}
+
+ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
+                              uint64_t group_size, uint16_t local_port,
+                              const ael_peer_t *send_peers,
+                              size_t n_send_peers) {
+    if (n_send_peers > 0 && !send_peers) {
+        log_error("AEL send peer list is NULL");
+        return NULL;
+    }
+
+    ael_hndl *pHndl = calloc(1, sizeof(ael_hndl));
+    if (!pHndl) {
+        log_error("Bad Alloc??");
+        return NULL;
+    }
+
+    pHndl->rank = rank;
+    pHndl->group_id = group_id;
+    pHndl->group_size = group_size;
+    pHndl->n_send_peers = n_send_peers;
+    pHndl->socket.fd = -1;
+    pHndl->socket.port = local_port;
+
+    if (n_send_peers > 0) {
+        pHndl->send_peers = calloc(n_send_peers, sizeof(*pHndl->send_peers));
+        if (!pHndl->send_peers) {
+            log_error("Bad Alloc??");
+            _ael_free_handle(pHndl);
+            return NULL;
+        }
+
+        for (size_t i = 0; i < n_send_peers; i++) {
+            const ael_peer_t *peer = &send_peers[i];
+            struct sockaddr_in *addr = &pHndl->send_peers[i];
+
+            if (!peer->ip || peer->port == 0) {
+                log_error("Invalid AEL send peer %zu", i);
+                _ael_free_handle(pHndl);
+                return NULL;
+            }
+
+            addr->sin_family = AF_INET;
+            addr->sin_port = htons(peer->port);
+            if (inet_pton(AF_INET, peer->ip, &addr->sin_addr) != 1) {
+                log_error("Invalid AEL send peer IP '%s'", peer->ip);
+                _ael_free_handle(pHndl);
+                return NULL;
+            }
+        }
+    }
+
+    pHndl->socket.fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (pHndl->socket.fd < 0) {
+        log_error("Failed to create AEL UDP socket: %s", strerror(errno));
+        _ael_free_handle(pHndl);
+        return NULL;
+    }
+
+    int opt = 1;
+    if (setsockopt(pHndl->socket.fd, SOL_SOCKET, SO_REUSEADDR, &opt,
+                   sizeof(opt)) < 0) {
+        log_warn("Failed to set SO_REUSEADDR: %s", strerror(errno));
+    }
+
+    struct sockaddr_in local = {
+        .sin_family = AF_INET,
+        .sin_port = htons(local_port),
+        .sin_addr = {.s_addr = htonl(INADDR_ANY)},
+    };
+    if (bind(pHndl->socket.fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
+        log_error("Failed to bind AEL UDP port %u: %s", (unsigned) local_port,
+                  strerror(errno));
+        _ael_free_handle(pHndl);
+        return NULL;
+    }
+
+    return pHndl;
+}
+
+eAEL_error ael_disconnect_instance(ael_hndl *pHndl) {
+    if (!pHndl) {
+        return eAEL_ERR_NULL;
+    }
+
+    _ael_close_socket(pHndl);
+    return eAEL_OK;
+}
+
+eAEL_error ael_destroy_instance(ael_hndl **ppHndl) {
+    if (!ppHndl) {
+        return eAEL_ERR_NULL;
+    }
+
+    _ael_free_handle(*ppHndl);
+    *ppHndl = NULL;
+    return eAEL_OK;
+}
+
+eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet) {
+    if (!pHndl || !packet) {
+        return eAEL_ERR_NULL;
+    }
+    if (pHndl->socket.fd < 0) {
+        return eAEL_ERR_SOCKET;
+    }
+    if (pHndl->n_send_peers == 0 || !pHndl->send_peers) {
+        log_error("AEL send: no send peers configured");
+        return eAEL_ERR_SEND;
+    }
+
+    eAEL_error status = eAEL_OK;
+    for (size_t i = 0; i < pHndl->n_send_peers; i++) {
+        const struct sockaddr_in *peer = &pHndl->send_peers[i];
+        ssize_t tx_bytes =
+            sendto(pHndl->socket.fd, packet, sizeof(*packet), 0,
+                   (const struct sockaddr *) peer, sizeof(*peer));
+
+        if (tx_bytes < 0) {
+            log_error("AEL sendto peer %zu failed: %s", i, strerror(errno));
+            if (status == eAEL_OK) {
+                status = eAEL_ERR_SEND;
+            }
+            continue;
+        }
+        if ((size_t) tx_bytes != sizeof(*packet)) {
+            log_error("AEL short send to peer %zu: %zd of %zu bytes", i,
+                      tx_bytes, sizeof(*packet));
+            if (status == eAEL_OK) {
+                status = eAEL_ERR_SIZE;
+            }
+        }
+    }
+
+    return status;
+}
+
+eAEL_error ael_recv_packet(ael_hndl *pHndl, ael_packet_t *packet,
+                           int timeout_ms) {
+    if (!pHndl || !packet) {
+        return eAEL_ERR_NULL;
+    }
+    if (pHndl->socket.fd < 0) {
+        return eAEL_ERR_SOCKET;
+    }
+
+    struct pollfd pfd = {
+        .fd = pHndl->socket.fd,
+        .events = POLLIN,
+    };
+    int poll_status = poll(&pfd, 1, timeout_ms);
+    if (poll_status == 0) {
+        return eAEL_ERR_TIMEOUT;
+    }
+    if (poll_status < 0) {
+        if (errno == EINTR) {
+            return eAEL_ERR_INTR;
+        }
+        log_error("AEL poll failed: %s", strerror(errno));
+        return eAEL_ERR_RECV;
+    }
+    if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+        log_error("AEL poll reported socket error 0x%x",
+                  (unsigned) pfd.revents);
+        return eAEL_ERR_RECV;
+    }
+    if (!(pfd.revents & POLLIN)) {
+        log_error("AEL poll returned unexpected events 0x%x",
+                  (unsigned) pfd.revents);
+        return eAEL_ERR_RECV;
+    }
+
+    ssize_t rx_bytes = recvfrom(pHndl->socket.fd, packet, sizeof(*packet),
+                                MSG_TRUNC, NULL, NULL);
+    if (rx_bytes < 0) {
+        if (errno == EINTR) {
+            return eAEL_ERR_INTR;
+        }
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return eAEL_ERR_TIMEOUT;
+        }
+        log_error("AEL recvfrom failed: %s", strerror(errno));
+        return eAEL_ERR_RECV;
+    }
+    if ((size_t) rx_bytes != sizeof(*packet)) {
+        log_warn("Discarded AEL datagram with invalid size: %zd (expected %zu)",
+                 rx_bytes, sizeof(*packet));
+        return eAEL_ERR_SIZE;
+    }
+    if (!ael_packet_verify(packet)) {
+        log_warn("Discarded AEL packet with invalid CRC");
+        return eAEL_ERR_CRC;
+    }
+    if ((unsigned) packet->event >= (unsigned) eAEL_N_EVENT) {
+        log_warn("Discarded AEL packet with invalid event code %d",
+                 (int) packet->event);
+        return eAEL_ERR_EVENT;
+    }
+
+    return eAEL_OK;
+}
