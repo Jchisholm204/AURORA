@@ -83,10 +83,12 @@ _Static_assert(offsetof(ael_packet_t, event_message) == 64,
                "unexpected event_message offset");
 _Static_assert(sizeof(ael_packet_t) == 128, "unexpected packet size");
 
-// CRC functions
+#ifdef AEL_INTERNAL
+// Internal CRC helpers; not part of the public AEL packet API.
 extern uint32_t ael_packet_crc(const ael_packet_t *packet);
 extern void ael_packet_seal(ael_packet_t *packet);
 extern bool ael_packet_verify(const ael_packet_t *packet);
+#endif
 
 // Packet functions
 extern ael_packet_t *ael_packet_create_cli(eAEL_event id, uint64_t rank,

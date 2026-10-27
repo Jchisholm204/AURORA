@@ -1,11 +1,13 @@
 /**
  * @file multi_client.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @author DeepSeek-V4.1-Flash OpenCode Free
  * @brief Multi-threaded AEL UDP client for testing concurrent connections.
  *
- * Each thread creates an AEL instance and sends packets to a single server
- * recipient at (server_ip, server_port). All threads share the same server
- * configuration but use unique ranks. Thread i automatically uses rank i.
+ * Each thread creates an AEL instance and sends events to a single server
+ * recipient at (server_ip, server_port) through the AEL event send helpers.
+ * All threads share the same server configuration but use unique ranks.
+ * Thread i automatically uses rank i.
  *
  * Command-line arguments:
  *   <server_ip>      - IP address of the AEL server (default: 127.0.0.1)
@@ -50,8 +52,8 @@ typedef struct {
 } thread_params_t;
 
 static test_params_t *ael_parse_params(int argc, char **argv);
-static ael_packet_t *_ael_packet_create(eAEL_event event, uint64_t rank,
-                                        unsigned long index);
+static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
+                                  eAEL_event event, unsigned long index);
 static void *thread_func(void *arg);
 
 static test_params_t *ael_parse_params(int argc, char **argv) {
@@ -114,8 +116,8 @@ static test_params_t *ael_parse_params(int argc, char **argv) {
     return tp;
 }
 
-static ael_packet_t *_ael_packet_create(eAEL_event event, uint64_t rank,
-                                        unsigned long index) {
+static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
+                                  eAEL_event event, unsigned long index) {
     char event_message[AEL_EVENT_MSG_LEN];
     char name[AEL_NAME_LEN];
 
@@ -123,32 +125,31 @@ static ael_packet_t *_ael_packet_create(eAEL_event event, uint64_t rank,
     case eAEL_EVENT_CLI_CONNECT:
         snprintf(event_message, sizeof(event_message),
                  "client %" PRIu64 " connect", rank);
-        return ael_packet_create_cli(event, rank, 0, event_message);
+        return ael_send_cli(pHndl, event, event_message);
     case eAEL_EVENT_CLI_FAILURE:
         snprintf(event_message, sizeof(event_message),
                  "client %" PRIu64 " failure", rank);
-        return ael_packet_create_cli(event, rank, 0, event_message);
+        return ael_send_cli(pHndl, event, event_message);
     case eAEL_EVENT_CLI_DISCONNECT:
         snprintf(event_message, sizeof(event_message),
                  "client %" PRIu64 " disconnect", rank);
-        return ael_packet_create_cli(event, rank, 0, event_message);
+        return ael_send_cli(pHndl, event, event_message);
     case eAEL_EVENT_CHECKPOINT_START:
-        return ael_packet_create_checkpoint(event, rank, 0, 1, 4, "ckpt-start");
+        return ael_send_checkpoint(pHndl, event, 1, 4, "ckpt-start", NULL);
     case eAEL_EVENT_CHECKPOINT_END:
-        return ael_packet_create_checkpoint(event, rank, 0, 2, 4, "ckpt-end");
+        return ael_send_checkpoint(pHndl, event, 2, 4, "ckpt-end", NULL);
     case eAEL_EVENT_RESTORE_START:
-        return ael_packet_create_checkpoint(event, rank, 0, 1, 4,
-                                            "restore-start");
+        return ael_send_checkpoint(pHndl, event, 1, 4, "restore-start", NULL);
     case eAEL_EVENT_RESTORE_END:
-        return ael_packet_create_checkpoint(event, rank, 0, 2, 4,
-                                            "restore-end");
+        return ael_send_checkpoint(pHndl, event, 2, 4, "restore-end", NULL);
     case eAEL_EVENT_REGION_ADD:
     case eAEL_EVENT_REGION_REMOVE:
         snprintf(name, sizeof(name), "rgn-%lu", index);
-        return ael_packet_create_region(event, rank, 0, (int64_t) index,
-                                        AEL_SAMPLE_REGION_SIZE, name);
+        return ael_send_region(pHndl, event, (int64_t) index,
+                               AEL_SAMPLE_REGION_SIZE, name, NULL);
     default:
-        return NULL;
+        log_error("Unsupported event code %d", (int) event);
+        return eAEL_ERR_EVENT;
     }
 }
 
@@ -171,37 +172,30 @@ static void *thread_func(void *arg) {
         return NULL;
     }
 
-    // Send packets to server
-    log_info("Thread %" PRId64 " sending %" PRIu64 " packet(s) to %s:%u",
+    // Send events to server
+    log_info("Thread %ld sending %" PRIu64 " packet(s) to %s:%u",
              params->rank, tp->packet_count, tp->server_ip, tp->server_port);
-    
-    for (unsigned long i = 0; i < tp->packet_count && pHndl; i++) {
+
+    unsigned long sent = 0;
+    for (unsigned long i = 0; i < tp->packet_count; i++) {
         eAEL_event event = ael_event_code(i);
-        ael_packet_t *packet = _ael_packet_create(event, params->rank, i);
-        if (!packet) {
-            log_error("Failed to allocate packet for rank %ld", params->rank);
-            break;
-        }
-
-        eAEL_error tx_status = ael_send_packet(pHndl, packet);
+        eAEL_error tx_status =
+            _ael_send_event(pHndl, (uint64_t) params->rank, event, i);
         if (tx_status != eAEL_OK) {
-            log_error("Failed to send packet from rank %ld: eAEL_error=%d",
-                      params->rank, (int) tx_status);
-            ael_packet_destroy(&packet);
+            log_error("Failed to send %s from rank %ld: eAEL_error=%d",
+                      ael_event_name(event), params->rank, (int) tx_status);
             break;
         }
 
-        log_info("tx rank=%" PRIu64 " ev=%s (%zu bytes)",
-                 packet->rank, ael_event_name(packet->event), sizeof(*packet));
-        ael_packet_destroy(&packet);
+        log_info("tx rank=%ld ev=%s (%zu bytes)", params->rank,
+                 ael_event_name(event), sizeof(ael_packet_t));
+        sent++;
     }
 
-    // Log completion if we sent any packets
-    if (pHndl) {
-        log_info("Thread completed: sent %" PRIu64 " packet(s) from rank %ld",
-                 tp->packet_count, params->rank);  // Total packets sent by this thread
-        ael_destroy_instance(&pHndl);
-    }
+    // Log completion and release the instance
+    log_info("Thread completed: sent %lu packet(s) from rank %ld", sent,
+             params->rank);
+    (void) ael_destroy_instance(&pHndl);
     
     return NULL;
 }

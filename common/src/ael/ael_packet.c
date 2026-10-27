@@ -11,6 +11,7 @@
  * @copyright Copyright (c) 2026
  */
 
+#define AEL_INTERNAL
 #include "ael/ael_packet.h"
 #include "log.h"
 

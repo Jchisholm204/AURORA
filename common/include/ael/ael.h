@@ -27,6 +27,7 @@
 enum aurora_external_logger_error_e {
     eAEL_OK = 0,
     eAEL_ERR_NULL,
+    eAEL_ERR_MEM,
     eAEL_ERR_INTR,
     eAEL_ERR_TIMEOUT,
     eAEL_ERR_SOCKET,
@@ -124,6 +125,62 @@ extern eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip,
  * @return eAEL_OK, or an eAEL_error code
  */
 extern eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet);
+
+/*
+ * Event send helpers
+ *
+ * Each helper builds a sealed packet using the handle's rank and group_id,
+ * stamps the current timestamp, and sends it to every configured send peer.
+ * The caller supplies the event code so the same helper covers every event
+ * that shares a payload layout.
+ */
+
+/**
+ * @brief Send a client lifecycle event.
+ *
+ * @param pHndl AEL handle
+ * @param id Event code; one of eAEL_EVENT_CLI_CONNECT,
+ *           eAEL_EVENT_CLI_FAILURE, or eAEL_EVENT_CLI_DISCONNECT
+ * @param event_message Optional message copied into the packet
+ * @return eAEL_OK, or an eAEL_error code
+ */
+extern eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
+                               const char *event_message);
+
+/**
+ * @brief Send a checkpoint or restore event.
+ *
+ * @param pHndl AEL handle
+ * @param id Event code; one of eAEL_EVENT_CHECKPOINT_START,
+ *           eAEL_EVENT_CHECKPOINT_END, eAEL_EVENT_RESTORE_START, or
+ *           eAEL_EVENT_RESTORE_END
+ * @param version Checkpoint version
+ * @param n_regions Number of regions in the checkpoint
+ * @param name Optional checkpoint name copied into the payload
+ * @param event_message Optional message copied into the packet
+ * @return eAEL_OK, or an eAEL_error code
+ */
+extern eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
+                                      int64_t version, size_t n_regions,
+                                      const char *name,
+                                      const char *event_message);
+
+/**
+ * @brief Send a region event.
+ *
+ * @param pHndl AEL handle
+ * @param id Event code; one of eAEL_EVENT_REGION_ADD or
+ *           eAEL_EVENT_REGION_REMOVE
+ * @param region_id Region identifier
+ * @param size Region size in bytes
+ * @param name Optional region name copied into the payload
+ * @param event_message Optional message copied into the packet
+ * @return eAEL_OK, or an eAEL_error code
+ */
+extern eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id,
+                                  int64_t region_id, size_t size,
+                                  const char *name,
+                                  const char *event_message);
 
 /**
  * @brief Receive one valid packet from any sender.
