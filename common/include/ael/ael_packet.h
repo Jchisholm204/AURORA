@@ -6,7 +6,7 @@
  * @brief
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
@@ -51,7 +51,14 @@ struct aurora_external_logger_packet {
     uint64_t group_id;
     uint64_t timestamp;
     enum aurora_external_logger_event_e event;
-    uint32_t crc;
+    // Reserved portion may be used internally by AEL. This memory should not
+    // be accessed externally.
+    union {
+#ifdef AEL_INTERNAL
+        uint32_t crc;
+#endif
+        uint32_t __reserved;
+    };
     union {
         // Shared by CHECKPOINT_* and RESTORE_* events
         struct aurora_external_logger_payload_checkpoint checkpoint;
@@ -67,7 +74,9 @@ typedef struct aurora_external_logger_packet ael_packet_t;
 typedef struct aurora_external_logger_payload_region ael_packet_payld_region_t;
 
 _Static_assert(sizeof(eAEL_event) == 4, "unexpected eAEL_event size");
+#ifdef AEL_INTERNAL
 _Static_assert(offsetof(ael_packet_t, crc) == 28, "unexpected crc offset");
+#endif
 _Static_assert(offsetof(ael_packet_t, payload) == 32,
                "unexpected payload offset");
 _Static_assert(offsetof(ael_packet_t, event_message) == 64,

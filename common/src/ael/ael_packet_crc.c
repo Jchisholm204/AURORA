@@ -6,11 +6,12 @@
  * @brief CRC helpers for AEL packets.
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
 
+#define AEL_INTERNAL
 #include "ael/ael_packet.h"
 
 #include <stddef.h>

@@ -59,12 +59,16 @@ any `#define`, `#include`, or include guard:
   then models on subsequent lines, e.g.:
   ```c
   * @author Jacob Chisholm (https://Jchisholm204.github.io)
-  * @author DeepSeek-R1-7B
+  * @author Example-Model-2.0-Instruct-32B
   ```
   **Important rules:**
   - Human authors must come above model authors — never list models first
   - Models **append** after all human authors — never replace them
-  - Use standardized model labels: `DeepSeek-R1-7B`, not informal names like "V4.1 Flash Free"
+  - Write the most descriptive label you can for yourself: model family, version,
+    variant, and parameter count, plus any provider or deployment tag you know —
+    e.g. `Example-Model-2.0-Instruct-32B` or
+    `Example-Model-2.0-Instruct-32B OpenCode Free`. Never shorten the label or
+    drop the version or parameter count.
   `@copyright` as `Copyright (c) 2026`.
 - Exempt: vendored sources under `common/log.c/` and `common/mdns/`. Do not add
   headers to them or reformat them.
