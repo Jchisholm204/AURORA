@@ -3,32 +3,28 @@
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @author DeepSeek-V4.1-Flash OpenCode Free
  * @author qwen 3.5 9b
- * @brief AEL packet construction and destruction.
+ * @brief AEL packet construction and finalization helpers.
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
 
 #define AEL_INTERNAL
 #include "ael/ael_packet.h"
-#include "log.h"
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
-static ael_packet_t *_ael_packet_alloc(eAEL_event id, uint64_t rank,
-                                       uint64_t group_id) {
+void _ael_packet_init(ael_packet_t *packet, eAEL_event id, uint64_t rank,
+                      uint64_t group_id, const char *event_message) {
+    assert(packet != NULL);
     assert((unsigned) id < (unsigned) eAEL_N_EVENT);
 
-    ael_packet_t *packet = calloc(1, sizeof(*packet));
-    if (!packet) {
-        log_error("Bad Alloc??");
-        return NULL;
-    }
+    memset(packet, 0, sizeof(ael_packet_t));
 
     uint64_t timestamp = 0;
     struct timespec ts;
@@ -42,79 +38,38 @@ static ael_packet_t *_ael_packet_alloc(eAEL_event id, uint64_t rank,
     packet->timestamp = timestamp;
     packet->event = id;
 
-    return packet;
-}
-
-ael_packet_t *ael_packet_create_cli(
-    eAEL_event id, uint64_t rank, uint64_t group_id,
-    const char *event_message) {
-    assert(id == eAEL_EVENT_CLI_CONNECT ||
-           id == eAEL_EVENT_CLI_FAILURE ||
-           id == eAEL_EVENT_CLI_DISCONNECT);
-
-    ael_packet_t *packet = _ael_packet_alloc(id, rank, group_id);
-    if (!packet) {
-        return NULL;
-    }
-
     if (event_message) {
-        snprintf(packet->event_message, sizeof(packet->event_message), "%s",
-                 event_message);
+        (void) snprintf(packet->event_message, AEL_EVENT_MSG_LEN, "%s",
+                        event_message);
     }
-
-    ael_packet_seal(packet);
-    return packet;
 }
 
-ael_packet_t *ael_packet_create_checkpoint(
-    eAEL_event id, uint64_t rank, uint64_t group_id, int64_t version,
-    size_t n_regions, const char *name) {
-    assert(id == eAEL_EVENT_CHECKPOINT_START ||
-           id == eAEL_EVENT_CHECKPOINT_END ||
-           id == eAEL_EVENT_RESTORE_START ||
-           id == eAEL_EVENT_RESTORE_END);
-
-    ael_packet_t *packet = _ael_packet_alloc(id, rank, group_id);
-    if (!packet) {
-        return NULL;
+void ael_packet_finalize(ael_packet_t *packet) {
+    if (packet) {
+        packet->crc = ael_packet_crc(packet);
     }
+}
 
-    packet->payload.checkpoint.version = version;
-    packet->payload.checkpoint.n_regions = n_regions;
+void _ael_packet_set_checkpoint(ael_packet_payld_checkpoint_t *payload,
+                                int64_t version, size_t n_regions,
+                                const char *name) {
+    assert(payload != NULL);
+
+    payload->version = version;
+    payload->n_regions = n_regions;
     if (name) {
-        snprintf(packet->payload.checkpoint.name,
-                 sizeof(packet->payload.checkpoint.name), "%s", name);
+        (void) snprintf(payload->name, AEL_NAME_LEN, "%s", name);
     }
-
-    ael_packet_seal(packet);
-    return packet;
 }
 
-ael_packet_t *ael_packet_create_region(
-    eAEL_event id, uint64_t rank, uint64_t group_id, int64_t region_id,
-    size_t size, const char *name) {
-    assert(id == eAEL_EVENT_REGION_ADD ||
-           id == eAEL_EVENT_REGION_REMOVE);
+void _ael_packet_set_region(ael_packet_payld_region_t *payload,
+                            int64_t region_id, size_t size,
+                            const char *name) {
+    assert(payload != NULL);
 
-    ael_packet_t *packet = _ael_packet_alloc(id, rank, group_id);
-    if (!packet) {
-        return NULL;
-    }
-
-    packet->payload.region.id = region_id;
-    packet->payload.region.size = size;
+    payload->id = region_id;
+    payload->size = size;
     if (name) {
-        snprintf(packet->payload.region.name,
-                 sizeof(packet->payload.region.name), "%s", name);
-    }
-
-    ael_packet_seal(packet);
-    return packet;
-}
-
-void ael_packet_destroy(ael_packet_t **ppPacket) {
-    if (ppPacket && *ppPacket) {
-        free(*ppPacket);
-        *ppPacket = NULL;
+        (void) snprintf(payload->name, AEL_NAME_LEN, "%s", name);
     }
 }

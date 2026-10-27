@@ -82,7 +82,7 @@ static void _ael_log_packet(const ael_packet_t *packet) {
     case eAEL_EVENT_CLI_CONNECT:
     case eAEL_EVENT_CLI_FAILURE:
     case eAEL_EVENT_CLI_DISCONNECT:
-        log_info("  event=\"%.*s\"", (int) sizeof(packet->event_message),
+        log_info("  event=\"%.*s\"", AEL_EVENT_MSG_LEN,
                  packet->event_message);
         break;
     case eAEL_EVENT_CHECKPOINT_START:
@@ -90,8 +90,7 @@ static void _ael_log_packet(const ael_packet_t *packet) {
     case eAEL_EVENT_RESTORE_START:
     case eAEL_EVENT_RESTORE_END:
         log_info("  version=%" PRId64 " name=\"%.*s\" regions=%zu",
-                 packet->payload.checkpoint.version,
-                 (int) sizeof(packet->payload.checkpoint.name),
+                 packet->payload.checkpoint.version, AEL_NAME_LEN,
                  packet->payload.checkpoint.name,
                  packet->payload.checkpoint.n_regions);
         break;
@@ -99,8 +98,7 @@ static void _ael_log_packet(const ael_packet_t *packet) {
     case eAEL_EVENT_REGION_REMOVE:
         log_info("  id=%" PRId64 " size=%zu name=\"%.*s\"",
                  packet->payload.region.id, packet->payload.region.size,
-                 (int) sizeof(packet->payload.region.name),
-                 packet->payload.region.name);
+                 AEL_NAME_LEN, packet->payload.region.name);
         break;
     default:
         break;

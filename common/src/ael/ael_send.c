@@ -15,16 +15,15 @@
 
 #include "log.h"
 
+#include <assert.h>
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
 
-eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet) {
-    if (!pHndl || !packet) {
-        log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
-    }
+static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *packet) {
+    assert(pHndl != NULL);
+    assert(packet != NULL);
+
     if (pHndl->socket.fd < 0) {
         log_error("AEL send: closed socket");
         return eAEL_ERR_SOCKET;
@@ -34,12 +33,14 @@ eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet) {
         return eAEL_ERR_SEND;
     }
 
+    ael_packet_finalize(packet);
+
     eAEL_error status = eAEL_OK;
     for (size_t i = 0; i < pHndl->n_send_peers; i++) {
         const struct sockaddr_in *peer = &pHndl->send_peers[i];
         ssize_t tx_bytes =
-            sendto(pHndl->socket.fd, packet, sizeof(*packet), 0,
-                   (const struct sockaddr *) peer, sizeof(*peer));
+            sendto(pHndl->socket.fd, packet, sizeof(ael_packet_t), 0,
+                   (const struct sockaddr *) peer, sizeof(struct sockaddr_in));
 
         if (tx_bytes < 0) {
             log_error("AEL sendto peer %zu failed: %s", i, strerror(errno));
@@ -48,9 +49,9 @@ eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet) {
             }
             continue;
         }
-        if ((size_t) tx_bytes != sizeof(*packet)) {
+        if ((size_t) tx_bytes != sizeof(ael_packet_t)) {
             log_error("AEL short send to peer %zu: %zd of %zu bytes", i,
-                      tx_bytes, sizeof(*packet));
+                      tx_bytes, sizeof(ael_packet_t));
             if (status == eAEL_OK) {
                 status = eAEL_ERR_SIZE;
             }
@@ -72,15 +73,11 @@ eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
         return eAEL_ERR_EVENT;
     }
 
-    ael_packet_t *packet =
-        ael_packet_create_cli(id, pHndl->rank, pHndl->group_id, event_message);
-    if (!packet) {
-        return eAEL_ERR_MEM;
-    }
+    ael_packet_t packet;
+    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id,
+                     event_message);
 
-    eAEL_error status = ael_send_packet(pHndl, packet);
-    ael_packet_destroy(&packet);
-    return status;
+    return _ael_send(pHndl, &packet);
 }
 
 eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
@@ -96,21 +93,13 @@ eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
         return eAEL_ERR_EVENT;
     }
 
-    ael_packet_t *packet = ael_packet_create_checkpoint(
-        id, pHndl->rank, pHndl->group_id, version, n_regions, name);
-    if (!packet) {
-        return eAEL_ERR_MEM;
-    }
+    ael_packet_t packet;
+    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id,
+                     event_message);
+    _ael_packet_set_checkpoint(&packet.payload.checkpoint, version, n_regions,
+                               name);
 
-    if (event_message) {
-        snprintf(packet->event_message, sizeof(packet->event_message), "%s",
-                 event_message);
-        ael_packet_seal(packet);
-    }
-
-    eAEL_error status = ael_send_packet(pHndl, packet);
-    ael_packet_destroy(&packet);
-    return status;
+    return _ael_send(pHndl, &packet);
 }
 
 eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
@@ -125,19 +114,10 @@ eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
         return eAEL_ERR_EVENT;
     }
 
-    ael_packet_t *packet = ael_packet_create_region(
-        id, pHndl->rank, pHndl->group_id, region_id, size, name);
-    if (!packet) {
-        return eAEL_ERR_MEM;
-    }
+    ael_packet_t packet;
+    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id,
+                     event_message);
+    _ael_packet_set_region(&packet.payload.region, region_id, size, name);
 
-    if (event_message) {
-        snprintf(packet->event_message, sizeof(packet->event_message), "%s",
-                 event_message);
-        ael_packet_seal(packet);
-    }
-
-    eAEL_error status = ael_send_packet(pHndl, packet);
-    ael_packet_destroy(&packet);
-    return status;
+    return _ael_send(pHndl, &packet);
 }

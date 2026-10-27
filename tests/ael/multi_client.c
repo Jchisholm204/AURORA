@@ -57,7 +57,7 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
 static void *thread_func(void *arg);
 
 static test_params_t *ael_parse_params(int argc, char **argv) {
-    test_params_t *tp = malloc(sizeof(*tp));
+    test_params_t *tp = malloc(sizeof(test_params_t));
     if (!tp) {
         log_error("Failed to allocate AEL test parameters");
         return NULL;
@@ -123,15 +123,15 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
 
     switch (event) {
     case eAEL_EVENT_CLI_CONNECT:
-        snprintf(event_message, sizeof(event_message),
+        snprintf(event_message, AEL_EVENT_MSG_LEN,
                  "client %" PRIu64 " connect", rank);
         return ael_send_cli(pHndl, event, event_message);
     case eAEL_EVENT_CLI_FAILURE:
-        snprintf(event_message, sizeof(event_message),
+        snprintf(event_message, AEL_EVENT_MSG_LEN,
                  "client %" PRIu64 " failure", rank);
         return ael_send_cli(pHndl, event, event_message);
     case eAEL_EVENT_CLI_DISCONNECT:
-        snprintf(event_message, sizeof(event_message),
+        snprintf(event_message, AEL_EVENT_MSG_LEN,
                  "client %" PRIu64 " disconnect", rank);
         return ael_send_cli(pHndl, event, event_message);
     case eAEL_EVENT_CHECKPOINT_START:
@@ -144,7 +144,7 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
         return ael_send_checkpoint(pHndl, event, 2, 4, "restore-end", NULL);
     case eAEL_EVENT_REGION_ADD:
     case eAEL_EVENT_REGION_REMOVE:
-        snprintf(name, sizeof(name), "rgn-%lu", index);
+        snprintf(name, AEL_NAME_LEN, "rgn-%lu", index);
         return ael_send_region(pHndl, event, (int64_t) index,
                                AEL_SAMPLE_REGION_SIZE, name, NULL);
     default:
@@ -195,7 +195,7 @@ static void *thread_func(void *arg) {
     // Log completion and release the instance
     log_info("Thread completed: sent %lu packet(s) from rank %ld", sent,
              params->rank);
-    (void) ael_destroy_instance(&pHndl);
+    ael_destroy_instance(&pHndl);
     
     return NULL;
 }

@@ -45,7 +45,7 @@ struct aurora_external_logger_hndl
 #ifdef AEL_INTERNAL
 {
     uint64_t rank;
-    uint64_t group_id;
+    int64_t group_id;
     uint64_t group_size;
 
     size_t n_send_peers;
@@ -84,17 +84,19 @@ typedef struct aurora_external_logger_peer ael_peer_t;
  * @param max_recipients Maximum number of recipients that can be added
  * @return Handle, or NULL on allocation or socket setup failure
  */
-extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
+extern ael_hndl *ael_create_instance(uint64_t rank, int64_t group_id,
                                       uint64_t group_size, uint16_t local_port,
                                       size_t max_recipients);
 
 /**
  * @brief Close the socket and free the handle.
  *
- * @param ppHndl Handle pointer to destroy; set to NULL on success
- * @return eAEL_OK, or an eAEL_error code
+ * Logs an error if the handle pointer or the handle itself is NULL. On
+ * success the caller's handle is set to NULL.
+ *
+ * @param ppHndl Handle pointer to destroy; set to NULL
  */
-extern eAEL_error ael_destroy_instance(ael_hndl **ppHndl);
+extern void ael_destroy_instance(ael_hndl **ppHndl);
 
 /**
  * @brief Add a recipient peer for outbound packet delivery.
@@ -112,27 +114,13 @@ extern eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip,
                                     uint16_t port);
 
 /*
- * Packet transport
- */
-
-/**
- * @brief Send one sealed packet to every configured send peer.
- *
- * All configured peers are attempted before an error is returned.
- *
- * @param pHndl AEL handle
- * @param packet Packet to send
- * @return eAEL_OK, or an eAEL_error code
- */
-extern eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet);
-
-/*
  * Event send helpers
  *
- * Each helper builds a sealed packet using the handle's rank and group_id,
- * stamps the current timestamp, and sends it to every configured send peer.
- * The caller supplies the event code so the same helper covers every event
- * that shares a payload layout.
+ * Each helper builds a finalized packet on the stack using the handle's rank
+ * and group_id, stamps the current timestamp, and sends it to every configured
+ * send peer. Packet construction is private to AEL: callers cannot supply or
+ * modify raw packets. The caller supplies the event code so the same helper
+ * covers every event that shares a payload layout.
  */
 
 /**

@@ -25,7 +25,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
+ael_hndl *ael_create_instance(uint64_t rank, int64_t group_id,
                               uint64_t group_size, uint16_t local_port,
                               size_t max_recipients) {
     ael_hndl *pHndl = calloc(1, sizeof(ael_hndl));
@@ -43,7 +43,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->socket.port = local_port;
 
     if (max_recipients > 0) {
-        pHndl->send_peers = calloc(max_recipients, sizeof(*pHndl->send_peers));
+        pHndl->send_peers = calloc(max_recipients, sizeof(struct sockaddr_in));
         if (!pHndl->send_peers) {
             log_error("Bad Alloc??");
             ael_destroy_instance(&pHndl);
@@ -52,7 +52,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
         /* Zero-initialize the send_peers array */
         memset(pHndl->send_peers, 0,
-               max_recipients * sizeof(*pHndl->send_peers));
+               max_recipients * sizeof(struct sockaddr_in));
     }
 
     pHndl->socket.fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -64,7 +64,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
     int opt = 1;
     if (setsockopt(pHndl->socket.fd, SOL_SOCKET, SO_REUSEADDR, &opt,
-                   sizeof(opt)) < 0) {
+                   sizeof(int)) < 0) {
         log_warn("Failed to set SO_REUSEADDR: %s", strerror(errno));
     }
 
@@ -73,7 +73,8 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
         .sin_port = htons(local_port),
         .sin_addr = {.s_addr = htonl(INADDR_ANY)},
     };
-    if (bind(pHndl->socket.fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
+    if (bind(pHndl->socket.fd, (struct sockaddr *) &local,
+             sizeof(struct sockaddr_in)) < 0) {
         log_error("Failed to bind AEL UDP port %u: %s", (unsigned) local_port,
                   strerror(errno));
         ael_destroy_instance(&pHndl);
@@ -110,19 +111,21 @@ eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
     return eAEL_OK;
 }
 
-eAEL_error ael_destroy_instance(ael_hndl **ppHndl) {
+void ael_destroy_instance(ael_hndl **ppHndl) {
     if (!ppHndl) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return;
     }
     ael_hndl *pHndl = *ppHndl;
     if (!pHndl) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return;
     }
 
     if (pHndl->socket.fd >= 0) {
-        close(pHndl->socket.fd);
+        if (close(pHndl->socket.fd) != 0) {
+            log_error("Failed to close AEL UDP socket: %s", strerror(errno));
+        }
         pHndl->socket.fd = -1;
     }
     if (pHndl->send_peers) {
@@ -132,5 +135,4 @@ eAEL_error ael_destroy_instance(ael_hndl **ppHndl) {
 
     free(pHndl);
     *ppHndl = NULL;
-    return eAEL_OK;
 }

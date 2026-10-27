@@ -53,20 +53,17 @@ static inline const char *ael_event_name(eAEL_event code) {
 /**
  * @brief Select an event code by sequence index
  *
- * Cycles through every event code in the enum.
+ * Event codes are contiguous from zero to eAEL_N_EVENT, so the index maps
+ * straight onto the enum.
  *
  * @param index Sequence index
- * @return Event code for the given index
+ * @return Event code for the given index, or eAEL_N_EVENT if out of range
  */
 static inline eAEL_event ael_event_code(unsigned long index) {
-    static const eAEL_event codes[] = {
-        eAEL_EVENT_CLI_CONNECT,    eAEL_EVENT_CLI_FAILURE,
-        eAEL_EVENT_CLI_DISCONNECT, eAEL_EVENT_CHECKPOINT_START,
-        eAEL_EVENT_CHECKPOINT_END, eAEL_EVENT_RESTORE_START,
-        eAEL_EVENT_RESTORE_END,    eAEL_EVENT_REGION_ADD,
-        eAEL_EVENT_REGION_REMOVE,
-    };
-    return codes[index % (sizeof(codes) / sizeof(codes[0]))];
+    if (index >= (unsigned long) eAEL_N_EVENT) {
+        return eAEL_N_EVENT;
+    }
+    return (eAEL_event) index;
 }
 
 #endif

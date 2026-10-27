@@ -16,10 +16,13 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
 // CRC-32/ISO-HDLC. The CRC field itself is skipped, so the covered ranges
-// are [0, offsetof(crc)) and [offsetof(payload), sizeof(packet)).
+// are [0, offsetof(crc)) and [offsetof(payload), sizeof(ael_packet_t)).
 static uint32_t _ael_crc32_update(uint32_t crc, const void *data, size_t len) {
+    assert(data != NULL);
+
     const uint8_t *bytes = data;
 
     while (len > 0) {
@@ -35,24 +38,16 @@ static uint32_t _ael_crc32_update(uint32_t crc, const void *data, size_t len) {
 }
 
 uint32_t ael_packet_crc(const ael_packet_t *packet) {
-    if (!packet) {
-        return 0;
-    }
+    assert(packet != NULL);
 
     uint32_t crc = 0xFFFFFFFFu;
     crc = _ael_crc32_update(crc, (const uint8_t *) packet,
                             offsetof(ael_packet_t, crc));
     crc = _ael_crc32_update(
         crc, (const uint8_t *) packet + offsetof(ael_packet_t, payload),
-        sizeof(*packet) - offsetof(ael_packet_t, payload));
+        sizeof(ael_packet_t) - offsetof(ael_packet_t, payload));
 
     return crc ^ 0xFFFFFFFFu;
-}
-
-void ael_packet_seal(ael_packet_t *packet) {
-    if (packet) {
-        packet->crc = ael_packet_crc(packet);
-    }
 }
 
 bool ael_packet_verify(const ael_packet_t *packet) {

@@ -3,7 +3,7 @@
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @author DeepSeek-V4.1-Flash OpenCode Free
  * @author qwen 3.5 9b
- * @brief
+ * @brief AEL packet layout and private construction helpers.
  * @version 0.1
  * @date Created: 2026-10-26
  * @modified Last Modified: 2026-10-27
@@ -86,26 +86,20 @@ _Static_assert(sizeof(ael_packet_t) == 128, "unexpected packet size");
 #ifdef AEL_INTERNAL
 // Internal CRC helpers; not part of the public AEL packet API.
 extern uint32_t ael_packet_crc(const ael_packet_t *packet);
-extern void ael_packet_seal(ael_packet_t *packet);
+extern void ael_packet_finalize(ael_packet_t *packet);
 extern bool ael_packet_verify(const ael_packet_t *packet);
+
+// Internal packet construction helpers; not part of the public AEL API.
+// The caller owns the packet storage (normally a stack variable).
+extern void _ael_packet_init(ael_packet_t *packet, eAEL_event id,
+                             uint64_t rank, uint64_t group_id,
+                             const char *event_message);
+extern void _ael_packet_set_checkpoint(ael_packet_payld_checkpoint_t *payload,
+                                       int64_t version, size_t n_regions,
+                                       const char *name);
+extern void _ael_packet_set_region(ael_packet_payld_region_t *payload,
+                                   int64_t region_id, size_t size,
+                                   const char *name);
 #endif
-
-// Packet functions
-extern ael_packet_t *ael_packet_create_cli(eAEL_event id, uint64_t rank,
-                                           uint64_t group_id,
-                                           const char *event_message);
-
-extern ael_packet_t *ael_packet_create_checkpoint(eAEL_event id, uint64_t rank,
-                                                  uint64_t group_id,
-                                                  int64_t version,
-                                                  size_t n_regions,
-                                                  const char *name);
-
-extern ael_packet_t *ael_packet_create_region(eAEL_event id, uint64_t rank,
-                                              uint64_t group_id,
-                                              int64_t region_id, size_t size,
-                                              const char *name);
-
-extern void ael_packet_destroy(ael_packet_t **ppPacket);
 
 #endif

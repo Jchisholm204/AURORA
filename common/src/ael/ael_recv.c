@@ -56,7 +56,7 @@ eAEL_error ael_recv_packet(ael_hndl *pHndl, ael_packet_t *packet,
         return eAEL_ERR_TIMEOUT;
     }
 
-    ssize_t rx_bytes = recvfrom(pHndl->socket.fd, packet, sizeof(*packet),
+    ssize_t rx_bytes = recvfrom(pHndl->socket.fd, packet, sizeof(ael_packet_t),
                                 MSG_TRUNC, NULL, NULL);
     if (rx_bytes < 0) {
         if (errno == EINTR) {
@@ -69,9 +69,9 @@ eAEL_error ael_recv_packet(ael_hndl *pHndl, ael_packet_t *packet,
         log_error("AEL recvfrom failed: %s", strerror(errno));
         return eAEL_ERR_RECV;
     }
-    if ((size_t) rx_bytes != sizeof(*packet)) {
+    if ((size_t) rx_bytes != sizeof(ael_packet_t)) {
         log_warn("Discarded AEL datagram with invalid size: %zd (expected %zu)",
-                 rx_bytes, sizeof(*packet));
+                 rx_bytes, sizeof(ael_packet_t));
         return eAEL_ERR_SIZE;
     }
     if (!ael_packet_verify(packet)) {
