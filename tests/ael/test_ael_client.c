@@ -1,7 +1,8 @@
 /**
  * @file test_ael_client.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @author DeepSeek V4.1 Flash Free
+ * @author DeepSeek-V4.1-Flash OpenCode Free
+ * @author qwen 3.5 9b
  * @brief AEL UDP client example.
  *
  * Sends ael_packet_t datagrams to the AEL UDP server through the public AEL

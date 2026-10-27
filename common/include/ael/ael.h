@@ -1,7 +1,8 @@
 /**
  * @file ael.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @author DeepSeek V4.1 Flash Free
+ * @author DeepSeek-V4.1-Flash OpenCode Free
+ * @author qwen 3.5 9b
  * @brief AURORA External Logger interface
  * @version 0.1
  * @date Created: 2026-10-26
@@ -55,23 +56,14 @@ struct aurora_external_logger_hndl
 #endif
 ;
 
-typedef enum aurora_external_logger_error_e eAEL_error;
-typedef struct aurora_external_logger_hndl ael_hndl;
-
-/**
- * @brief A configured AEL send destination.
- *
- * The IP string is only read while ael_create_instance() is called.
- */
 struct aurora_external_logger_peer {
     const char *ip;
-    uint16_t port; /**< UDP port in host byte order */
+    uint16_t port;
 };
-typedef struct aurora_external_logger_peer ael_peer_t;
 
-/*
- * Handle lifecycle
- */
+typedef enum aurora_external_logger_error_e eAEL_error;
+typedef struct aurora_external_logger_hndl ael_hndl;
+typedef struct aurora_external_logger_peer ael_peer_t;
 
 /**
  * @brief Allocate an AEL handle, open its UDP socket, and bind it locally.
@@ -94,15 +86,7 @@ extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
                                      size_t n_send_peers);
 
 /**
- * @brief Close the UDP socket without freeing the handle.
- *
- * @param pHndl AEL handle
- * @return eAEL_OK, or an eAEL_error code
- */
-extern eAEL_error ael_disconnect_instance(ael_hndl *pHndl);
-
-/**
- * @brief Close the socket, if needed, and free the handle.
+ * @brief Close the socket and free the handle.
  *
  * @param ppHndl Handle pointer to destroy; set to NULL on success
  * @return eAEL_OK, or an eAEL_error code
@@ -122,8 +106,7 @@ extern eAEL_error ael_destroy_instance(ael_hndl **ppHndl);
  * @param packet Packet to send
  * @return eAEL_OK, or an eAEL_error code
  */
-extern eAEL_error ael_send_packet(ael_hndl *pHndl,
-                                  const ael_packet_t *packet);
+extern eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet);
 
 /**
  * @brief Receive one valid packet from any sender.

@@ -1,7 +1,8 @@
 /**
  * @file ael_packet_crc.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @author DeepSeek V4.1 Flash Free
+ * @author DeepSeek-V4.1-Flash OpenCode Free
+ * @author qwen 3.5 9b
  * @brief CRC helpers for AEL packets.
  * @version 0.1
  * @date Created: 2026-10-26

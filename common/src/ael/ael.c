@@ -1,7 +1,8 @@
 /**
  * @file ael.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @author DeepSeek V4.1 Flash Free
+ * @author DeepSeek-V4.1-Flash OpenCode Free
+ * @author qwen 3.5 9b
  * @brief AURORA External Logger endpoint implementation.
  * @version 0.1
  * @date Created: 2026-10-26
@@ -23,25 +24,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-static void _ael_close_socket(ael_hndl *pHndl) {
-    if (!pHndl || pHndl->socket.fd < 0) {
-        return;
-    }
-
-    close(pHndl->socket.fd);
-    pHndl->socket.fd = -1;
-}
-
-static void _ael_free_handle(ael_hndl *pHndl) {
-    if (!pHndl) {
-        return;
-    }
-
-    _ael_close_socket(pHndl);
-    free(pHndl->send_peers);
-    free(pHndl);
-}
 
 ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
                               uint64_t group_size, uint16_t local_port,
@@ -69,7 +51,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
         pHndl->send_peers = calloc(n_send_peers, sizeof(*pHndl->send_peers));
         if (!pHndl->send_peers) {
             log_error("Bad Alloc??");
-            _ael_free_handle(pHndl);
+            ael_destroy_instance(&pHndl);
             return NULL;
         }
 
@@ -79,7 +61,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
             if (!peer->ip || peer->port == 0) {
                 log_error("Invalid AEL send peer %zu", i);
-                _ael_free_handle(pHndl);
+                ael_destroy_instance(&pHndl);
                 return NULL;
             }
 
@@ -87,7 +69,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
             addr->sin_port = htons(peer->port);
             if (inet_pton(AF_INET, peer->ip, &addr->sin_addr) != 1) {
                 log_error("Invalid AEL send peer IP '%s'", peer->ip);
-                _ael_free_handle(pHndl);
+                ael_destroy_instance(&pHndl);
                 return NULL;
             }
         }
@@ -96,7 +78,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->socket.fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (pHndl->socket.fd < 0) {
         log_error("Failed to create AEL UDP socket: %s", strerror(errno));
-        _ael_free_handle(pHndl);
+        ael_destroy_instance(&pHndl);
         return NULL;
     }
 
@@ -114,37 +96,45 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     if (bind(pHndl->socket.fd, (struct sockaddr *) &local, sizeof(local)) < 0) {
         log_error("Failed to bind AEL UDP port %u: %s", (unsigned) local_port,
                   strerror(errno));
-        _ael_free_handle(pHndl);
+        ael_destroy_instance(&pHndl);
         return NULL;
     }
 
     return pHndl;
 }
 
-eAEL_error ael_disconnect_instance(ael_hndl *pHndl) {
-    if (!pHndl) {
-        return eAEL_ERR_NULL;
-    }
-
-    _ael_close_socket(pHndl);
-    return eAEL_OK;
-}
-
 eAEL_error ael_destroy_instance(ael_hndl **ppHndl) {
     if (!ppHndl) {
+        log_error("NULL Parameter");
+        return eAEL_ERR_NULL;
+    }
+    ael_hndl *pHndl = *ppHndl;
+    if (!pHndl) {
+        log_error("NULL Parameter");
         return eAEL_ERR_NULL;
     }
 
-    _ael_free_handle(*ppHndl);
+    if (pHndl->socket.fd >= 0) {
+        close(pHndl->socket.fd);
+        pHndl->socket.fd = -1;
+    }
+    if (pHndl->send_peers) {
+        free(pHndl->send_peers);
+        pHndl->send_peers = NULL;
+    }
+
+    free(pHndl);
     *ppHndl = NULL;
     return eAEL_OK;
 }
 
 eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet) {
     if (!pHndl || !packet) {
+        log_error("NULL Parameter");
         return eAEL_ERR_NULL;
     }
     if (pHndl->socket.fd < 0) {
+        log_error("AEL send: closed socket");
         return eAEL_ERR_SOCKET;
     }
     if (pHndl->n_send_peers == 0 || !pHndl->send_peers) {
@@ -181,9 +171,11 @@ eAEL_error ael_send_packet(ael_hndl *pHndl, const ael_packet_t *packet) {
 eAEL_error ael_recv_packet(ael_hndl *pHndl, ael_packet_t *packet,
                            int timeout_ms) {
     if (!pHndl || !packet) {
+        log_error("NULL Parameter");
         return eAEL_ERR_NULL;
     }
     if (pHndl->socket.fd < 0) {
+        log_error("AEL recv: closed socket");
         return eAEL_ERR_SOCKET;
     }
 
@@ -208,15 +200,15 @@ eAEL_error ael_recv_packet(ael_hndl *pHndl, ael_packet_t *packet,
         return eAEL_ERR_RECV;
     }
     if (!(pfd.revents & POLLIN)) {
-        log_error("AEL poll returned unexpected events 0x%x",
-                  (unsigned) pfd.revents);
-        return eAEL_ERR_RECV;
+        log_info("AEL recv: no data available");
+        return eAEL_ERR_TIMEOUT;
     }
 
     ssize_t rx_bytes = recvfrom(pHndl->socket.fd, packet, sizeof(*packet),
                                 MSG_TRUNC, NULL, NULL);
     if (rx_bytes < 0) {
         if (errno == EINTR) {
+            log_debug("AEL recv: interrupted");
             return eAEL_ERR_INTR;
         }
         if (errno == EAGAIN || errno == EWOULDBLOCK) {

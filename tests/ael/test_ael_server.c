@@ -1,7 +1,8 @@
 /**
  * @file test_ael_server.c
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
- * @author DeepSeek V4.1 Flash Free
+ * @author DeepSeek-V4.1-Flash OpenCode Free
+ * @author qwen 3.5 9b
  * @brief AEL UDP server example.
  *
  * Creates an AEL handle bound to PORT and logs every valid ael_packet_t

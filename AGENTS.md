@@ -55,12 +55,16 @@ any `#define`, `#include`, or include guard:
 - `@file` is the file name; `@brief` is one line describing the file's purpose;
   `@version` starts at `0.1` for new files; `@date Created:` is the creation date
   and `@modified Last Modified:` is today's date when editing.
-- `@author` is fixed as `Jacob Chisholm (https://Jchisholm204.github.io)` and
-  should include any contributing models on a new line, e.g.:
+- `@author` lists human authors first (Jacob Chisholm as default for new files),
+  then models on subsequent lines, e.g.:
   ```c
   * @author Jacob Chisholm (https://Jchisholm204.github.io)
-  * @author DeepSeek R1-7B
+  * @author DeepSeek-R1-7B
   ```
+  **Important rules:**
+  - Human authors must come above model authors — never list models first
+  - Models **append** after all human authors — never replace them
+  - Use standardized model labels: `DeepSeek-R1-7B`, not informal names like "V4.1 Flash Free"
   `@copyright` as `Copyright (c) 2026`.
 - Exempt: vendored sources under `common/log.c/` and `common/mdns/`. Do not add
   headers to them or reformat them.
