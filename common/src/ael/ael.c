@@ -25,6 +25,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+eAEL_error _ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port);
+
 ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
                               uint64_t group_size, uint16_t local_port,
                               const ael_peer_t *send_peers,
@@ -44,6 +46,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->group_id = group_id;
     pHndl->group_size = group_size;
     pHndl->n_send_peers = n_send_peers;
+    pHndl->recipient_count = 0;
     pHndl->socket.fd = -1;
     pHndl->socket.port = local_port;
 
@@ -57,7 +60,6 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
         for (size_t i = 0; i < n_send_peers; i++) {
             const ael_peer_t *peer = &send_peers[i];
-            struct sockaddr_in *addr = &pHndl->send_peers[i];
 
             if (!peer->ip || peer->port == 0) {
                 log_error("Invalid AEL send peer %zu", i);
@@ -65,10 +67,8 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
                 return NULL;
             }
 
-            addr->sin_family = AF_INET;
-            addr->sin_port = htons(peer->port);
-            if (inet_pton(AF_INET, peer->ip, &addr->sin_addr) != 1) {
-                log_error("Invalid AEL send peer IP '%s'", peer->ip);
+            eAEL_error status = _ael_add_recipient(pHndl, peer->ip, peer->port);
+            if (status != eAEL_OK) {
                 ael_destroy_instance(&pHndl);
                 return NULL;
             }
@@ -101,6 +101,39 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     }
 
     return pHndl;
+}
+
+/**
+ * @brief Validate a single recipient peer and populate its sockaddr_in.
+ *
+ * Performs null checking, validates the IP address and port, then stores the
+ * populated sockaddr_in structure in pHndl->send_peers[pHndl->recipient_count].
+ * This function exists to encapsulate per-peer validation logic that is called
+ * for each entry in the send_peers array during instance creation.
+ *
+ * @param pHndl AEL handle with socket already created and bound
+ * @param ip Recipient peer IP address (IPv4 dotted-decimal string)
+ * @param port Recipient peer port in host byte order
+ * @return eAEL_OK on success, or appropriate error code on failure
+ */
+eAEL_error _ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
+    if (!pHndl || !ip || port == 0) {
+        log_error("NULL Parameter");
+        return eAEL_ERR_NULL;
+    }
+
+    struct sockaddr_in addr = {.sin_family = AF_INET};
+    int rc = inet_pton(AF_INET, ip, &addr.sin_addr);
+    if (rc != 1) {
+        log_error("Invalid AEL peer IP '%s'", ip);
+        return eAEL_ERR_SOCKET;
+    }
+
+    addr.sin_port = htons(port);
+    pHndl->send_peers[pHndl->recipient_count++] =
+        addr; // Store populated address and increment counter
+
+    return eAEL_OK;
 }
 
 eAEL_error ael_destroy_instance(ael_hndl **ppHndl) {

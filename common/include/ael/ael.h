@@ -46,6 +46,7 @@ struct aurora_external_logger_hndl
     uint64_t group_size;
 
     size_t n_send_peers;
+    size_t recipient_count;
     struct sockaddr_in *send_peers;
 
     struct aurora_external_logger_socket {
