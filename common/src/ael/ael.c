@@ -6,7 +6,7 @@
  * @brief AURORA External Logger endpoint implementation.
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
@@ -25,17 +25,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-eAEL_error _ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port);
-
 ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
                               uint64_t group_size, uint16_t local_port,
-                              const ael_peer_t *send_peers,
-                              size_t n_send_peers) {
-    if (n_send_peers > 0 && !send_peers) {
-        log_error("AEL send peer list is NULL");
-        return NULL;
-    }
-
+                              size_t max_recipients) {
     ael_hndl *pHndl = calloc(1, sizeof(ael_hndl));
     if (!pHndl) {
         log_error("Bad Alloc??");
@@ -45,34 +37,22 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     pHndl->rank = rank;
     pHndl->group_id = group_id;
     pHndl->group_size = group_size;
-    pHndl->n_send_peers = n_send_peers;
+    pHndl->n_send_peers = max_recipients;
     pHndl->recipient_count = 0;
     pHndl->socket.fd = -1;
     pHndl->socket.port = local_port;
 
-    if (n_send_peers > 0) {
-        pHndl->send_peers = calloc(n_send_peers, sizeof(*pHndl->send_peers));
+    if (max_recipients > 0) {
+        pHndl->send_peers = calloc(max_recipients, sizeof(*pHndl->send_peers));
         if (!pHndl->send_peers) {
             log_error("Bad Alloc??");
             ael_destroy_instance(&pHndl);
             return NULL;
         }
 
-        for (size_t i = 0; i < n_send_peers; i++) {
-            const ael_peer_t *peer = &send_peers[i];
-
-            if (!peer->ip || peer->port == 0) {
-                log_error("Invalid AEL send peer %zu", i);
-                ael_destroy_instance(&pHndl);
-                return NULL;
-            }
-
-            eAEL_error status = _ael_add_recipient(pHndl, peer->ip, peer->port);
-            if (status != eAEL_OK) {
-                ael_destroy_instance(&pHndl);
-                return NULL;
-            }
-        }
+        /* Zero-initialize the send_peers array */
+        memset(pHndl->send_peers, 0,
+               max_recipients * sizeof(*pHndl->send_peers));
     }
 
     pHndl->socket.fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -103,35 +83,29 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
     return pHndl;
 }
 
-/**
- * @brief Validate a single recipient peer and populate its sockaddr_in.
- *
- * Performs null checking, validates the IP address and port, then stores the
- * populated sockaddr_in structure in pHndl->send_peers[pHndl->recipient_count].
- * This function exists to encapsulate per-peer validation logic that is called
- * for each entry in the send_peers array during instance creation.
- *
- * @param pHndl AEL handle with socket already created and bound
- * @param ip Recipient peer IP address (IPv4 dotted-decimal string)
- * @param port Recipient peer port in host byte order
- * @return eAEL_OK on success, or appropriate error code on failure
- */
-eAEL_error _ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
+eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
+    /* Validate handle and parameters */
     if (!pHndl || !ip || port == 0) {
         log_error("NULL Parameter");
         return eAEL_ERR_NULL;
     }
 
+    /* Check max recipient count limit */
+    if (pHndl->recipient_count >= pHndl->n_send_peers) {
+        log_error("Max recipients limit reached");
+        return eAEL_ERR_COUNT;
+    }
+
+    /* Validate IP address format */
     struct sockaddr_in addr = {.sin_family = AF_INET};
     int rc = inet_pton(AF_INET, ip, &addr.sin_addr);
     if (rc != 1) {
         log_error("Invalid AEL peer IP '%s'", ip);
-        return eAEL_ERR_SOCKET;
+        return eAEL_ERR_IP;
     }
 
     addr.sin_port = htons(port);
-    pHndl->send_peers[pHndl->recipient_count++] =
-        addr; // Store populated address and increment counter
+    pHndl->send_peers[pHndl->recipient_count++] = addr;
 
     return eAEL_OK;
 }

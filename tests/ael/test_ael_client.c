@@ -12,7 +12,7 @@
  *
  * @version 0.1
  * @date Created: 2026-10-25
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
@@ -46,12 +46,18 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ael_peer_t peer = {
-        .ip = tp->server_ip,
-        .port = PORT,
-    };
-    ael_hndl *pHndl = ael_create_instance(tp->rank, 0, 1, 0, &peer, 1);
+    /* Create instance with max_recipients=1 */
+    ael_hndl *pHndl = ael_create_instance(tp->rank, 0, 1, 0, 1);
     if (!pHndl) {
+        free(tp);
+        return 1;
+    }
+
+    /* Add the server as a recipient peer */
+    eAEL_error status = ael_add_recipient(pHndl, tp->server_ip, PORT);
+    if (status != eAEL_OK) {
+        log_error("Failed to add recipient: eAEL_error=%d", (int) status);
+        ael_destroy_instance(&pHndl);
         free(tp);
         return 1;
     }

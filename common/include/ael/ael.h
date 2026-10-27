@@ -6,7 +6,7 @@
  * @brief AURORA External Logger interface
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
@@ -35,6 +35,8 @@ enum aurora_external_logger_error_e {
     eAEL_ERR_SIZE,
     eAEL_ERR_EVENT,
     eAEL_ERR_CRC,
+    eAEL_ERR_COUNT,
+    eAEL_ERR_IP,
     eAEL_N_ERR,
 };
 
@@ -71,20 +73,19 @@ typedef struct aurora_external_logger_peer ael_peer_t;
  *
  * The socket is bound to INADDR_ANY on local_port and is left unconnected so
  * that ael_recv_packet() accepts datagrams from any sender. The send_peers
- * array and its IP strings are only read during this call.
+ * array is allocated with capacity for max_recipients; recipients are added
+ * via ael_add_recipient().
  *
  * @param rank Rank of the local process
  * @param group_id Group identifier
  * @param group_size Number of processes in the group
  * @param local_port Local UDP port in host byte order
- * @param send_peers Peers that receive every sent packet
- * @param n_send_peers Number of configured send peers
+ * @param max_recipients Maximum number of recipients that can be added
  * @return Handle, or NULL on allocation or socket setup failure
  */
 extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
-                                     uint64_t group_size, uint16_t local_port,
-                                     const ael_peer_t *send_peers,
-                                     size_t n_send_peers);
+                                      uint64_t group_size, uint16_t local_port,
+                                      size_t max_recipients);
 
 /**
  * @brief Close the socket and free the handle.
@@ -93,6 +94,21 @@ extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
  * @return eAEL_OK, or an eAEL_error code
  */
 extern eAEL_error ael_destroy_instance(ael_hndl **ppHndl);
+
+/**
+ * @brief Add a recipient peer for outbound packet delivery.
+ *
+ * Must be called after ael_create_instance() and before any send operations.
+ * The handle must have been created with a max_recipients > 0, and the call
+ * will fail if the maximum recipient count has been reached.
+ *
+ * @param pHndl AEL handle
+ * @param ip Recipient peer IP address (IPv4 dotted-decimal string)
+ * @param port Recipient peer port in host byte order
+ * @return eAEL_OK on success, or an eAEL_error code on failure
+ */
+extern eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip,
+                                    uint16_t port);
 
 /*
  * Packet transport

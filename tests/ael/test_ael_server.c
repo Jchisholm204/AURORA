@@ -10,7 +10,7 @@
  *
  * @version 0.1
  * @date Created: 2026-10-25
- * @modified Last Modified: 2026-10-26
+ * @modified Last Modified: 2026-10-27
  *
  * @copyright Copyright (c) 2026
  */
@@ -31,7 +31,7 @@ static void _ael_signal_handler(int signal) {
 static void _ael_log_packet(const ael_packet_t *packet);
 
 int main(void) {
-    // Do not use SA_RESTART so poll wakes up on Ctrl+C
+    /* Do not use SA_RESTART so poll wakes up on Ctrl+C */
     struct sigaction sa = {
         .sa_handler = _ael_signal_handler,
     };
@@ -40,7 +40,8 @@ int main(void) {
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    ael_hndl *pHndl = ael_create_instance(0, 0, 1, PORT, NULL, 0);
+    /* Create instance with max_recipients=0 (no outbound sends) */
+    ael_hndl *pHndl = ael_create_instance(0, 0, 1, PORT, 0);
     if (!pHndl) {
         return 1;
     }
