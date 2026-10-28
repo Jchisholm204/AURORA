@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
              tp->packet_count, tp->server_ip, PORT, tp->rank);
 
     for (unsigned long i = 0; i < tp->packet_count; i++) {
-        eAEL_event event = ael_event_code(i);
+        eAEL_event event = ael_event_code(i % (unsigned long) eAEL_N_EVENT);
         eAEL_error tx_status = _ael_send_event(pHndl, tp->rank, event, i);
         if (tx_status != eAEL_OK) {
             log_error("Failed to send packet %lu (eAEL_error=%d)", i,
