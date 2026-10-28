@@ -6,7 +6,7 @@
  * @brief AEL packet layout and private construction helpers.
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-27
+ * @modified Last Modified: 2026-10-28
  *
  * @copyright Copyright (c) 2026
  */
@@ -34,16 +34,16 @@ enum aurora_external_logger_event_e {
     eAEL_N_EVENT
 };
 
-struct aurora_external_logger_payload_checkpoint {
-    int64_t version;
-    size_t n_regions;
-    char name[AEL_NAME_LEN];
-};
-
-struct aurora_external_logger_payload_region {
-    int64_t id;
-    size_t size;
-    char name[AEL_NAME_LEN];
+/**
+ * @brief Uniform AEL event payload.
+ *
+ * Every event uses the same three slots, so the wire layout, the decoded
+ * message and any serialiser share one definition and one field order.
+ */
+struct aurora_external_logger_payload {
+    int64_t id_version;      /* id of the event (region id / checkpoint version) */
+    uint64_t size;           /* size of the event (region bytes / region count) */
+    char name[AEL_NAME_LEN]; /* name of the event (region name / checkpoint name) */
 };
 
 struct aurora_external_logger_packet {
@@ -59,21 +59,16 @@ struct aurora_external_logger_packet {
 #endif
         uint32_t __reserved;
     };
-    union {
-        // Shared by CHECKPOINT_* and RESTORE_* events
-        struct aurora_external_logger_payload_checkpoint checkpoint;
-        struct aurora_external_logger_payload_region region;
-    } payload;
+    struct aurora_external_logger_payload payload;
     char event_message[AEL_EVENT_MSG_LEN];
 };
 
 typedef enum aurora_external_logger_event_e eAEL_event;
-typedef struct aurora_external_logger_payload_checkpoint
-    ael_packet_payld_checkpoint_t;
+typedef struct aurora_external_logger_payload ael_payload_t;
 typedef struct aurora_external_logger_packet ael_packet_t;
-typedef struct aurora_external_logger_payload_region ael_packet_payld_region_t;
 
 _Static_assert(sizeof(eAEL_event) == 4, "unexpected eAEL_event size");
+_Static_assert(sizeof(ael_payload_t) == 32, "unexpected payload size");
 #ifdef AEL_INTERNAL
 _Static_assert(offsetof(ael_packet_t, crc) == 28, "unexpected crc offset");
 #endif
@@ -91,15 +86,10 @@ extern bool ael_packet_verify(const ael_packet_t *packet);
 
 // Internal packet construction helpers; not part of the public AEL API.
 // The caller owns the packet storage (normally a stack variable).
-extern void _ael_packet_init(ael_packet_t *packet, eAEL_event id,
-                             uint64_t rank, uint64_t group_id,
-                             const char *event_message);
-extern void _ael_packet_set_checkpoint(ael_packet_payld_checkpoint_t *payload,
-                                       int64_t version, size_t n_regions,
-                                       const char *name);
-extern void _ael_packet_set_region(ael_packet_payld_region_t *payload,
-                                   int64_t region_id, size_t size,
-                                   const char *name);
+extern void _ael_packet_init(ael_packet_t *packet, eAEL_event id, uint64_t rank,
+                             uint64_t group_id, const char *event_message);
+extern void _ael_packet_set_payload(ael_payload_t *payload, int64_t id_version,
+                                    uint64_t size, const char *name);
 #endif
 
 #endif

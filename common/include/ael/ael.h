@@ -6,7 +6,7 @@
  * @brief AURORA External Logger interface
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-27
+ * @modified Last Modified: 2026-10-28
  *
  * @copyright Copyright (c) 2026
  */
@@ -63,10 +63,33 @@ typedef enum aurora_external_logger_error_e eAEL_error;
 typedef struct aurora_external_logger_hndl ael_hndl;
 
 /**
+ * @brief Decoded AEL message returned by ael_recv_message().
+ *
+ * The datagram is validated and decoded before this record is written: payload
+ * slots not used by the event are zero, and name and event_message are always
+ * NUL-terminated. The payload uses the uniform AEL slots, so a consumer can
+ * serialise every event through one code path with a stable field order.
+ */
+struct aurora_external_logger_message {
+    uint64_t rank;
+    uint64_t group_id;
+    uint64_t timestamp_ns;
+    eAEL_event event;
+
+    uint32_t from_ip;   /* Sender address, host byte order */
+    uint16_t from_port; /* Sender port, host byte order */
+
+    ael_payload_t payload;
+    char event_message[AEL_EVENT_MSG_LEN];
+};
+
+typedef struct aurora_external_logger_message ael_message_t;
+
+/**
  * @brief Allocate an AEL handle, open its UDP socket, and bind it locally.
  *
  * The socket is bound to INADDR_ANY on local_port and is left unconnected so
- * that ael_recv_packet() accepts datagrams from any sender. The send_peers
+ * that ael_recv_message() accepts datagrams from any sender. The send_peers
  * array is allocated with capacity for max_recipients; recipients are added
  * via ael_add_recipient().
  *
@@ -163,19 +186,21 @@ extern eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id,
                                   const char *event_message);
 
 /**
- * @brief Receive one valid packet from any sender.
+ * @brief Receive and decode one valid AEL message from any sender.
  *
- * Validates the datagram size, CRC, and event code.
+ * The datagram size, CRC, and event code are validated before the record is
+ * decoded. *pMsg is only written when eAEL_OK is returned; on any other return
+ * it is left untouched.
  *
  * @param pHndl AEL handle
- * @param packet Output packet
+ * @param pMsg Decoded message output
  * @param timeout_ms Receive timeout in milliseconds:
  *                   negative blocks indefinitely,
  *                   zero polls without blocking,
  *                   positive waits up to the given time
  * @return eAEL_OK, or an eAEL_error code
  */
-extern eAEL_error ael_recv_packet(ael_hndl *pHndl, ael_packet_t *packet,
-                                  int timeout_ms);
+extern eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
+                                   int timeout_ms);
 
 #endif

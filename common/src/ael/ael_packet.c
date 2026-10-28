@@ -6,7 +6,7 @@
  * @brief AEL packet construction and finalization helpers.
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-27
+ * @modified Last Modified: 2026-10-28
  *
  * @copyright Copyright (c) 2026
  */
@@ -50,24 +50,11 @@ void ael_packet_finalize(ael_packet_t *packet) {
     }
 }
 
-void _ael_packet_set_checkpoint(ael_packet_payld_checkpoint_t *payload,
-                                int64_t version, size_t n_regions,
-                                const char *name) {
+void _ael_packet_set_payload(ael_payload_t *payload, int64_t id_version,
+                             uint64_t size, const char *name) {
     assert(payload != NULL);
 
-    payload->version = version;
-    payload->n_regions = n_regions;
-    if (name) {
-        (void) snprintf(payload->name, AEL_NAME_LEN, "%s", name);
-    }
-}
-
-void _ael_packet_set_region(ael_packet_payld_region_t *payload,
-                            int64_t region_id, size_t size,
-                            const char *name) {
-    assert(payload != NULL);
-
-    payload->id = region_id;
+    payload->id_version = id_version;
     payload->size = size;
     if (name) {
         (void) snprintf(payload->name, AEL_NAME_LEN, "%s", name);
