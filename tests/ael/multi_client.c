@@ -15,6 +15,9 @@
  *   [num_messages]   - Packets sent per thread (default: AEL_DEFAULT_PACKETS)
  *   [server_port]    - Server UDP port in host byte order, 1..65535 (default: PORT)
  *
+ * Running with no arguments (or -h/--help) prints the usage message. Arguments
+ * are positional and may be omitted from the right; omitted ones use defaults.
+ *
  * Example: ./multi_client 127.0.0.1 4 64 8335
  *   - Creates 4 threads with ranks 0-3, each sending to server on port 8335
  *   - Each rank sends 64 events (cycling through all event types)
@@ -66,6 +69,7 @@ static void _ael_usage(const char *prog) {
     fprintf(stderr, "  - num_threads: Number of threads, 1..%d (default: 4)\n", AEL_MAX_THREADS);
     fprintf(stderr, "  - num_messages: Packets per thread (default: %d)\n", AEL_DEFAULT_PACKETS);
     fprintf(stderr, "  - server_port: Server UDP port in host byte order, 1..65535 (default: %d)\n", PORT);
+    fprintf(stderr, "Run with no arguments, -h, or --help to print this message.\n");
 }
 
 static test_params_t *ael_parse_params(int argc, char **argv) {
@@ -203,7 +207,8 @@ static void *thread_func(void *arg) {
 
     unsigned long sent = 0;
     for (unsigned long i = 0; i < tp->packet_count; i++) {
-        eAEL_event event = ael_event_code(i);
+        // Cycle through all event types, wrapping after the last one
+        eAEL_event event = ael_event_code(i % (unsigned long) eAEL_N_EVENT);
         eAEL_error tx_status =
             _ael_send_event(pHndl, (uint64_t) params->rank, event, i);
         if (tx_status != eAEL_OK) {
@@ -226,8 +231,9 @@ static void *thread_func(void *arg) {
 }
 
 int main(int argc, char **argv) {
-    // Support -h/--help without requiring any positional arguments
-    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+    // No arguments, -h, or --help: print usage instead of running
+    if (argc < 2 || strcmp(argv[1], "-h") == 0 ||
+        strcmp(argv[1], "--help") == 0) {
         _ael_usage(argv[0]);
         return 0;
     }
