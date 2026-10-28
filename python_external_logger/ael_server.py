@@ -251,6 +251,18 @@ class AELServer:
         if self.sock:
             self.sock.close()
             self.sock = None
+    
+    def __enter__(self) -> 'AELServer':
+        """Enter context - initialize socket if not already done."""
+        if self.sock is None:
+            self.open()
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context - cleanup socket regardless of exception."""
+        self.close()
+        # Return False to propagate exceptions normally (don't suppress)
+        return False
 
 
 __all__ = ['AELServer', 'AELFatalError', 'AELInterruptedError']
