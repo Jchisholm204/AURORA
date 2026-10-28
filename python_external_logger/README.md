@@ -13,9 +13,9 @@ This is a receive-only client interface for AURORA's Asynchronous External Logge
 ### Core Library (`ael.py`)
 **Single source of truth** for all AEL packet logic:
 - `AelEvent` enum (mirrors C `eAEL_event`)
-- `decode(data, addr)` - decodes 128-byte packets with CRC validation
+- `AELPacket.decode(data, addr)` - decodes 128-byte packets with CRC validation
 - `AelMessage` dataclass representing decoded events
-- `packet_to_bytes(...)` - constructs valid packets for sending
+- `AELPacket.encode(...)` - constructs valid packets for sending
 
 ### Receiver (`ael_receiver.py`)
 UDP receiver that:
@@ -32,8 +32,8 @@ CLI tool to send synthetic packets for testing.
 ### Start Receiver
 ```bash
 python3 ael_receiver.py --port 8334
-# Or in daemon mode (Unix/Linux):
-python3 ael_receiver.py --port 8334 --daemon
+# Or use a different port:
+python3 ael_receiver.py --port 8335
 ```
 
 ### Send Test Packets
@@ -50,13 +50,13 @@ REGION_ADD, REGION_REMOVE
 
 ### Python API Usage
 ```python
-from ael import decode, packet_to_bytes, AelEvent
+from ael import AELPacket, AelEvent, AelMessage
 
 # Decode incoming packet:
-msg = decode(data, addr)  # data is 128 bytes, addr is (host, port)
+msg = AELPacket.decode(data, addr)  # data is 128 bytes, addr is (host, port)
 
 # Send synthetic packet:
-packet = packet_to_bytes(
+packet = AELPacket.encode(
     event_code=AelEvent.CHECKPOINT_END.value,
     rank=3,
     timestamp_ns=1700000000000000000,

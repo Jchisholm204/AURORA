@@ -1,3 +1,4 @@
+# This file contains AEL UDP server implementation.
 #!/usr/bin/env python3
 """
 @file ael_server.py
@@ -22,6 +23,10 @@ Usage pattern:
   finally:
       server.close()
 
+@date Created: 2026-10-28
+@modified Last Modified: 2026-10-28
+
+@copyright Copyright (c) 2026
 @version 0.5
 @author qwen 3.5 9b
 """
@@ -45,11 +50,6 @@ class AELInterruptedError(Exception):
     pass
 
 
-class TimeoutError(TimeoutError):
-    """Raised when receive times out (non-fatal, retryable)."""
-    pass
-
-
 class AELServer:
     """UDP server that receives and decodes AEL packets.
     
@@ -68,15 +68,13 @@ class AELServer:
         stopped: Signal flag for graceful shutdown.
     
     Usage:
-        server = AELServer(port=8334)
-        
         # Option 1: Use with context manager (recommended)
         async with server:
             while True:
                 msg = await server.recv_async(timeout=-1)
                 print(msg.event.name)
         
-        # Option 2: Manual lifecycle
+        # Option 2: Manual lifecycle (use TimeoutError for timeout handling)
         server = AELServer(port=8334)
         server.open()
         try:
@@ -177,7 +175,7 @@ class AELServer:
                     raise AELFatalError("Socket initialization failed after error")
                 raise TimeoutError("Select error on socket") from e
     
-    async def recv_async(self, timeout: Optional[float] = None) -> AelMessage:
+    async def recv_async(self, timeout: Optional[int] = None) -> AelMessage:
         """
         Async receive for CHILT integration.
         

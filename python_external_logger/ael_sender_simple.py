@@ -1,3 +1,4 @@
+# This file contains AEL simple sender implementation.
 #!/usr/bin/env python3
 """
 @file ael_sender_simple.py
@@ -17,6 +18,10 @@ Events (mirror C eAEL_event enum):
   REGION_ADD           - Region added
   REGION_REMOVE        - Region removed
 
+@date Created: 2026-10-28
+@modified Last Modified: 2026-10-28
+
+@copyright Copyright (c) 2026
 @version 0.3
 @author qwen 3.5 9b
 """
