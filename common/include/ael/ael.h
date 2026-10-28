@@ -45,8 +45,7 @@ struct aurora_external_logger_hndl
 #ifdef AEL_INTERNAL
 {
     uint64_t rank;
-    int64_t group_id;
-    uint64_t group_size;
+    uint64_t group_id;
 
     size_t n_send_peers;
     size_t recipient_count;
@@ -60,14 +59,8 @@ struct aurora_external_logger_hndl
 #endif
 ;
 
-struct aurora_external_logger_peer {
-    const char *ip;
-    uint16_t port;
-};
-
 typedef enum aurora_external_logger_error_e eAEL_error;
 typedef struct aurora_external_logger_hndl ael_hndl;
-typedef struct aurora_external_logger_peer ael_peer_t;
 
 /**
  * @brief Allocate an AEL handle, open its UDP socket, and bind it locally.
@@ -79,14 +72,13 @@ typedef struct aurora_external_logger_peer ael_peer_t;
  *
  * @param rank Rank of the local process
  * @param group_id Group identifier
- * @param group_size Number of processes in the group
  * @param local_port Local UDP port in host byte order
  * @param max_recipients Maximum number of recipients that can be added
  * @return Handle, or NULL on allocation or socket setup failure
  */
-extern ael_hndl *ael_create_instance(uint64_t rank, int64_t group_id,
-                                      uint64_t group_size, uint16_t local_port,
-                                      size_t max_recipients);
+extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
+                                     uint16_t local_port,
+                                     size_t max_recipients);
 
 /**
  * @brief Close the socket and free the handle.

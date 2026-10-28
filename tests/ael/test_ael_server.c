@@ -41,7 +41,7 @@ int main(void) {
     sigaction(SIGTERM, &sa, NULL);
 
     /* Create instance with max_recipients=0 (no outbound sends) */
-    ael_hndl *pHndl = ael_create_instance(0, 0, 1, PORT, 0);
+    ael_hndl *pHndl = ael_create_instance(0, 0, PORT, 0);
     if (!pHndl) {
         return 1;
     }

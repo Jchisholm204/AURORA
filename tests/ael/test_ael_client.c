@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     }
 
     /* Create instance with max_recipients=1 */
-    ael_hndl *pHndl = ael_create_instance(tp->rank, 0, 1, 0, 1);
+    ael_hndl *pHndl = ael_create_instance(tp->rank, 0, 0, 1);
     if (!pHndl) {
         free(tp);
         return 1;
