@@ -41,16 +41,15 @@ enum aurora_external_logger_error_e {
 
     /* Caller errors: fatal, the handle itself remains valid */
     eAEL_ERR_NULL = BIT(6),
-    eAEL_ERR_MEM = BIT(7),
-    eAEL_ERR_COUNT = BIT(8),
-    eAEL_ERR_IP = BIT(9),
+    eAEL_ERR_COUNT = BIT(7),
+    eAEL_ERR_IP = BIT(8),
 
     /* Handle errors: fatal */
-    eAEL_ERR_SOCKET = BIT(10),
-    eAEL_ERR_RECV = BIT(11),
+    eAEL_ERR_SOCKET = BIT(9),
+    eAEL_ERR_RECV = BIT(10),
 
     /* Retrying the same call cannot succeed */
-    eAEL_ERR_FATAL = BIT(12),
+    eAEL_ERR_FATAL = BIT(11),
 };
 
 struct aurora_external_logger_hndl
