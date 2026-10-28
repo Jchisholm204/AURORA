@@ -24,21 +24,41 @@
 #include <netinet/in.h>
 #endif
 
+#ifndef BIT
+#define BIT(x) ((1) << (x))
+#endif
+
+/**
+ * @brief AEL status bitmap.
+ *
+ * Bits may be combined. eAEL_ERR_FATAL is OR'd in whenever retrying the same
+ * call cannot succeed: the caller must change its arguments or tear down the
+ * handle. Without that bit the condition is transient and the caller should
+ * retry, or discard the datagram and keep receiving.
+ */
 enum aurora_external_logger_error_e {
     eAEL_OK = 0,
-    eAEL_ERR_NULL,
-    eAEL_ERR_MEM,
-    eAEL_ERR_INTR,
-    eAEL_ERR_TIMEOUT,
-    eAEL_ERR_SOCKET,
-    eAEL_ERR_SEND,
-    eAEL_ERR_RECV,
-    eAEL_ERR_SIZE,
-    eAEL_ERR_EVENT,
-    eAEL_ERR_CRC,
-    eAEL_ERR_COUNT,
-    eAEL_ERR_IP,
-    eAEL_N_ERR,
+
+    /* Transient: retry, or discard the datagram and continue */
+    eAEL_ERR_INTR = BIT(0),
+    eAEL_ERR_TIMEOUT = BIT(1),
+    eAEL_ERR_SIZE = BIT(2),
+    eAEL_ERR_CRC = BIT(3),
+    eAEL_ERR_EVENT = BIT(4),
+    eAEL_ERR_SEND = BIT(5),
+
+    /* Caller errors: fatal, the handle itself remains valid */
+    eAEL_ERR_NULL = BIT(6),
+    eAEL_ERR_MEM = BIT(7),
+    eAEL_ERR_COUNT = BIT(8),
+    eAEL_ERR_IP = BIT(9),
+
+    /* Handle errors: fatal */
+    eAEL_ERR_SOCKET = BIT(10),
+    eAEL_ERR_RECV = BIT(11),
+
+    /* Retrying the same call cannot succeed */
+    eAEL_ERR_FATAL = BIT(12),
 };
 
 struct aurora_external_logger_hndl
@@ -164,7 +184,7 @@ extern eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
  * @return eAEL_OK, or an eAEL_error code
  */
 extern eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
-                                      int64_t version, size_t n_regions,
+                                      int64_t version, uint64_t n_regions,
                                       const char *name,
                                       const char *event_message);
 
@@ -181,7 +201,7 @@ extern eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
  * @return eAEL_OK, or an eAEL_error code
  */
 extern eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id,
-                                  int64_t region_id, size_t size,
+                                  int64_t region_id, uint64_t size,
                                   const char *name,
                                   const char *event_message);
 

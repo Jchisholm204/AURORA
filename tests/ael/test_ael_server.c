@@ -56,17 +56,11 @@ int main(void) {
 
         if (rx_status == eAEL_OK) {
             _ael_log_message(&msg);
-        } else if (rx_status == eAEL_ERR_INTR) {
-            if (g_stop) {
-                break;
-            }
-        } else if (rx_status == eAEL_ERR_TIMEOUT ||
-                   rx_status == eAEL_ERR_SIZE || rx_status == eAEL_ERR_CRC ||
-                   rx_status == eAEL_ERR_EVENT) {
-            continue;
-        } else {
+        } else if (rx_status & eAEL_ERR_FATAL) {
+            log_error("AEL recv failed (eAEL_error=%d)", (int) rx_status);
             break;
         }
+        /* Any non-fatal status is a transient receive condition */
     }
 
     ael_destroy_instance(&pHndl);

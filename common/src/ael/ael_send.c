@@ -26,11 +26,11 @@ static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *packet) {
 
     if (pHndl->socket.fd < 0) {
         log_error("AEL send: closed socket");
-        return eAEL_ERR_SOCKET;
+        return eAEL_ERR_SOCKET | eAEL_ERR_FATAL;
     }
     if (pHndl->n_send_peers == 0 || !pHndl->send_peers) {
         log_error("AEL send: no send peers configured");
-        return eAEL_ERR_SEND;
+        return eAEL_ERR_SEND | eAEL_ERR_FATAL;
     }
 
     ael_packet_finalize(packet);
@@ -65,12 +65,12 @@ eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
                         const char *event_message) {
     if (!pHndl) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return eAEL_ERR_NULL | eAEL_ERR_FATAL;
     }
     if (id != eAEL_EVENT_CLI_CONNECT && id != eAEL_EVENT_CLI_FAILURE &&
         id != eAEL_EVENT_CLI_DISCONNECT) {
         log_error("AEL send: invalid client event %d", (int) id);
-        return eAEL_ERR_EVENT;
+        return eAEL_ERR_EVENT | eAEL_ERR_FATAL;
     }
 
     ael_packet_t packet;
@@ -81,16 +81,16 @@ eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
 }
 
 eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
-                               int64_t version, size_t n_regions,
+                               int64_t version, uint64_t n_regions,
                                const char *name, const char *event_message) {
     if (!pHndl) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return eAEL_ERR_NULL | eAEL_ERR_FATAL;
     }
     if (id != eAEL_EVENT_CHECKPOINT_START && id != eAEL_EVENT_CHECKPOINT_END &&
         id != eAEL_EVENT_RESTORE_START && id != eAEL_EVENT_RESTORE_END) {
         log_error("AEL send: invalid checkpoint event %d", (int) id);
-        return eAEL_ERR_EVENT;
+        return eAEL_ERR_EVENT | eAEL_ERR_FATAL;
     }
 
     ael_packet_t packet;
@@ -102,15 +102,15 @@ eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
 }
 
 eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
-                           size_t size, const char *name,
+                           uint64_t size, const char *name,
                            const char *event_message) {
     if (!pHndl) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return eAEL_ERR_NULL | eAEL_ERR_FATAL;
     }
     if (id != eAEL_EVENT_REGION_ADD && id != eAEL_EVENT_REGION_REMOVE) {
         log_error("AEL send: invalid region event %d", (int) id);
-        return eAEL_ERR_EVENT;
+        return eAEL_ERR_EVENT | eAEL_ERR_FATAL;
     }
 
     ael_packet_t packet;

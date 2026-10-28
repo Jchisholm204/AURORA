@@ -84,15 +84,19 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
 eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
     /* Validate handle and parameters */
-    if (!pHndl || !ip || port == 0) {
+    if (!pHndl || !ip) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return eAEL_ERR_NULL | eAEL_ERR_FATAL;
+    }
+    if (port == 0) {
+        log_error("Invalid AEL peer port");
+        return eAEL_ERR_IP | eAEL_ERR_FATAL;
     }
 
     /* Check max recipient count limit */
     if (pHndl->recipient_count >= pHndl->n_send_peers) {
         log_error("Max recipients limit reached");
-        return eAEL_ERR_COUNT;
+        return eAEL_ERR_COUNT | eAEL_ERR_FATAL;
     }
 
     /* Validate IP address format */
@@ -100,7 +104,7 @@ eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
     int rc = inet_pton(AF_INET, ip, &addr.sin_addr);
     if (rc != 1) {
         log_error("Invalid AEL peer IP '%s'", ip);
-        return eAEL_ERR_IP;
+        return eAEL_ERR_IP | eAEL_ERR_FATAL;
     }
 
     addr.sin_port = htons(port);

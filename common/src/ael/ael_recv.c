@@ -47,6 +47,7 @@ static void _ael_decode(const ael_packet_t *packet,
     msg->from_port = ntohs(from->sin_port);
 
     msg->payload = packet->payload;
+    memcpy(msg->event_message, packet->event_message, AEL_EVENT_MSG_LEN);
     msg->payload.name[AEL_NAME_LEN - 1] = '\0';
     msg->event_message[AEL_EVENT_MSG_LEN - 1] = '\0';
 }
@@ -55,11 +56,11 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
                             int timeout_ms) {
     if (!pHndl || !pMsg) {
         log_error("NULL Parameter");
-        return eAEL_ERR_NULL;
+        return eAEL_ERR_NULL | eAEL_ERR_FATAL;
     }
     if (pHndl->socket.fd < 0) {
         log_error("AEL recv: closed socket");
-        return eAEL_ERR_SOCKET;
+        return eAEL_ERR_SOCKET | eAEL_ERR_FATAL;
     }
 
     struct pollfd pfd = {
@@ -75,12 +76,12 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
             return eAEL_ERR_INTR;
         }
         log_error("AEL poll failed: %s", strerror(errno));
-        return eAEL_ERR_RECV;
+        return eAEL_ERR_RECV | eAEL_ERR_FATAL;
     }
     if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
         log_error("AEL poll reported socket error 0x%x",
                   (unsigned) pfd.revents);
-        return eAEL_ERR_RECV;
+        return eAEL_ERR_RECV | eAEL_ERR_FATAL;
     }
     if (!(pfd.revents & POLLIN)) {
         log_info("AEL recv: no data available");
@@ -102,7 +103,7 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
             return eAEL_ERR_TIMEOUT;
         }
         log_error("AEL recvfrom failed: %s", strerror(errno));
-        return eAEL_ERR_RECV;
+        return eAEL_ERR_RECV | eAEL_ERR_FATAL;
     }
     if ((size_t) rx_bytes != sizeof(ael_packet_t)) {
         log_warn("Discarded AEL datagram with invalid size: %zd (expected %zu)",

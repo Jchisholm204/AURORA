@@ -178,7 +178,7 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
                                AEL_SAMPLE_REGION_SIZE, name, NULL);
     default:
         log_error("Unsupported event code %d", (int) event);
-        return eAEL_ERR_EVENT;
+        return eAEL_ERR_EVENT | eAEL_ERR_FATAL;
     }
 }
 
