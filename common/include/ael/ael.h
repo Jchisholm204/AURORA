@@ -28,14 +28,6 @@
 #define BIT(x) ((1) << (x))
 #endif
 
-/**
- * @brief AEL status bitmap.
- *
- * Bits may be combined. eAEL_ERR_FATAL is OR'd in whenever retrying the same
- * call cannot succeed: the caller must change its arguments or tear down the
- * handle. Without that bit the condition is transient and the caller should
- * retry, or discard the datagram and keep receiving.
- */
 enum aurora_external_logger_error_e {
     eAEL_OK = 0,
 
@@ -100,11 +92,6 @@ typedef struct aurora_external_logger_message ael_message_t;
 /**
  * @brief Allocate an AEL handle, open its UDP socket, and bind it locally.
  *
- * The socket is bound to INADDR_ANY on local_port and is left unconnected so
- * that ael_recv_message() accepts datagrams from any sender. The send_peers
- * array is allocated with capacity for max_recipients; recipients are added
- * via ael_add_recipient().
- *
  * @param rank Rank of the local process
  * @param group_id Group identifier
  * @param local_port Local UDP port in host byte order
@@ -125,10 +112,6 @@ extern void ael_destroy_instance(ael_hndl **ppHndl);
 /**
  * @brief Add a recipient peer for outbound packet delivery.
  *
- * Must be called after ael_create_instance() and before any send operations.
- * The handle must have been created with a max_recipients > 0, and the call
- * will fail if the maximum recipient count has been reached.
- *
  * @param pHndl AEL handle
  * @param ip Recipient peer IP address (IPv4 dotted-decimal string)
  * @param port Recipient peer port in host byte order
@@ -136,16 +119,6 @@ extern void ael_destroy_instance(ael_hndl **ppHndl);
  */
 extern eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip,
                                     uint16_t port);
-
-/*
- * Event send helpers
- *
- * Each helper builds a finalized packet on the stack using the handle's rank
- * and group_id, stamps the current timestamp, and sends it to every configured
- * send peer. Packet construction is private to AEL: callers cannot supply or
- * modify raw packets. The caller supplies the event code so the same helper
- * covers every event that shares a payload layout.
- */
 
 /**
  * @brief Send a client lifecycle event.

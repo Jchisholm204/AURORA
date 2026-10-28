@@ -34,9 +34,6 @@ enum aurora_external_logger_event_e {
     eAEL_N_EVENT
 };
 
-/**
- * @brief Uniform AEL event payload: id, size and name of the event.
- */
 struct aurora_external_logger_payload {
     int64_t id_version;
     uint64_t size;
