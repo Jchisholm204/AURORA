@@ -217,8 +217,7 @@ static void *thread_func(void *arg) {
             break;
         }
 
-        log_info("tx rank=%ld ev=%s (%zu bytes)", params->rank,
-                 ael_event_name(event), sizeof(ael_packet_t));
+        log_info("tx rank=%ld ev=%s", params->rank, ael_event_name(event));
         sent++;
     }
 

@@ -12,7 +12,7 @@
  *
  * @version 0.1
  * @date Created: 2026-10-25
- * @modified Last Modified: 2026-10-27
+ * @modified Last Modified: 2026-10-28
  *
  * @copyright Copyright (c) 2026
  */
@@ -76,8 +76,7 @@ int main(int argc, char **argv) {
             return 1;
         }
 
-        log_info("tx rank=%" PRIu64 " ev=%s (%zu bytes)", tp->rank,
-                 ael_event_name(event), sizeof(ael_packet_t));
+        log_info("tx rank=%" PRIu64 " ev=%s", tp->rank, ael_event_name(event));
         usleep(10000);
     }
 

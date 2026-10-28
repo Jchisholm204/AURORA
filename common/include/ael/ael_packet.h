@@ -40,42 +40,40 @@ struct aurora_external_logger_payload {
     char name[AEL_NAME_LEN];
 };
 
+typedef enum aurora_external_logger_event_e eAEL_event;
+typedef struct aurora_external_logger_payload ael_payload_t;
+
+_Static_assert(sizeof(eAEL_event) == 4, "unexpected eAEL_event size");
+_Static_assert(sizeof(ael_payload_t) == 32, "unexpected payload size");
+
+#ifdef AEL_INTERNAL
 struct aurora_external_logger_packet {
     uint64_t rank;
     uint64_t group_id;
     uint64_t timestamp;
     enum aurora_external_logger_event_e event;
     union {
-#ifdef AEL_INTERNAL
         uint32_t crc;
-#endif
         uint32_t __reserved;
     };
     struct aurora_external_logger_payload payload;
     char event_message[AEL_EVENT_MSG_LEN];
 };
 
-typedef enum aurora_external_logger_event_e eAEL_event;
-typedef struct aurora_external_logger_payload ael_payload_t;
 typedef struct aurora_external_logger_packet ael_packet_t;
 
-_Static_assert(sizeof(eAEL_event) == 4, "unexpected eAEL_event size");
-_Static_assert(sizeof(ael_payload_t) == 32, "unexpected payload size");
-#ifdef AEL_INTERNAL
 _Static_assert(offsetof(ael_packet_t, crc) == 28, "unexpected crc offset");
-#endif
 _Static_assert(offsetof(ael_packet_t, payload) == 32,
                "unexpected payload offset");
 _Static_assert(offsetof(ael_packet_t, event_message) == 64,
                "unexpected event_message offset");
 _Static_assert(sizeof(ael_packet_t) == 128, "unexpected packet size");
 
-#ifdef AEL_INTERNAL
 extern uint32_t ael_packet_crc(const ael_packet_t *pPacket);
 extern void ael_packet_finalize(ael_packet_t *pPacket);
 extern bool ael_packet_verify(const ael_packet_t *pPacket);
 
-/* The caller owns the packet storage (normally a stack variable). */
+/* The caller owned storage. */
 extern void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id,
                              uint64_t rank, uint64_t group_id,
                              const char *event_message);
