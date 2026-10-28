@@ -35,3 +35,6 @@ mutagen.yml.lock
 
 # Libreoffice Lock Files
 *.~lock.*
+
+# Python
+__pycache__/*
