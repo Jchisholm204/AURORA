@@ -9,11 +9,11 @@
  * All threads share the same server configuration but use unique ranks.
  * Thread i automatically uses rank i.
  *
- * Command-line arguments:
- *   <server_ip>      - IP address of the AEL server (default: 127.0.0.1)
- *   <num_threads>    - Number of concurrent threads (default: 4)
+ * Command-line arguments (all optional, positional):
+ *   [server_ip]      - IP address of the AEL server (default: 127.0.0.1)
+ *   [num_threads]    - Number of concurrent threads, 1..1024 (default: 4)
  *   [num_messages]   - Packets sent per thread (default: AEL_DEFAULT_PACKETS)
- *   [server_port]    - Server UDP port in host byte order (default: PORT)
+ *   [server_port]    - Server UDP port in host byte order, 1..65535 (default: PORT)
  *
  * Example: ./multi_client 127.0.0.1 4 64 8335
  *   - Creates 4 threads with ranks 0-3, each sending to server on port 8335
@@ -21,7 +21,7 @@
  *
  * @version 0.1
  * @date Created: 2026-10-26
- * @modified Last Modified: 2026-10-27
+ * @modified Last Modified: 2026-10-28
  *
  * @copyright Copyright (c) 2026
  */
@@ -34,10 +34,12 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define AEL_DEFAULT_PACKETS 32
 #define AEL_SAMPLE_REGION_SIZE 4096
+#define AEL_MAX_THREADS 1024
 
 typedef struct {
     const char *server_ip;
@@ -51,13 +53,23 @@ typedef struct {
     const test_params_t *tp;  // Pointer to shared configuration (const prevents accidental modification)
 } thread_params_t;
 
+static void _ael_usage(const char *prog);
 static test_params_t *ael_parse_params(int argc, char **argv);
 static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
                                   eAEL_event event, unsigned long index);
 static void *thread_func(void *arg);
 
+static void _ael_usage(const char *prog) {
+    fprintf(stderr, "Usage: %s [server_ip] [num_threads] [num_messages] [server_port]\n", prog);
+    fprintf(stderr, "Example: %s 127.0.0.1 4 64 8335\n", prog);
+    fprintf(stderr, "  - server_ip: IP address of the AEL server (default: 127.0.0.1)\n");
+    fprintf(stderr, "  - num_threads: Number of threads, 1..%d (default: 4)\n", AEL_MAX_THREADS);
+    fprintf(stderr, "  - num_messages: Packets per thread (default: %d)\n", AEL_DEFAULT_PACKETS);
+    fprintf(stderr, "  - server_port: Server UDP port in host byte order, 1..65535 (default: %d)\n", PORT);
+}
+
 static test_params_t *ael_parse_params(int argc, char **argv) {
-    test_params_t *tp = malloc(sizeof(test_params_t));
+    test_params_t *tp = malloc(sizeof(*tp));
     if (!tp) {
         log_error("Failed to allocate AEL test parameters");
         return NULL;
@@ -68,52 +80,65 @@ static test_params_t *ael_parse_params(int argc, char **argv) {
     tp->packet_count = AEL_DEFAULT_PACKETS;  // Default packets per thread
     tp->server_port = PORT;    // Default server port
 
-    if (argc < 3) {
-        free(tp);
-        fprintf(stderr, "Usage: %s <server_ip> <num_threads> [num_messages] [server_port]\n", argv[0]);
-        fprintf(stderr, "Example: %s 127.0.0.1 4 64 8335\n", argv[0]);
-        fprintf(stderr, "  - server_ip: IP address of the AEL server\n");
-        fprintf(stderr, "  - num_threads: Number of threads (default: 4)\n");
-        fprintf(stderr, "  - num_messages: Packets per thread (default: AEL_DEFAULT_PACKETS)\n");
-        fprintf(stderr, "  - server_port: Server UDP port in host byte order (default: PORT)\n");
-        return NULL;
-    }
-
     // Parse server_ip from argv[1]
-    if (argv[1] && argv[1][0] != '\0') {
+    if (argc > 1) {
+        if (argv[1][0] == '\0') {
+            log_error("Invalid server_ip: empty string");
+            goto fail;
+        }
         tp->server_ip = argv[1];
     }
 
     // Parse num_threads from argv[2]
-    tp->num_threads = atoi(argv[2]);
-
-    // Parse packet_count from argv[3] (optional, defaults to AEL_DEFAULT_PACKETS)
-    if (argc >= 5 && argv[4] && argv[4][0] != '\0') {
+    if (argc > 2) {
         char *end = NULL;
         errno = 0;
-        unsigned long packet_count_val = strtoul(argv[4], &end, 10);
-        if (!errno && end != argv[4] && packet_count_val > 0) {
-            tp->packet_count = packet_count_val;
-        } else {
-            log_error("Invalid packet_count '%s' (must be positive)", argv[4]);
-            free(tp);
-            return NULL;
+        long num_threads = strtol(argv[2], &end, 10);
+        if (errno || end == argv[2] || *end != '\0' ||
+            num_threads < 1 || num_threads > AEL_MAX_THREADS) {
+            log_error("Invalid num_threads '%s' (must be 1..%d)",
+                      argv[2], AEL_MAX_THREADS);
+            goto fail;
         }
+        tp->num_threads = (int) num_threads;
     }
 
-    // Parse optional server port from argv[5]
-    if (argc >= 6 && argv[5] && argv[5][0] != '\0') {
+    // Parse packet_count from argv[3] (optional, defaults to AEL_DEFAULT_PACKETS)
+    if (argc > 3) {
         char *end = NULL;
         errno = 0;
-        unsigned long port_val = strtoull(argv[5], &end, 10);
-        if (errno == 0 && end != argv[5] && port_val <= UINT16_MAX) {
-            tp->server_port = (uint16_t) port_val;
-        } else {
-            log_warn("Invalid server port '%s' (defaulting to %d)", argv[5], PORT);
+        unsigned long packet_count = strtoul(argv[3], &end, 10);
+        if (errno || end == argv[3] || *end != '\0' || packet_count == 0) {
+            log_error("Invalid num_messages '%s' (must be positive)", argv[3]);
+            goto fail;
         }
+        tp->packet_count = packet_count;
+    }
+
+    // Parse optional server port from argv[4]
+    if (argc > 4) {
+        char *end = NULL;
+        errno = 0;
+        unsigned long port_val = strtoul(argv[4], &end, 10);
+        if (errno || end == argv[4] || *end != '\0' ||
+            port_val < 1 || port_val > UINT16_MAX) {
+            log_error("Invalid server_port '%s' (must be 1..65535)", argv[4]);
+            goto fail;
+        }
+        tp->server_port = (uint16_t) port_val;
+    }
+
+    if (argc > 5) {
+        log_error("Unexpected extra argument '%s'", argv[5]);
+        goto fail;
     }
 
     return tp;
+
+fail:
+    _ael_usage(argv[0]);
+    free(tp);
+    return NULL;
 }
 
 static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
@@ -173,7 +198,7 @@ static void *thread_func(void *arg) {
     }
 
     // Send events to server
-    log_info("Thread %ld sending %" PRIu64 " packet(s) to %s:%u",
+    log_info("Thread %ld sending %lu packet(s) to %s:%u",
              params->rank, tp->packet_count, tp->server_ip, tp->server_port);
 
     unsigned long sent = 0;
@@ -201,14 +226,20 @@ static void *thread_func(void *arg) {
 }
 
 int main(int argc, char **argv) {
+    // Support -h/--help without requiring any positional arguments
+    if (argc > 1 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+        _ael_usage(argv[0]);
+        return 0;
+    }
+
     // Parse all arguments into consolidated params struct
     test_params_t *tp = ael_parse_params(argc, argv);
     if (!tp) {
         return 1;
     }
 
-    pthread_t *threads = malloc(sizeof(pthread_t) * tp->num_threads);
-    thread_params_t *thread_params = malloc(sizeof(thread_params_t) * tp->num_threads);
+    pthread_t *threads = malloc(sizeof(pthread_t) * (size_t) tp->num_threads);
+    thread_params_t *thread_params = malloc(sizeof(thread_params_t) * (size_t) tp->num_threads);
     
     if (!threads || !thread_params) {
         log_error("Failed to allocate thread structures");
