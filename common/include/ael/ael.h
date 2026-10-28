@@ -82,22 +82,14 @@ struct aurora_external_logger_hndl
 typedef enum aurora_external_logger_error_e eAEL_error;
 typedef struct aurora_external_logger_hndl ael_hndl;
 
-/**
- * @brief Decoded AEL message returned by ael_recv_message().
- *
- * The datagram is validated and decoded before this record is written: payload
- * slots not used by the event are zero, and name and event_message are always
- * NUL-terminated. The payload uses the uniform AEL slots, so a consumer can
- * serialise every event through one code path with a stable field order.
- */
 struct aurora_external_logger_message {
     uint64_t rank;
     uint64_t group_id;
     uint64_t timestamp_ns;
     eAEL_event event;
 
-    uint32_t from_ip;   /* Sender address, host byte order */
-    uint16_t from_port; /* Sender port, host byte order */
+    uint32_t from_ip;
+    uint16_t from_port;
 
     ael_payload_t payload;
     char event_message[AEL_EVENT_MSG_LEN];
@@ -125,9 +117,6 @@ extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
 /**
  * @brief Close the socket and free the handle.
- *
- * Logs an error if the handle pointer or the handle itself is NULL. On
- * success the caller's handle is set to NULL.
  *
  * @param ppHndl Handle pointer to destroy; set to NULL
  */
@@ -202,8 +191,7 @@ extern eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
  */
 extern eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id,
                                   int64_t region_id, uint64_t size,
-                                  const char *name,
-                                  const char *event_message);
+                                  const char *name, const char *event_message);
 
 /**
  * @brief Receive and decode one valid AEL message from any sender.

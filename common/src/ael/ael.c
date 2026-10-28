@@ -48,7 +48,6 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
             return NULL;
         }
 
-        /* Zero-initialize the send_peers array */
         memset(pHndl->send_peers, 0,
                max_recipients * sizeof(struct sockaddr_in));
     }
@@ -83,7 +82,6 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 }
 
 eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
-    /* Validate handle and parameters */
     if (!pHndl || !ip) {
         log_error("NULL Parameter");
         return eAEL_ERR_NULL | eAEL_ERR_FATAL;
@@ -93,13 +91,11 @@ eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
         return eAEL_ERR_IP | eAEL_ERR_FATAL;
     }
 
-    /* Check max recipient count limit */
     if (pHndl->recipient_count >= pHndl->n_send_peers) {
         log_error("Max recipients limit reached");
         return eAEL_ERR_COUNT | eAEL_ERR_FATAL;
     }
 
-    /* Validate IP address format */
     struct sockaddr_in addr = {.sin_family = AF_INET};
     int rc = inet_pton(AF_INET, ip, &addr.sin_addr);
     if (rc != 1) {

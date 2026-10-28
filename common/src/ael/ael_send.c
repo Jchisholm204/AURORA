@@ -12,7 +12,6 @@
 
 #define AEL_INTERNAL
 #include "ael/ael.h"
-
 #include "log.h"
 
 #include <assert.h>
@@ -74,15 +73,14 @@ eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id,
-                     event_message);
+    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id, event_message);
 
     return _ael_send(pHndl, &packet);
 }
 
-eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
-                               int64_t version, uint64_t n_regions,
-                               const char *name, const char *event_message) {
+eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id, int64_t version,
+                               uint64_t n_regions, const char *name,
+                               const char *event_message) {
     if (!pHndl) {
         log_error("NULL Parameter");
         return eAEL_ERR_NULL | eAEL_ERR_FATAL;
@@ -94,8 +92,7 @@ eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id,
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id,
-                     event_message);
+    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id, event_message);
     _ael_packet_set_payload(&packet.payload, version, n_regions, name);
 
     return _ael_send(pHndl, &packet);
@@ -114,8 +111,7 @@ eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id,
-                     event_message);
+    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id, event_message);
     _ael_packet_set_payload(&packet.payload, region_id, size, name);
 
     return _ael_send(pHndl, &packet);

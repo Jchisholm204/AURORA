@@ -35,15 +35,12 @@ enum aurora_external_logger_event_e {
 };
 
 /**
- * @brief Uniform AEL event payload.
- *
- * Every event uses the same three slots, so the wire layout, the decoded
- * message and any serialiser share one definition and one field order.
+ * @brief Uniform AEL event payload: id, size and name of the event.
  */
 struct aurora_external_logger_payload {
-    int64_t id_version;      /* id of the event (region id / checkpoint version) */
-    uint64_t size;           /* size of the event (region bytes / region count) */
-    char name[AEL_NAME_LEN]; /* name of the event (region name / checkpoint name) */
+    int64_t id_version;
+    uint64_t size;
+    char name[AEL_NAME_LEN];
 };
 
 struct aurora_external_logger_packet {
@@ -51,8 +48,6 @@ struct aurora_external_logger_packet {
     uint64_t group_id;
     uint64_t timestamp;
     enum aurora_external_logger_event_e event;
-    // Reserved portion may be used internally by AEL. This memory should not
-    // be accessed externally.
     union {
 #ifdef AEL_INTERNAL
         uint32_t crc;
@@ -79,13 +74,11 @@ _Static_assert(offsetof(ael_packet_t, event_message) == 64,
 _Static_assert(sizeof(ael_packet_t) == 128, "unexpected packet size");
 
 #ifdef AEL_INTERNAL
-// Internal CRC helpers; not part of the public AEL packet API.
 extern uint32_t ael_packet_crc(const ael_packet_t *pPacket);
 extern void ael_packet_finalize(ael_packet_t *pPacket);
 extern bool ael_packet_verify(const ael_packet_t *pPacket);
 
-// Internal packet construction helpers; not part of the public AEL API.
-// The caller owns the packet storage (normally a stack variable).
+/* The caller owns the packet storage (normally a stack variable). */
 extern void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id,
                              uint64_t rank, uint64_t group_id,
                              const char *event_message);
