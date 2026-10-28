@@ -80,15 +80,16 @@ _Static_assert(sizeof(ael_packet_t) == 128, "unexpected packet size");
 
 #ifdef AEL_INTERNAL
 // Internal CRC helpers; not part of the public AEL packet API.
-extern uint32_t ael_packet_crc(const ael_packet_t *packet);
-extern void ael_packet_finalize(ael_packet_t *packet);
-extern bool ael_packet_verify(const ael_packet_t *packet);
+extern uint32_t ael_packet_crc(const ael_packet_t *pPacket);
+extern void ael_packet_finalize(ael_packet_t *pPacket);
+extern bool ael_packet_verify(const ael_packet_t *pPacket);
 
 // Internal packet construction helpers; not part of the public AEL API.
 // The caller owns the packet storage (normally a stack variable).
-extern void _ael_packet_init(ael_packet_t *packet, eAEL_event id, uint64_t rank,
-                             uint64_t group_id, const char *event_message);
-extern void _ael_packet_set_payload(ael_payload_t *payload, int64_t id_version,
+extern void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id,
+                             uint64_t rank, uint64_t group_id,
+                             const char *event_message);
+extern void _ael_packet_set_payload(ael_payload_t *pPayload, int64_t id_version,
                                     uint64_t size, const char *name);
 #endif
 

@@ -37,19 +37,19 @@ static uint32_t _ael_crc32_update(uint32_t crc, const void *data, size_t len) {
     return crc;
 }
 
-uint32_t ael_packet_crc(const ael_packet_t *packet) {
-    assert(packet != NULL);
+uint32_t ael_packet_crc(const ael_packet_t *pPacket) {
+    assert(pPacket != NULL);
 
     uint32_t crc = 0xFFFFFFFFu;
-    crc = _ael_crc32_update(crc, (const uint8_t *) packet,
+    crc = _ael_crc32_update(crc, (const uint8_t *) pPacket,
                             offsetof(ael_packet_t, crc));
     crc = _ael_crc32_update(
-        crc, (const uint8_t *) packet + offsetof(ael_packet_t, payload),
+        crc, (const uint8_t *) pPacket + offsetof(ael_packet_t, payload),
         sizeof(ael_packet_t) - offsetof(ael_packet_t, payload));
 
     return crc ^ 0xFFFFFFFFu;
 }
 
-bool ael_packet_verify(const ael_packet_t *packet) {
-    return packet && packet->crc == ael_packet_crc(packet);
+bool ael_packet_verify(const ael_packet_t *pPacket) {
+    return pPacket && pPacket->crc == ael_packet_crc(pPacket);
 }

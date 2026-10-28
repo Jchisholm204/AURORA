@@ -30,26 +30,26 @@
  * the CRC only protects integrity, so the string fields are force terminated
  * before they are handed out.
  */
-static void _ael_decode(const ael_packet_t *packet,
-                        const struct sockaddr_in *from, ael_message_t *msg) {
-    assert(packet != NULL);
-    assert(from != NULL);
-    assert(msg != NULL);
+static void _ael_decode(const ael_packet_t *pPacket,
+                        const struct sockaddr_in *pFrom, ael_message_t *pMsg) {
+    assert(pPacket != NULL);
+    assert(pFrom != NULL);
+    assert(pMsg != NULL);
 
-    memset(msg, 0, sizeof(*msg));
+    memset(pMsg, 0, sizeof(*pMsg));
 
-    msg->rank = packet->rank;
-    msg->group_id = packet->group_id;
-    msg->timestamp_ns = packet->timestamp;
-    msg->event = packet->event;
+    pMsg->rank = pPacket->rank;
+    pMsg->group_id = pPacket->group_id;
+    pMsg->timestamp_ns = pPacket->timestamp;
+    pMsg->event = pPacket->event;
 
-    msg->from_ip = ntohl(from->sin_addr.s_addr);
-    msg->from_port = ntohs(from->sin_port);
+    pMsg->from_ip = ntohl(pFrom->sin_addr.s_addr);
+    pMsg->from_port = ntohs(pFrom->sin_port);
 
-    msg->payload = packet->payload;
-    memcpy(msg->event_message, packet->event_message, AEL_EVENT_MSG_LEN);
-    msg->payload.name[AEL_NAME_LEN - 1] = '\0';
-    msg->event_message[AEL_EVENT_MSG_LEN - 1] = '\0';
+    pMsg->payload = pPacket->payload;
+    memcpy(pMsg->event_message, pPacket->event_message, AEL_EVENT_MSG_LEN);
+    pMsg->payload.name[AEL_NAME_LEN - 1] = '\0';
+    pMsg->event_message[AEL_EVENT_MSG_LEN - 1] = '\0';
 }
 
 eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,

@@ -20,9 +20,9 @@
 #include <string.h>
 #include <sys/socket.h>
 
-static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *packet) {
+static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *pPacket) {
     assert(pHndl != NULL);
-    assert(packet != NULL);
+    assert(pPacket != NULL);
 
     if (pHndl->socket.fd < 0) {
         log_error("AEL send: closed socket");
@@ -33,14 +33,14 @@ static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *packet) {
         return eAEL_ERR_SEND | eAEL_ERR_FATAL;
     }
 
-    ael_packet_finalize(packet);
+    ael_packet_finalize(pPacket);
 
     eAEL_error status = eAEL_OK;
     for (size_t i = 0; i < pHndl->n_send_peers; i++) {
-        const struct sockaddr_in *peer = &pHndl->send_peers[i];
+        const struct sockaddr_in *pPeer = &pHndl->send_peers[i];
         ssize_t tx_bytes =
-            sendto(pHndl->socket.fd, packet, sizeof(ael_packet_t), 0,
-                   (const struct sockaddr *) peer, sizeof(struct sockaddr_in));
+            sendto(pHndl->socket.fd, pPacket, sizeof(ael_packet_t), 0,
+                   (const struct sockaddr *) pPeer, sizeof(struct sockaddr_in));
 
         if (tx_bytes < 0) {
             log_error("AEL sendto peer %zu failed: %s", i, strerror(errno));
