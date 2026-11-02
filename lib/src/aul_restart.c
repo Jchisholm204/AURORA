@@ -74,6 +74,15 @@ int AUL_Restart_remote(const int version,
     if (!_aul_ctx.pACI) {
         log_fatal("Not Initialized");
     }
+
+    log_trace("Restore Matching Regions");
+    // Test loading the checkpoint
+    int checkpoint_test = AUL_Test(version, name);
+    if (checkpoint_test != version) {
+        log_warn("Failed to load checkpoint 0x%x", -checkpoint_test);
+        return checkpoint_test;
+    }
+
     // Wait for all pending operations to finish
     eACN_error acn_status = eACN_OK;
     do {
@@ -89,6 +98,8 @@ int AUL_Restart_remote(const int version,
     acn_set_name(_aul_ctx.pACN, name);
     acn_set(_aul_ctx.pACN, eACN_version, ((int64_t) version));
     acn_tick(_aul_ctx.pACN, eACN_restore);
+
+    log_trace("Starting Restore");
 
     // Wait for restore
     do {
@@ -121,6 +132,13 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
         return INT_MIN;
     }
 
+    // Test loading the checkpoint - confirms all regions are valid
+    int checkpoint_test = AUL_Test(version, name);
+    if (checkpoint_test != version) {
+        log_warn("Failed to load checkpoint 0x%x", -checkpoint_test);
+        return checkpoint_test;
+    }
+
     // All variables in LOCAL_RESTART_FAIL must be declared here
     afv_checkpoint_t *pCheckpoint = NULL;
     size_t *amr_restore_order = NULL;
@@ -132,6 +150,7 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
         return INT_MIN;
     }
 
+    // Load ARM (local) regions
     const size_t arm_n_regions = arm_get_n_local_regions(_aul_ctx.pARM);
     // Read only pointer, do not free
     amr_hndl const *const arm_region_list =
@@ -153,6 +172,8 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
                  checkpoint_n_regions, arm_n_regions);
     }
 
+    log_trace("Restore Matching Regions");
+
     amr_restore_order = calloc(arm_n_regions, sizeof(size_t));
     if (!amr_restore_order) {
         log_error("Bad Alloc?");
@@ -173,6 +194,8 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
         }
         amr_restore_order[index] = i;
     }
+
+    log_trace("Starting Restore");
 
     // Complete the Restore
     for (size_t i = 0; i < (size_t) checkpoint_n_regions;
@@ -197,6 +220,11 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
     restored_version = afv_checkpoint_version(pCheckpoint);
 
 LOCAL_RESTART_FAIL:
+
+    if (amr_restore_order) {
+        free(amr_restore_order);
+        amr_restore_order = NULL;
+    }
 
     afv_checkpoint_destroy(&pCheckpoint);
 
