@@ -96,3 +96,22 @@ int AUL_Test(const int version, const char *name);
 ```c
 int AUL_Restart(const int version, const char name[static AUL_NAME_LEN]);
 ```
+
+Note that for versions greater than v0.0.4, both host and DPU based restart strategies can be used.
+By default, restarts will be performed using CPU cores.
+To use DPU cores for the restart procedure (as tested in <=v0.0.3), include the following definition before including the `aul.h` header.
+
+```c
+#define AUL_DEFAULT_RESTART_REMOTE
+```
+
+Alternatively, the restart strategies can be explicitly utilized via:
+
+```c
+// Uses DPU Cores - Performs restarts on the DPU
+extern int AUL_Restart_remote(const int version,
+                              const char name[static AUL_NAME_LEN]);
+// Uses CPU Cores - Performs restarts on the CPU
+extern int AUL_Restart_local(const int version,
+                             const char name[static AUL_NAME_LEN]);
+```
