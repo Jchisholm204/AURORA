@@ -56,6 +56,15 @@ CMake will attempt to find the VeLOC package (`find_package(veloc)`), however th
 VELOC_INSTALL_DIR=/path/to/veloc_base_dir
 ```
 
+### Restart Strategy
+Configures the default restart strategy invoked by `AUL_restart(version, name)`.
+By default, restarts will be performed using CPU cores.
+To use DPU cores for the restart procedure (as tested in <=v0.0.3), include the following definition before including the `aul.h` header.
+
+```c
+#define AUL_DEFAULT_RESTART_REMOTE
+```
+
 ## Build with CMake (x86_64)
 The following CMake command can be used to generate the build system for all AURORA components using the following parameters:
 - Build Output Directory: `build`
