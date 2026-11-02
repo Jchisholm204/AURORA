@@ -110,7 +110,7 @@ extern eAFV_verif afv_metadata_set_name(afv_metadata_t *pMetadata,
  *
  * @param pMetadata Optional: Metadata to set version of
  * @param version Checkpoint Version
- * @return 
+ * @return
  */
 extern eAFV_verif afv_metadata_set_version(afv_metadata_t *pMetadata,
                                            int64_t version);
@@ -128,14 +128,5 @@ extern eAFV_verif afv_metadata_get_region(const afv_metadata_t *pMetadata,
 extern eAFV_verif afv_metadata_check(const afv_metadata_t *pMetadata,
                                      int64_t version, char *name,
                                      size_t n_regions);
-
-// Let this function be included explicitly through a macro,
-//  or implicitly if the ARM is already defined and present in the file
-#if defined(AFV_METADATA_INC_MATCH) || defined(_ARM_ARM_H_)
-#include "arm/arm.h"
-extern eAFV_verif afv_metadata_match(const afv_metadata_t *pMetadata,
-                                     const amr_hndl *const region_list,
-                                     size_t n_regions, size_t *match_map_list);
-#endif
 
 #endif
