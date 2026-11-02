@@ -47,6 +47,10 @@ void *acr_cmd_checkpoint(void *arg) {
     // Read Only Pointer (do not free)
     const amr_hndl *const arm_regions = arm_get_remote_regions(pInstance->pARM);
     const size_t arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
+    if (arm_n_regions == 0 || arm_regions == NULL) {
+        log_fatal("Attempted Checkpoint with no active regions");
+        goto CHECKPOINT_FAIL;
+    }
 
     if (arm_n_regions == 0) {
         log_error("No regions to checkpoint");
