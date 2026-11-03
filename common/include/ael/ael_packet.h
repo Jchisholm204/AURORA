@@ -52,10 +52,7 @@ struct aurora_external_logger_packet {
     uint64_t group_id;
     uint64_t timestamp;
     enum aurora_external_logger_event_e event;
-    union {
-        uint32_t crc;
-        uint32_t __reserved;
-    };
+    uint32_t crc;
     struct aurora_external_logger_payload payload;
     char event_message[AEL_EVENT_MSG_LEN];
 };
