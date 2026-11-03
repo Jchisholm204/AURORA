@@ -9,7 +9,9 @@ lifecycle, checkpoint/restore, and region changes to another process or host.
 ## Events
 | Group | Event codes | Payload meaning |
 |---|---|---|
-| Client | `eAEL_EVENT_CLI_CONNECT`, `_FAILURE`, `_DISCONNECT` | unused (zeroed) |
+| Client | `eAEL_EVENT_CLI_CONNECT` | `version` = group ID, `size` = group size |
+| Client | `eAEL_EVENT_CLI_FAILURE` | `version` = exit code, `size` = group size, `name` = reason |
+| Client | `eAEL_EVENT_CLI_DISCONNECT` | unused (zeroed) |
 | Checkpoint | `eAEL_EVENT_CHECKPOINT_START/END`, `eAEL_EVENT_RESTORE_START/END` | `id_version` = version, `size` = region count, `name` = checkpoint name |
 | Region | `eAEL_EVENT_REGION_ADD`, `eAEL_EVENT_REGION_REMOVE` | `id_version` = region ID, `size` = bytes, `name` = region name |
 
@@ -57,8 +59,10 @@ eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port);
 
 ### Send Event
 ```c
-eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
-                        const char *event_message);
+eAEL_error ael_send_connect(ael_hndl *pHndl, const char *event_message);
+eAEL_error ael_send_failure(ael_hndl *pHndl, int64_t exit_code,
+                            const char *reason, const char *event_message);
+eAEL_error ael_send_disconnect(ael_hndl *pHndl, const char *event_message);
 eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id, int64_t version,
                                uint64_t n_regions, const char *name,
                                const char *event_message);
@@ -66,7 +70,9 @@ eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
                            uint64_t size, const char *name,
                            const char *event_message);
 ```
-- Each helper rejects event codes that do not belong to its group.
+- `ael_send_connect` stores the group ID in its payload version field and the group size in the size field.
+- `ael_send_failure` stores the exit code, group size (from handle), and optional reason in its payload.
+- `ael_send_disconnect` sends the appropriate client lifecycle event with a zeroed payload.
 - The packet is built, timestamped, CRC-finalized, and sent to every recipient.
 - `name` and `event_message` are optional; `NULL` leaves the field zeroed.
 - Returns `eAEL_OK` only if every recipient accepted all 128 bytes. Otherwise it

@@ -154,15 +154,15 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
     case eAEL_EVENT_CLI_CONNECT:
         snprintf(event_message, AEL_EVENT_MSG_LEN,
                  "client %" PRIu64 " connect", rank);
-        return ael_send_cli(pHndl, event, event_message);
+        return ael_send_connect(pHndl, event_message);
     case eAEL_EVENT_CLI_FAILURE:
         snprintf(event_message, AEL_EVENT_MSG_LEN,
                  "client %" PRIu64 " failure", rank);
-        return ael_send_cli(pHndl, event, event_message);
+        return ael_send_failure(pHndl, -1, "failure occurred", event_message);
     case eAEL_EVENT_CLI_DISCONNECT:
         snprintf(event_message, AEL_EVENT_MSG_LEN,
                  "client %" PRIu64 " disconnect", rank);
-        return ael_send_cli(pHndl, event, event_message);
+        return ael_send_disconnect(pHndl, event_message);
     case eAEL_EVENT_CHECKPOINT_START:
         return ael_send_checkpoint(pHndl, event, 1, 4, "ckpt-start", NULL);
     case eAEL_EVENT_CHECKPOINT_END:

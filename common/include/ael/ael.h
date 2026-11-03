@@ -100,9 +100,8 @@ typedef struct aurora_external_logger_message ael_message_t;
  * @return Handle, or NULL on allocation or socket setup failure
  */
 extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
-	uint64_t group_size,
-	uint16_t local_port,
-	size_t max_recipients);
+                                     uint64_t group_size, uint16_t local_port,
+                                     size_t max_recipients);
 
 /**
  * @brief Close the socket and free the handle.
@@ -123,16 +122,41 @@ extern eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip,
                                     uint16_t port);
 
 /**
- * @brief Send a client lifecycle event.
+ * @brief Send a client connect event.
+ *
+ * The payload contains the group ID in the version field and the group size
+ * in the size field (from handle initialization).
  *
  * @param pHndl AEL handle
- * @param id Event code; one of eAEL_EVENT_CLI_CONNECT,
- *           eAEL_EVENT_CLI_FAILURE, or eAEL_EVENT_CLI_DISCONNECT
  * @param event_message Optional message copied into the packet
  * @return eAEL_OK, or an eAEL_error code
  */
-extern eAEL_error ael_send_cli(ael_hndl *pHndl, eAEL_event id,
-                               const char *event_message);
+extern eAEL_error ael_send_connect(ael_hndl *pHndl, const char *event_message);
+
+/**
+ * @brief Send a client failure event.
+ *
+ * The payload contains the exit code in the version field, group size 
+ * (from handle initialization) in the size field, and an optional reason string.
+ *
+ * @param pHndl AEL handle
+ * @param exit_code Failure exit code to store in payload
+ * @param reason Optional failure reason copied into the payload
+ * @return eAEL_OK, or an eAEL_error code
+ */
+extern eAEL_error ael_send_failure(ael_hndl *pHndl, int64_t exit_code,
+                                    const char *reason,
+                                    const char *event_message);
+
+/**
+ * @brief Send a client disconnect event.
+ *
+ * @param pHndl AEL handle
+ * @param event_message Optional message copied into the packet
+ * @return eAEL_OK, or an eAEL_error code
+ */
+extern eAEL_error ael_send_disconnect(ael_hndl *pHndl,
+                                      const char *event_message);
 
 /**
  * @brief Send a checkpoint or restore event.
