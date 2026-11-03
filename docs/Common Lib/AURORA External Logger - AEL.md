@@ -148,6 +148,7 @@ struct aurora_external_logger_hndl {
 ```
 - The handle and the peer table are separate allocations; the table only exists
   when `max_recipients > 0`.
+- The size of the client table (number of times `ael_add_recipient` can be called) is set on initialization by `max_recipients`
 - `fd` is `-1` before setup and after `ael_destroy_instance`.
 - There is no background thread and no lock. All sending and receiving happens
   on the caller's thread.
