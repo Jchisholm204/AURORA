@@ -26,8 +26,8 @@
 #include <unistd.h>
 
 ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
-                              uint64_t group_size,
-                              uint16_t local_port, size_t max_recipients) {
+                              uint64_t group_size, uint16_t local_port,
+                              size_t max_recipients) {
     ael_hndl *pHndl = calloc(1, sizeof(ael_hndl));
     if (!pHndl) {
         log_error("Bad Alloc??");
@@ -103,6 +103,12 @@ eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
     if (rc != 1) {
         log_error("Invalid AEL peer IP '%s'", ip);
         return eAEL_ERR_IP | eAEL_ERR_FATAL;
+    }
+
+    // Send peers should always be allocated if the recipient count is >= 0
+    if (!pHndl->send_peers) {
+        log_fatal("Bad Alloc??");
+        return eAEL_ERR_FATAL;
     }
 
     addr.sin_port = htons(port);
