@@ -32,7 +32,7 @@ static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *pPacket) {
         return eAEL_ERR_SEND | eAEL_ERR_FATAL;
     }
 
-    ael_packet_finalize(pPacket);
+    _ael_packet_finalize(pPacket);
 
     eAEL_error status = eAEL_OK;
     for (size_t i = 0; i < pHndl->recipient_count; i++) {

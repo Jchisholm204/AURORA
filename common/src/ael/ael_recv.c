@@ -110,8 +110,11 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
                  rx_bytes, sizeof(ael_packet_t));
         return eAEL_ERR_SIZE;
     }
-    if (!ael_packet_verify(&packet)) {
-        log_warn("Discarded AEL packet with invalid CRC");
+    /* Compute and compare CRC inline. */
+    uint32_t computed = _ael_packet_crc(&packet);
+    if (computed != packet.crc) {
+        log_warn("Discarded AEL packet with invalid CRC (computed 0x%08x, stored 0x%08x)",
+                 computed, packet.crc);
         return eAEL_ERR_CRC;
     }
     if ((unsigned) packet.event >= (unsigned) eAEL_N_EVENT) {

@@ -44,10 +44,9 @@ void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id, uint64_t rank,
     }
 }
 
-void ael_packet_finalize(ael_packet_t *pPacket) {
-    if (pPacket) {
-        pPacket->crc = ael_packet_crc(pPacket);
-    }
+void _ael_packet_finalize(ael_packet_t *pPacket) {
+    assert(pPacket != NULL);
+    pPacket->crc = _ael_packet_crc(pPacket);
 }
 
 void _ael_packet_set_payload(ael_payload_t *pPayload, int64_t id_version,

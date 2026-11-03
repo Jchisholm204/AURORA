@@ -67,9 +67,8 @@ _Static_assert(offsetof(ael_packet_t, event_message) == 64,
                "unexpected event_message offset");
 _Static_assert(sizeof(ael_packet_t) == 128, "unexpected packet size");
 
-extern uint32_t ael_packet_crc(const ael_packet_t *pPacket);
-extern void ael_packet_finalize(ael_packet_t *pPacket);
-extern bool ael_packet_verify(const ael_packet_t *pPacket);
+extern uint32_t _ael_packet_crc(const ael_packet_t *pPacket);
+extern void _ael_packet_finalize(ael_packet_t *pPacket);
 
 /* The caller owned storage. */
 extern void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id,
