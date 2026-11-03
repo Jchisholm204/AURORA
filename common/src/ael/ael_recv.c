@@ -12,7 +12,6 @@
 
 #define AEL_INTERNAL
 #include "ael/ael.h"
-
 #include "log.h"
 
 #include <arpa/inet.h>
@@ -40,6 +39,7 @@ static void _ael_decode(const ael_packet_t *pPacket,
 
     pMsg->rank = pPacket->rank;
     pMsg->group_id = pPacket->group_id;
+    pMsg->origin = (eAEL_origin) pPacket->origin;
     pMsg->timestamp_ns = pPacket->timestamp;
     pMsg->event = pPacket->event;
 
@@ -92,8 +92,9 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
     struct sockaddr_in from;
     socklen_t from_len = sizeof(from);
 
-    ssize_t rx_bytes = recvfrom(pHndl->socket.fd, &packet, sizeof(packet),
-                                MSG_TRUNC, (struct sockaddr *) &from, &from_len);
+    ssize_t rx_bytes =
+        recvfrom(pHndl->socket.fd, &packet, sizeof(packet), MSG_TRUNC,
+                 (struct sockaddr *) &from, &from_len);
     if (rx_bytes < 0) {
         if (errno == EINTR) {
             log_debug("AEL recv: interrupted");
@@ -113,7 +114,8 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
     /* Compute and compare CRC inline. */
     uint32_t computed = _ael_packet_crc(&packet);
     if (computed != packet.crc) {
-        log_warn("Discarded AEL packet with invalid CRC (computed 0x%08x, stored 0x%08x)",
+        log_warn("Discarded AEL packet with invalid CRC (computed 0x%08x, "
+                 "stored 0x%08x)",
                  computed, packet.crc);
         return eAEL_ERR_CRC;
     }
@@ -121,6 +123,11 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
         log_warn("Discarded AEL packet with invalid event code %d",
                  (int) packet.event);
         return eAEL_ERR_EVENT;
+    }
+    if ((unsigned) packet.origin >= (unsigned) eAEL_N_ORIGIN) {
+        log_warn("Discarded AEL packet with invalid origin code %d",
+                 (int) packet.origin);
+        return eAEL_ERR_ORIGIN;
     }
 
     _ael_decode(&packet, &from, pMsg);

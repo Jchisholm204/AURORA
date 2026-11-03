@@ -27,11 +27,14 @@ Allocates the handle, opens a UDP socket, sets `SO_REUSEADDR` (best effort), and
 binds to `INADDR_ANY:local_port`.
 
 ```c
-ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
-                              uint64_t group_size,
+ael_hndl *ael_create_instance(eAEL_origin origin, uint64_t rank,
+                              uint64_t group_id, uint64_t group_size,
                               uint16_t local_port, size_t max_recipients);
 ```
 
+- `origin` Subsystem identifier for packets sent by this handle: one of
+  `eAEL_ORIGIN_ARE`, `eAEL_ORIGIN_MPI`, `eAEL_ORIGIN_SMARTNIC`, or
+  `eAEL_ORIGIN_HOST`. This is trusted and identifies which component sent the message.
 - `local_port` is in host byte order.
 - `local_port = 0` requests an ephemeral port. The assigned port is not exposed
   by the API, so this is only useful for send-only handles.
@@ -79,6 +82,21 @@ eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
   returns the first failure, but still attempts the remaining peers, so partial
   delivery is possible. No per-peer result is reported.
 
+## The origin Parameter
+
+The `origin` field identifies which subsystem sent or received the packet:
+
+| Value | Meaning |
+|-------|---------|
+| `eAEL_ORIGIN_ARE` | AURORA Remote Engine |
+| `eAEL_ORIGIN_MPI` | MPI application |
+| `eAEL_ORIGIN_SMARTNIC` | Smart NIC |
+| `eAEL_ORIGIN_HOST` | Host-side |
+
+The origin is **trusted** - it identifies which component of the larger system sent this message. This allows receiving code to differentiate packet sources when rank and group information are identical across different components (e.g., multiple MPI ranks or region managers).
+
+The origin is set once during `ael_create_instance()` and used by all subsequent send operations. It appears in both outgoing packets and decoded incoming messages.
+
 ## Receiving
 ```c
 eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
@@ -86,11 +104,11 @@ eAEL_error ael_recv_message(ael_hndl *pHndl, ael_message_t *pMsg,
 ```
 - Polls the socket: negative blocks, `0` polls without blocking, positive waits
   up to that many milliseconds.
-- Validation order is datagram size, then CRC, then event range. Rejected
-  datagrams return `eAEL_ERR_SIZE`, `eAEL_ERR_CRC`, or `eAEL_ERR_EVENT` and leave
+- Validation order is datagram size, then CRC, then event range, then origin range. Rejected
+  datagrams return `eAEL_ERR_SIZE`, `eAEL_ERR_CRC`, `eAEL_ERR_EVENT`, or `eAEL_ERR_ORIGIN` and leave
   `*pMsg` untouched.
-- On success the message is filled with the sender IP and port in host byte
-  order, and both string fields are force-terminated.
+- On success the message is filled with the sender IP, port, rank, group ID, origin (all in host byte
+  order where applicable), event code, and timestamp. Both string fields are force-terminated.
 - `eAEL_ERR_TIMEOUT` and `eAEL_ERR_INTR` are normal loop conditions. Socket
   errors are fatal.
 - The CRC protects integrity only: any host that can reach the port can send a
@@ -159,10 +177,10 @@ event has one, then `ael_packet_finalize`, then send.
 
 #### Packet Init
 ```c
-void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id, uint64_t rank,
-                      uint64_t group_id, const char *event_message);
+void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id, eAEL_origin origin,
+                      uint64_t rank, uint64_t group_id, const char *event_message);
 ```
-- Zeroes the whole packet, then fills rank, group, event, and timestamp.
+- Zeroes the whole packet, then fills rank, group ID, event, timestamp, and origin.
 - Timestamp is `CLOCK_REALTIME` in nanoseconds, or `0` if `clock_gettime` fails.
 - Copies `event_message` with `snprintf` when it is not `NULL`.
 - Does not set the payload; it stays zeroed unless set separately.
@@ -180,26 +198,17 @@ void _ael_packet_set_payload(ael_payload_t *pPayload, int64_t id_version,
 
 #### Finalize
 ```c
-void ael_packet_finalize(ael_packet_t *pPacket);
+void _ael_packet_finalize(ael_packet_t *pPacket);
 ```
-Computes the CRC and stores it in the packet. Silently does nothing when the
-pointer is `NULL`. `_ael_send` calls this itself, so the public send helpers do
-not need to.
+Computes and stores the CRC in the packet. Asserts a non-null pointer. Called by internal send logic.
 
 #### Calculate CRC
 ```c
-uint32_t ael_packet_crc(const ael_packet_t *pPacket);
+uint32_t _ael_packet_crc(const ael_packet_t *pPacket);
 ```
 Reflected CRC-32/ISO-HDLC (polynomial `0xEDB88320`, init/final `0xFFFFFFFF`).
 It covers `[0, offsetof(crc))` and `[offsetof(payload), sizeof(ael_packet_t))`,
 so the CRC field itself is skipped. Asserts a non-null packet.
-
-#### Verify CRC
-```c
-bool ael_packet_verify(const ael_packet_t *pPacket);
-```
-Recomputes the CRC and compares it with the stored field. Returns `false` for a
-`NULL` packet. This checks integrity only; it says nothing about the sender.
 
 ### Send Path
 ```c
@@ -230,7 +239,8 @@ passed.
 
 ### Layout Invariants
 `ael_packet.h` asserts the wire contract at compile time:
-- `sizeof(eAEL_event) == 4`
+- `sizeof(eAEL_event) == 2`
+- `sizeof(eAEL_origin) == 2`
 - `sizeof(ael_payload_t) == 32`
 - CRC at offset 28, payload at 32, event message at 64
 - `sizeof(ael_packet_t) == 128`
@@ -243,15 +253,15 @@ though there is no version field to detect it.
 
 | Codes | Meaning |
 |---|---|
-| `eAEL_ERR_INTR`, `_TIMEOUT`, `_SIZE`, `_CRC`, `_EVENT`, `_SEND` | Transient. Retry or discard the datagram and continue. |
+| `eAEL_ERR_INTR`, `_TIMEOUT`, `_SIZE`, `_CRC`, `_EVENT`, `_SEND`, `_ORIGIN` | Transient. Retry or discard the datagram and continue. |
 | `eAEL_ERR_NULL`, `_COUNT`, `_IP` | Caller error. The handle remains valid. |
 | `eAEL_ERR_SOCKET`, `_RECV` | Handle error. The socket is unusable. |
 | `eAEL_ERR_FATAL` | Bit set when repeating the same call cannot succeed. |
 
 ## Usage
 ```c
-/* Listener: bind port 8334, no outbound peers */
-ael_hndl *rx = ael_create_instance(0, 0, 1, 8334, 0);
+/* Listener: eAEL_ORIGIN_HOST, port 8334, no outbound peers */
+ael_hndl *rx = ael_create_instance(eAEL_ORIGIN_HOST, 0, 0, 1, 8334, 0);
 ael_message_t msg;
 for (;;) {
     eAEL_error st = ael_recv_message(rx, &msg, -1);
@@ -262,8 +272,8 @@ for (;;) {
     }
 }
 
-/* Sender: ephemeral local port, one recipient */
-ael_hndl *tx = ael_create_instance(rank, group_id, 1, 0, 1);
+/* Sender: host-side component, ephemeral local port, one recipient */
+ael_hndl *tx = ael_create_instance(eAEL_ORIGIN_HOST, rank, group_id, 1, 0, 1);
 ael_add_recipient(tx, "10.0.0.42", 8334);
 ael_send_checkpoint(tx, eAEL_EVENT_CHECKPOINT_START, version, n_regions,
                     "heatdis", NULL);
@@ -272,6 +282,13 @@ ael_send_checkpoint(tx, eAEL_EVENT_CHECKPOINT_START, version, n_regions,
 Reference programs live under `tests/ael/`: `test_ael_server` (listener on port
 8334), `test_ael_client`, `multi_client`, and `test_ael_recv_bad` (malformed and
 hostile datagram rejection).
+
+## Origin Error Handling
+
+When a packet's origin field contains an invalid value (>= `eAEL_N_ORIGIN`), the receive
+path returns `eAEL_ERR_ORIGIN`. This is treated as a transient error - retry or discard.
+This differs from event code validation, which also rejects invalid events. Both are
+logged at warning level before returning the error.
 
 ## Limits
 - UDP semantics: packets may be lost, duplicated, or reordered. There is no

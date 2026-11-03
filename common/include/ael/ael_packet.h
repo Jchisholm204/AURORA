@@ -21,7 +21,7 @@
 #define AEL_NAME_LEN 16
 #define AEL_EVENT_MSG_LEN 64
 
-enum aurora_external_logger_event_e {
+__extension__ enum aurora_external_logger_event_e : uint16_t {
     eAEL_EVENT_CLI_CONNECT,
     eAEL_EVENT_CLI_FAILURE,
     eAEL_EVENT_CLI_DISCONNECT,
@@ -34,6 +34,14 @@ enum aurora_external_logger_event_e {
     eAEL_N_EVENT
 };
 
+__extension__ enum aurora_external_logger_origin_e : uint16_t {
+    eAEL_ORIGIN_ARE,
+    eAEL_ORIGIN_MPI,
+    eAEL_ORIGIN_SMARTNIC,
+    eAEL_ORIGIN_HOST,
+    eAEL_N_ORIGIN
+};
+
 struct aurora_external_logger_payload {
     int64_t id_version;
     uint64_t size;
@@ -41,9 +49,11 @@ struct aurora_external_logger_payload {
 };
 
 typedef enum aurora_external_logger_event_e eAEL_event;
+typedef enum aurora_external_logger_origin_e eAEL_origin;
 typedef struct aurora_external_logger_payload ael_payload_t;
 
-_Static_assert(sizeof(eAEL_event) == 4, "unexpected eAEL_event size");
+_Static_assert(sizeof(eAEL_event) == 2, "unexpected eAEL_event size");
+_Static_assert(sizeof(eAEL_origin) == 2, "unexpected eAEL_origin size");
 _Static_assert(sizeof(ael_payload_t) == 32, "unexpected payload size");
 
 #ifdef AEL_INTERNAL // BEGIN: AEL_INTERNAL
@@ -52,7 +62,10 @@ struct aurora_external_logger_packet {
     uint64_t rank;
     uint64_t group_id;
     uint64_t timestamp;
-    enum aurora_external_logger_event_e event;
+    // enum aurora_external_logger_event_e
+    uint16_t event;
+    // enum aurora_external_logger_origin_e
+    uint16_t origin;
     uint32_t crc;
     struct aurora_external_logger_payload payload;
     char event_message[AEL_EVENT_MSG_LEN];
@@ -72,8 +85,8 @@ extern void _ael_packet_finalize(ael_packet_t *pPacket);
 
 /* The caller owned storage. */
 extern void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id,
-                             uint64_t rank, uint64_t group_id,
-                             const char *event_message);
+                             eAEL_origin origin, uint64_t rank,
+                             uint64_t group_id, const char *event_message);
 extern void _ael_packet_set_payload(ael_payload_t *pPayload, int64_t id_version,
                                     uint64_t size, const char *name);
 #endif // END: AEL_INTERNAL

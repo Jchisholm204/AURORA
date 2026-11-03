@@ -19,7 +19,6 @@
 
 #define AEL_INTERNAL
 #include "ael/ael.h"
-
 #include "log.h"
 
 #include <arpa/inet.h>
@@ -44,8 +43,8 @@ static int g_failures = 0;
  * On failure the message must also still be filled with the sentinel byte,
  * proving that ael_recv_message() did not publish a rejected datagram.
  */
-static void verify_receive_status(const char *name, eAEL_error got, eAEL_error want,
-                           const ael_message_t *msg) {
+static void verify_receive_status(const char *name, eAEL_error got,
+                                  eAEL_error want, const ael_message_t *msg) {
     if (got != want) {
         log_error("[FAIL] %s: got eAEL_error=0x%X, expected 0x%X", name,
                   (unsigned) got, (unsigned) want);
@@ -130,12 +129,14 @@ static void construct_test_packet(ael_packet_t *packet, eAEL_event event) {
     packet->payload.id_version = 42;
     packet->payload.size = 4096;
     (void) snprintf(packet->payload.name, AEL_NAME_LEN, "%s", "rgn-bad");
-    (void) snprintf(packet->event_message, AEL_EVENT_MSG_LEN, "%s", "bad input");
+    (void) snprintf(packet->event_message, AEL_EVENT_MSG_LEN, "%s",
+                    "bad input");
     _ael_packet_finalize(packet);
 }
 
 int main(void) {
-    ael_hndl *pHndl = ael_create_instance(0, 0, 1, AEL_BAD_TEST_PORT, 0);
+    ael_hndl *pHndl =
+        ael_create_instance(eAEL_ORIGIN_HOST, 0, 0, 1, AEL_BAD_TEST_PORT, 0);
     if (!pHndl) {
         log_error("Failed to bind AEL test receiver on port %d",
                   AEL_BAD_TEST_PORT);
@@ -152,13 +153,15 @@ int main(void) {
     ael_packet_t packet;
 
     /* 1. Nothing queued: timeout, nothing written */
-    verify_receive_status("timeout", receive_with_sentinel(pHndl, &msg), eAEL_ERR_TIMEOUT, &msg);
+    verify_receive_status("timeout", receive_with_sentinel(pHndl, &msg),
+                          eAEL_ERR_TIMEOUT, &msg);
 
     /* 2. Undersized datagram */
     const uint32_t short_dgram = 0;
     if (send_datagram_to_receiver(tx, &short_dgram, sizeof(short_dgram))) {
-        verify_receive_status("short datagram", receive_with_sentinel(pHndl, &msg),
-                       eAEL_ERR_SIZE, &msg);
+        verify_receive_status("short datagram",
+                              receive_with_sentinel(pHndl, &msg), eAEL_ERR_SIZE,
+                              &msg);
     } else {
         g_failures++;
     }
@@ -166,8 +169,9 @@ int main(void) {
     /* 3. Oversized datagram, discarded by the MSG_TRUNC size check */
     uint8_t oversized[256] = {0};
     if (send_datagram_to_receiver(tx, oversized, sizeof(oversized))) {
-        verify_receive_status("oversized datagram", receive_with_sentinel(pHndl, &msg),
-                       eAEL_ERR_SIZE, &msg);
+        verify_receive_status("oversized datagram",
+                              receive_with_sentinel(pHndl, &msg), eAEL_ERR_SIZE,
+                              &msg);
     } else {
         g_failures++;
     }
@@ -176,7 +180,8 @@ int main(void) {
     construct_test_packet(&packet, eAEL_EVENT_REGION_ADD);
     packet.event_message[0] ^= 0xFF;
     if (send_datagram_to_receiver(tx, &packet, sizeof(packet))) {
-        verify_receive_status("bad CRC", receive_with_sentinel(pHndl, &msg), eAEL_ERR_CRC, &msg);
+        verify_receive_status("bad CRC", receive_with_sentinel(pHndl, &msg),
+                              eAEL_ERR_CRC, &msg);
     } else {
         g_failures++;
     }
@@ -184,8 +189,9 @@ int main(void) {
     /* 5. Valid CRC but the event code is outside the enum */
     construct_test_packet(&packet, (eAEL_event) eAEL_N_EVENT);
     if (send_datagram_to_receiver(tx, &packet, sizeof(packet))) {
-        verify_receive_status("bad event code", receive_with_sentinel(pHndl, &msg),
-                       eAEL_ERR_EVENT, &msg);
+        verify_receive_status("bad event code",
+                              receive_with_sentinel(pHndl, &msg),
+                              eAEL_ERR_EVENT, &msg);
     } else {
         g_failures++;
     }
@@ -200,24 +206,25 @@ int main(void) {
         verify_receive_status("unterminated strings", status, eAEL_OK, &msg);
         if (status == eAEL_OK) {
             uint16_t sender_port = get_local_port(tx);
-            assert_check(msg.event == eAEL_EVENT_REGION_ADD, "unterminated strings",
-                    "event decoded");
+            assert_check(msg.event == eAEL_EVENT_REGION_ADD,
+                         "unterminated strings", "event decoded");
             assert_check(msg.rank == 7 && msg.group_id == 3 &&
-                       msg.timestamp_ns == 123456789ULL,
-                   "unterminated strings", "envelope decoded");
-            assert_check(msg.payload.id_version == 42 && msg.payload.size == 4096,
-                    "unterminated strings", "payload slots decoded");
+                             msg.timestamp_ns == 123456789ULL,
+                         "unterminated strings", "envelope decoded");
+            assert_check(msg.payload.id_version == 42 &&
+                             msg.payload.size == 4096,
+                         "unterminated strings", "payload slots decoded");
             assert_check(msg.from_ip == INADDR_LOOPBACK &&
-                        msg.from_port == sender_port,
-                   "unterminated strings", "sender address decoded");
+                             msg.from_port == sender_port,
+                         "unterminated strings", "sender address decoded");
             assert_check(strnlen(msg.payload.name, AEL_NAME_LEN) ==
-                           AEL_NAME_LEN - 1 &&
-                       msg.payload.name[AEL_NAME_LEN - 1] == '\0',
-                   "unterminated strings", "name terminated");
+                                 AEL_NAME_LEN - 1 &&
+                             msg.payload.name[AEL_NAME_LEN - 1] == '\0',
+                         "unterminated strings", "name terminated");
             assert_check(strnlen(msg.event_message, AEL_EVENT_MSG_LEN) ==
-                            AEL_EVENT_MSG_LEN - 1 &&
-                        msg.event_message[AEL_EVENT_MSG_LEN - 1] == '\0',
-                    "unterminated strings", "event_message terminated");
+                                 AEL_EVENT_MSG_LEN - 1 &&
+                             msg.event_message[AEL_EVENT_MSG_LEN - 1] == '\0',
+                         "unterminated strings", "event_message terminated");
         }
     } else {
         g_failures++;
@@ -232,8 +239,9 @@ int main(void) {
         eAEL_error status = receive_with_sentinel(pHndl, &msg);
         verify_receive_status("empty strings", status, eAEL_OK, &msg);
         if (status == eAEL_OK) {
-            assert_check(msg.payload.name[0] == '\0' && msg.event_message[0] == '\0',
-                   "empty strings", "strings decoded as empty");
+            assert_check(msg.payload.name[0] == '\0' &&
+                             msg.event_message[0] == '\0',
+                         "empty strings", "strings decoded as empty");
         }
     } else {
         g_failures++;

@@ -43,7 +43,7 @@ int main(void) {
     sigaction(SIGTERM, &sa, NULL);
 
     /* Create instance with max_recipients=0 (no outbound sends) */
-    ael_hndl *pHndl = ael_create_instance(0, 0, 1, PORT, 0);
+    ael_hndl *pHndl = ael_create_instance(eAEL_ORIGIN_ARE, 0, 0, 1, PORT, 0);
     if (!pHndl) {
         return 1;
     }
@@ -75,8 +75,8 @@ static void _log_received_message(const ael_message_t *msg) {
         (void) snprintf(from, sizeof(from), "0x%08x", msg->from_ip);
     }
 
-    log_info("rx from=%s:%u rank=%" PRIu64 " group_id=%" PRIu64
-             " ts=%" PRIu64 " ev=%s",
+    log_info("rx from=%s:%u rank=%" PRIu64 " group_id=%" PRIu64 " ts=%" PRIu64
+             " ev=%s",
              from, (unsigned) msg->from_port, msg->rank, msg->group_id,
              msg->timestamp_ns, ael_event_name(msg->event));
     log_info("  id_version=%" PRId64 " size=%" PRIu64 " name=\"%.*s\"",

@@ -19,8 +19,9 @@
 #include <string.h>
 #include <time.h>
 
-void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id, uint64_t rank,
-                      uint64_t group_id, const char *event_message) {
+void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id, eAEL_origin origin,
+                      uint64_t rank, uint64_t group_id,
+                      const char *event_message) {
     assert(pPacket != NULL);
     assert((unsigned) id < (unsigned) eAEL_N_EVENT);
 
@@ -36,7 +37,8 @@ void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id, uint64_t rank,
     pPacket->rank = rank;
     pPacket->group_id = group_id;
     pPacket->timestamp = timestamp;
-    pPacket->event = id;
+    pPacket->event = (uint16_t) id;
+    pPacket->origin = (uint16_t) origin;
 
     if (event_message) {
         (void) snprintf(pPacket->event_message, AEL_EVENT_MSG_LEN, "%s",

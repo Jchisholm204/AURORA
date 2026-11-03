@@ -37,19 +37,20 @@ enum aurora_external_logger_error_e {
     eAEL_ERR_SIZE = BIT(2),
     eAEL_ERR_CRC = BIT(3),
     eAEL_ERR_EVENT = BIT(4),
-    eAEL_ERR_SEND = BIT(5),
+    eAEL_ERR_ORIGIN = BIT(5),
+    eAEL_ERR_SEND = BIT(6),
 
     /* Caller errors: fatal, the handle itself remains valid */
-    eAEL_ERR_NULL = BIT(6),
-    eAEL_ERR_COUNT = BIT(7),
-    eAEL_ERR_IP = BIT(8),
+    eAEL_ERR_NULL = BIT(7),
+    eAEL_ERR_COUNT = BIT(8),
+    eAEL_ERR_IP = BIT(9),
 
     /* Handle errors: fatal */
-    eAEL_ERR_SOCKET = BIT(9),
-    eAEL_ERR_RECV = BIT(10),
+    eAEL_ERR_SOCKET = BIT(10),
+    eAEL_ERR_RECV = BIT(11),
 
     /* Retrying the same call cannot succeed */
-    eAEL_ERR_FATAL = BIT(11),
+    eAEL_ERR_FATAL = BIT(12),
 };
 
 struct aurora_external_logger_hndl
@@ -58,6 +59,7 @@ struct aurora_external_logger_hndl
     uint64_t rank;
     uint64_t group_id;
     uint64_t group_size;
+    eAEL_origin origin;
 
     size_t n_send_peers;
     size_t recipient_count;
@@ -74,6 +76,7 @@ struct aurora_external_logger_hndl
 struct aurora_external_logger_message {
     uint64_t rank;
     uint64_t group_id;
+    eAEL_origin origin;
     uint64_t timestamp_ns;
     eAEL_event event;
 
@@ -91,6 +94,7 @@ typedef struct aurora_external_logger_message ael_message_t;
 /**
  * @brief Allocate an AEL handle, open its UDP socket, and bind it locally.
  *
+ * @param origin Tagged on all packets, set to caller location
  * @param rank Rank of the local process
  * @param group_id Group identifier (use 0 for server-only implementations)
  * @param group_size Number of members in the group (use 0 for server-only)
@@ -98,8 +102,9 @@ typedef struct aurora_external_logger_message ael_message_t;
  * @param max_recipients Maximum number of recipients that can be added
  * @return Handle, or NULL on allocation or socket setup failure
  */
-extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
-                                     uint64_t group_size, uint16_t local_port,
+extern ael_hndl *ael_create_instance(eAEL_origin origin, uint64_t rank,
+                                     uint64_t group_id, uint64_t group_size,
+                                     uint16_t local_port,
                                      size_t max_recipients);
 
 /**

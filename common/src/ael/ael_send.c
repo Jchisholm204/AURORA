@@ -67,8 +67,8 @@ eAEL_error ael_send_connect(ael_hndl *pHndl, const char *event_message) {
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, eAEL_EVENT_CLI_CONNECT, pHndl->rank,
-                     pHndl->group_id, event_message);
+    _ael_packet_init(&packet, eAEL_EVENT_CLI_CONNECT, pHndl->origin,
+                     pHndl->rank, pHndl->group_id, event_message);
     _ael_packet_set_payload(&packet.payload, pHndl->group_id, pHndl->group_size,
                             NULL);
 
@@ -83,8 +83,8 @@ eAEL_error ael_send_failure(ael_hndl *pHndl, int64_t exit_code,
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, eAEL_EVENT_CLI_FAILURE, pHndl->rank,
-                     pHndl->group_id, event_message);
+    _ael_packet_init(&packet, eAEL_EVENT_CLI_FAILURE, pHndl->origin,
+                     pHndl->rank, pHndl->group_id, event_message);
 
     _ael_packet_set_payload(&packet.payload, exit_code, pHndl->group_size,
                             reason);
@@ -99,8 +99,8 @@ eAEL_error ael_send_disconnect(ael_hndl *pHndl, const char *event_message) {
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, eAEL_EVENT_CLI_DISCONNECT, pHndl->rank,
-                     pHndl->group_id, event_message);
+    _ael_packet_init(&packet, eAEL_EVENT_CLI_DISCONNECT, pHndl->origin,
+                     pHndl->rank, pHndl->group_id, event_message);
     return _ael_send(pHndl, &packet);
 }
 
@@ -118,7 +118,8 @@ eAEL_error ael_send_checkpoint(ael_hndl *pHndl, eAEL_event id, int64_t version,
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id, event_message);
+    _ael_packet_init(&packet, id, pHndl->origin, pHndl->rank, pHndl->group_id,
+                     event_message);
     _ael_packet_set_payload(&packet.payload, version, n_regions, name);
 
     return _ael_send(pHndl, &packet);
@@ -137,7 +138,8 @@ eAEL_error ael_send_region(ael_hndl *pHndl, eAEL_event id, int64_t region_id,
     }
 
     ael_packet_t packet;
-    _ael_packet_init(&packet, id, pHndl->rank, pHndl->group_id, event_message);
+    _ael_packet_init(&packet, id, pHndl->origin, pHndl->rank, pHndl->group_id,
+                     event_message);
     _ael_packet_set_payload(&packet.payload, region_id, size, name);
 
     return _ael_send(pHndl, &packet);

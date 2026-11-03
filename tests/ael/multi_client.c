@@ -135,7 +135,7 @@ static void *client_thread_entry(void *arg) {
     thread_params_t *params = (thread_params_t *) arg;
     const test_params_t *tp = params->tp;  // Dereference config pointer
     // Create AEL instance with rank from params
-    ael_hndl *pHndl = ael_create_instance(params->rank, 0, 1, 0, 1);
+    ael_hndl *pHndl = ael_create_instance(eAEL_ORIGIN_HOST, params->rank, 0, 1, 0, 1);
     if (!pHndl) {
         log_error("Failed to create AEL instance for thread");
         return NULL;
