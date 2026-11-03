@@ -27,10 +27,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pmix.h>
 
 struct aurora_discovery_service_hndl {
     int mdns_sock;
     int tcp_sock;
+    pmix_proc_t pmix_proc;
     uint8_t mdns_buf[MDNS_BUF_SIZE];
 };
 
@@ -52,12 +54,30 @@ static int _client_discovery_callback(int sock, const struct sockaddr *from,
                                       size_t record_length, void *user_data);
 
 extern ads_hndl *ads_init(void) {
+    
     ads_hndl *pHndl = malloc(sizeof(ads_hndl));
     if (!pHndl) {
-        log_error("Failed to allocate ADS Handle");
+        log_error("Failed to allocated ADS Handle");
         return NULL;
     }
 
+    { // PMIx BEGIN 
+        pmix_status_t pmix_status;
+        pmix_proc_t *all_procs;
+        pmix_value_t pmix_value;
+        size_t nprocs;
+        pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
+
+        log_info("PMIx Server proc %d @ %s", pHndl->pmix_proc.rank, pHndl->pmix_proc.nspace);
+        pmix_status = PMIx_Resolve_peers("localhost-0.tail6b59c6.ts.net", NULL, &all_procs, &nprocs);
+        for (size_t i = 0; i < nprocs; i++) log_info("Server sees proc %d @ %s", all_procs[i].rank, all_procs[i].nspace);
+
+        pmix_status = PMIx_Value_load(&pmix_value, &pHndl->pmix_proc, PMIX_PROC);
+        pmix_status = PMIx_Put(PMIX_LOCAL, "server", &pmix_value);
+
+    }
+    
     pHndl->mdns_sock = mdns_socket_open_ipv4(NULL);
     mdns_socket_setup_ipv4(pHndl->mdns_sock, NULL);
 
@@ -103,6 +123,12 @@ extern int ads_finalize(ads_hndl **ppHndl) {
         return -1;
     if (!*ppHndl)
         return -1;
+
+    { // PMIx BEGIN
+        pmix_status_t pmix_status;
+        pmix_status = PMIx_Finalize(NULL, 0);
+        if (pmix_status != PMIX_SUCCESS) log_error("Failed to finalize the PMIx Client");
+    }
     mdns_socket_close((*ppHndl)->mdns_sock);
     close((*ppHndl)->tcp_sock);
     free((*ppHndl));
@@ -230,6 +256,19 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
                                                  ads_exchange_data_t *pTxData) {
     if (!pConf || !pTxData) {
         return NULL;
+    }
+
+    { // PMIx BEGIN
+        pmix_status_t pmix_status;
+        pmix_proc_t client_proc;
+        pmix_proc_t *all_procs;
+        size_t nprocs;
+        pmix_status = PMIx_Init(&client_proc, NULL, 0);
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to initialize with error %s", PMIx_Error_string(pmix_status));
+
+        log_info("PMIx client %d @ %s", client_proc.rank, client_proc.nspace);
+        pmix_status = PMIx_Resolve_peers("localhost-0.tail6b59c6.ts.net", NULL, &all_procs, &nprocs);
+        for (size_t i = 0; i < nprocs; i++) log_info("Client sees proc %d @ %s", all_procs[i].rank, all_procs[i].nspace);
     }
 
     log_trace("Connecting to %s", pConf->opt_server_ip);
