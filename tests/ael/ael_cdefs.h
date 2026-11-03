@@ -17,7 +17,20 @@
 #include "ael/ael.h"
 #include "ael/ael_packet.h"
 
+#include <errno.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+
 #define PORT 8334
+#define AEL_SAMPLE_REGION_SIZE 4096
+#define AEL_DEFAULT_PACKETS 32
+
+#include "log.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Get the printable name of an event code
@@ -64,6 +77,51 @@ static inline eAEL_event ael_event_code(unsigned long index) {
         return eAEL_N_EVENT;
     }
     return (eAEL_event) index;
+}
+
+/**
+ * @brief Send a test event to the AEL server
+ *
+ * @param pHndl AEL instance handle
+ * @param rank Rank of the sender
+ * @param event Event code to send
+ * @param index Sequence index for region events
+ * @return eAEL_OK on success, error code on failure
+ */
+static inline eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
+                                         eAEL_event event, unsigned long index) {
+    char event_message[AEL_EVENT_MSG_LEN];
+    char name[AEL_NAME_LEN];
+
+    switch (event) {
+    case eAEL_EVENT_CLI_CONNECT:
+        snprintf(event_message, AEL_EVENT_MSG_LEN,
+                 "client %" PRIu64 " connect", rank);
+        return ael_send_connect(pHndl, event_message);
+    case eAEL_EVENT_CLI_FAILURE:
+        snprintf(event_message, AEL_EVENT_MSG_LEN,
+                 "client %" PRIu64 " failure", rank);
+        return ael_send_failure(pHndl, -1, "failure occurred", event_message);
+    case eAEL_EVENT_CLI_DISCONNECT:
+        snprintf(event_message, AEL_EVENT_MSG_LEN,
+                 "client %" PRIu64 " disconnect", rank);
+        return ael_send_disconnect(pHndl, event_message);
+    case eAEL_EVENT_CHECKPOINT_START:
+        return ael_send_checkpoint(pHndl, event, 1, 4, "ckpt-start", NULL);
+    case eAEL_EVENT_CHECKPOINT_END:
+        return ael_send_checkpoint(pHndl, event, 2, 4, "ckpt-end", NULL);
+    case eAEL_EVENT_RESTORE_START:
+        return ael_send_checkpoint(pHndl, event, 1, 4, "restore-start", NULL);
+    case eAEL_EVENT_RESTORE_END:
+        return ael_send_checkpoint(pHndl, event, 2, 4, "restore-end", NULL);
+    case eAEL_EVENT_REGION_ADD:
+    case eAEL_EVENT_REGION_REMOVE:
+        snprintf(name, AEL_NAME_LEN, "rgn-%lu", index);
+        return ael_send_region(pHndl, event, (int64_t) index,
+                               AEL_SAMPLE_REGION_SIZE, name, NULL);
+    default:
+        return eAEL_ERR_EVENT | eAEL_ERR_FATAL;
+    }
 }
 
 #endif

@@ -18,16 +18,12 @@
  */
 
 #include "ael_cdefs.h"
-#include "log.h"
 
 #include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#define AEL_DEFAULT_PACKETS 32
-#define AEL_SAMPLE_REGION_SIZE 4096
 
 struct ael_test_params {
     const char *server_ip;
@@ -36,8 +32,6 @@ struct ael_test_params {
 };
 
 static struct ael_test_params *parse_test_cli_params(int argc, char **argv);
-static eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
-                                  eAEL_event event, unsigned long index);
 
 int main(int argc, char **argv) {
     struct ael_test_params *tp = parse_test_cli_params(argc, argv);
@@ -84,43 +78,6 @@ int main(int argc, char **argv) {
     log_info("AEL UDP client sent %lu packet(s)", tp->packet_count);
     free(tp);
     return 0;
-}
-
-static eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
-                                  eAEL_event event, unsigned long index) {
-    char event_message[AEL_EVENT_MSG_LEN];
-    char name[AEL_NAME_LEN];
-
-    switch (event) {
-    case eAEL_EVENT_CLI_CONNECT:
-        snprintf(event_message, AEL_EVENT_MSG_LEN,
-                 "client %" PRIu64 " connect", rank);
-        return ael_send_connect(pHndl, event_message);
-    case eAEL_EVENT_CLI_FAILURE:
-        snprintf(event_message, AEL_EVENT_MSG_LEN,
-                 "client %" PRIu64 " failure", rank);
-        return ael_send_failure(pHndl, -1, "failure occurred", event_message);
-    case eAEL_EVENT_CLI_DISCONNECT:
-        snprintf(event_message, AEL_EVENT_MSG_LEN,
-                 "client %" PRIu64 " disconnect", rank);
-        return ael_send_disconnect(pHndl, event_message);
-    case eAEL_EVENT_CHECKPOINT_START:
-        return ael_send_checkpoint(pHndl, event, 1, 4, "ckpt-start", NULL);
-    case eAEL_EVENT_CHECKPOINT_END:
-        return ael_send_checkpoint(pHndl, event, 2, 4, "ckpt-end", NULL);
-    case eAEL_EVENT_RESTORE_START:
-        return ael_send_checkpoint(pHndl, event, 1, 4, "restore-start", NULL);
-    case eAEL_EVENT_RESTORE_END:
-        return ael_send_checkpoint(pHndl, event, 2, 4, "restore-end", NULL);
-    case eAEL_EVENT_REGION_ADD:
-    case eAEL_EVENT_REGION_REMOVE:
-        snprintf(name, AEL_NAME_LEN, "rgn-%lu", index);
-        return ael_send_region(pHndl, event, (int64_t) index,
-                               AEL_SAMPLE_REGION_SIZE, name, NULL);
-    default:
-        log_error("Unsupported event code %d", (int) event);
-        return eAEL_ERR_EVENT | eAEL_ERR_FATAL;
-    }
 }
 
 static struct ael_test_params *parse_test_cli_params(int argc, char **argv) {
