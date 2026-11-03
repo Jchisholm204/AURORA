@@ -46,7 +46,8 @@ typedef struct aurora_external_logger_payload ael_payload_t;
 _Static_assert(sizeof(eAEL_event) == 4, "unexpected eAEL_event size");
 _Static_assert(sizeof(ael_payload_t) == 32, "unexpected payload size");
 
-#ifdef AEL_INTERNAL
+#ifdef AEL_INTERNAL // BEGIN: AEL_INTERNAL
+
 struct aurora_external_logger_packet {
     uint64_t rank;
     uint64_t group_id;
@@ -76,6 +77,6 @@ extern void _ael_packet_init(ael_packet_t *pPacket, eAEL_event id,
                              const char *event_message);
 extern void _ael_packet_set_payload(ael_payload_t *pPayload, int64_t id_version,
                                     uint64_t size, const char *name);
-#endif
+#endif // END: AEL_INTERNAL
 
 #endif
