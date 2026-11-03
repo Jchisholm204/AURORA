@@ -135,7 +135,7 @@ static void _build_packet(ael_packet_t *packet, eAEL_event event) {
 }
 
 int main(void) {
-    ael_hndl *pHndl = ael_create_instance(0, 0, AEL_BAD_TEST_PORT, 0);
+    ael_hndl *pHndl = ael_create_instance(0, 0, 1, AEL_BAD_TEST_PORT, 0);
     if (!pHndl) {
         log_error("Failed to bind AEL test receiver on port %d",
                   AEL_BAD_TEST_PORT);

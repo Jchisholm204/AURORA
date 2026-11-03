@@ -26,6 +26,7 @@
 #include <unistd.h>
 
 ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
+                              uint64_t group_size,
                               uint16_t local_port, size_t max_recipients) {
     ael_hndl *pHndl = calloc(1, sizeof(ael_hndl));
     if (!pHndl) {
@@ -35,6 +36,7 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
 
     pHndl->rank = rank;
     pHndl->group_id = group_id;
+    pHndl->group_size = group_size;
     pHndl->n_send_peers = max_recipients;
     pHndl->recipient_count = 0;
     pHndl->socket.fd = -1;

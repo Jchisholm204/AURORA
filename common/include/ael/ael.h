@@ -57,6 +57,7 @@ struct aurora_external_logger_hndl
 {
     uint64_t rank;
     uint64_t group_id;
+    uint64_t group_size;
 
     size_t n_send_peers;
     size_t recipient_count;
@@ -92,14 +93,16 @@ typedef struct aurora_external_logger_message ael_message_t;
  * @brief Allocate an AEL handle, open its UDP socket, and bind it locally.
  *
  * @param rank Rank of the local process
- * @param group_id Group identifier
+ * @param group_id Group identifier (use 0 for server-only implementations)
+ * @param group_size Number of members in the group (use 0 for server-only)
  * @param local_port Local UDP port in host byte order
  * @param max_recipients Maximum number of recipients that can be added
  * @return Handle, or NULL on allocation or socket setup failure
  */
 extern ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
-                                     uint16_t local_port,
-                                     size_t max_recipients);
+	uint64_t group_size,
+	uint16_t local_port,
+	size_t max_recipients);
 
 /**
  * @brief Close the socket and free the handle.

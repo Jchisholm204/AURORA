@@ -26,6 +26,7 @@ binds to `INADDR_ANY:local_port`.
 
 ```c
 ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
+                              uint64_t group_size,
                               uint16_t local_port, size_t max_recipients);
 ```
 
@@ -34,7 +35,8 @@ ael_hndl *ael_create_instance(uint64_t rank, uint64_t group_id,
   by the API, so this is only useful for send-only handles.
 - `max_recipients` fixes the size of the outbound peer table. Use `0` for a
   receive-only handle.
-- `rank` and `group_id` are copied into every outgoing packet.
+- `rank`, `group_id`, and `group_size` identify the process's position within
+  its group (use `0` for server-only implementations that don't send messages).
 - Returns `NULL` on allocation, socket, or bind failure.
 
 ### Deconstruction
@@ -126,6 +128,7 @@ never be defined by a consumer that only needs the event API.
 struct aurora_external_logger_hndl {
     uint64_t rank;
     uint64_t group_id;
+	uint64_t group_size;	// number of members in the group (0 = server-only)
 
     size_t n_send_peers;     // peer table capacity
     size_t recipient_count;  // peers added so far
@@ -241,7 +244,7 @@ though there is no version field to detect it.
 ## Usage
 ```c
 /* Listener: bind port 8334, no outbound peers */
-ael_hndl *rx = ael_create_instance(0, 0, 8334, 0);
+ael_hndl *rx = ael_create_instance(0, 0, 1, 8334, 0);
 ael_message_t msg;
 for (;;) {
     eAEL_error st = ael_recv_message(rx, &msg, -1);
@@ -253,7 +256,7 @@ for (;;) {
 }
 
 /* Sender: ephemeral local port, one recipient */
-ael_hndl *tx = ael_create_instance(rank, group_id, 0, 1);
+ael_hndl *tx = ael_create_instance(rank, group_id, 1, 0, 1);
 ael_add_recipient(tx, "10.0.0.42", 8334);
 ael_send_checkpoint(tx, eAEL_EVENT_CHECKPOINT_START, version, n_regions,
                     "heatdis", NULL);
