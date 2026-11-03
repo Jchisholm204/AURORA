@@ -36,12 +36,26 @@ void *acr_cmd_checkpoint(void *arg) {
     }
     struct aurora_command_ctx *pCtx = arg;
 
+    struct timespec ael_start;
+    clock_gettime(CLOCK_MONOTONIC, &ael_start);
+    int64_t ael_version = -1;
+    char ael_name[AFV_CKPT_NAME_LEN] = {0};
+    bool checkpoint_fail = true;
+
     // Initialize Checkpoint
     aim_entry_t *pInstance = pCtx->pInstance;
     afv_checkpoint_t *pCheckpoint = _acr_cmd_checkpoint_init(pInstance);
     if (!pCheckpoint) {
         log_error("Checkpoint Creation Failed");
         goto CHECKPOINT_FAIL;
+    }
+
+    { // Capture identity for AEL before the checkpoint is closed
+        ael_version = afv_checkpoint_version(pCheckpoint);
+        const char *name = afv_checkpoint_name(pCheckpoint);
+        if (name) {
+            memcpy(ael_name, name, strnlen(name, AFV_CKPT_NAME_LEN));
+        }
     }
 
     // Read Only Pointer (do not free)
@@ -181,12 +195,15 @@ void *acr_cmd_checkpoint(void *arg) {
 
     // NOP
     acn_tick(pInstance->pACN, eACN_checkpoint);
+    checkpoint_fail = false;
 
 CHECKPOINT_FAIL:
     if (pCheckpoint) {
         log_error("Checkpoint Failed");
         afv_checkpoint_destroy(&pCheckpoint);
     }
+    _acr_emit(pCtx, pInstance, eAEL_CHECKPOINT, !checkpoint_fail, ael_version,
+              ael_name, &ael_start);
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {
         log_fatal("Could Not Enqueue! A thread lost a connection");

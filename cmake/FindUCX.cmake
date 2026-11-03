@@ -2,6 +2,12 @@
 
 find_package(ucx)
 
+# Ubuntu's libucx-dev ships a config with a bad prefix (/usr/lib/include) - fall back to manual search
+if(ucx_FOUND AND NOT EXISTS "${UCX_INCLUDE_DIRS}/ucp/api/ucp.h")
+    message(STATUS "Ignoring broken UCX CMake package at ${ucx_DIR}")
+    set(ucx_FOUND FALSE)
+endif()
+
 if(NOT ucx_FOUND)
     find_path(UCX_INCLUDE_DIR NAMES ucp/api/ucp.h
         HINTS $ENV{UCX_HOME} $ENV{HPC_SDK_PATH}

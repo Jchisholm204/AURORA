@@ -3,6 +3,9 @@ set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+# STATIC_LIBRARY try-compiles skip linking, so CMake can't detect the multiarch
+# lib dir (e.g. /usr/lib/x86_64-linux-gnu) on Debian/Ubuntu - set it explicitly
+set(CMAKE_LIBRARY_ARCHITECTURE x86_64-linux-gnu)
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_ASM_COMPILER ${CMAKE_C_COMPILER})

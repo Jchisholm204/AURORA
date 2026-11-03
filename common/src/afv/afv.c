@@ -296,6 +296,20 @@ uint64_t afv_get_rank(afv_hndl *pHndl) {
     return pHndl->rank;
 }
 
+int64_t afv_get_group_id(afv_hndl *pHndl) {
+    if (!pHndl) {
+        return 0;
+    }
+    return pHndl->group_id;
+}
+
+int64_t afv_get_group_size(afv_hndl *pHndl) {
+    if (!pHndl) {
+        return 0;
+    }
+    return (int64_t) pHndl->group_size;
+}
+
 #ifndef FARUE
 #error "FARUE was not found"
 #endif

@@ -13,6 +13,7 @@
 
 #include "acl.h"
 #include "acr/acr.h"
+#include "ael/ael.h"
 #include "aim.h"
 #include "log.h"
 
@@ -52,9 +53,13 @@ int are_main(int argc, char **argv) {
     aim_hndl *pAIM = NULL;
     acl_hndl *pACL = NULL;
     acr_hndl *pACR = NULL;
+    ael_hndl *pAEL = NULL;
+
+    // Optional external logger (enabled via AURORA_AEL_HOST)
+    pAEL = ael_init_from_env();
 
     pAIM = aim_init(AIM_MAX_WORKERS);
-    pACR = acr_init(pAIM, ACR_MAX_WORKERS);
+    pACR = acr_init(pAIM, pAEL, ACR_MAX_WORKERS);
     pACL = acl_init(pAIM, pACR);
 
     aci_keepalive(true);
@@ -110,6 +115,9 @@ int are_main(int argc, char **argv) {
     acr_finalize(&pACR);
     acl_finalize(&pACL);
     aim_finalize(&pAIM);
+    if (pAEL) {
+        (void) ael_finalize(&pAEL);
+    }
 
     if (pLogFile) {
         fclose(pLogFile);

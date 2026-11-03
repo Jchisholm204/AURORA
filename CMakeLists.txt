@@ -53,6 +53,7 @@ set(COMMON_LIBRARIES
 # Add All Subprojects
 add_subdirectory(common)
 add_subdirectory(server)
+add_subdirectory(logger)
 add_subdirectory(lib)
 if(BUILD_TESTING)
     # Adds all test Subprojects

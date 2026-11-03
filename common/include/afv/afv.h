@@ -64,4 +64,8 @@ extern eAFV_verif afv_write_metadata(afv_hndl *pHndl,
 
 extern uint64_t afv_get_rank(afv_hndl *pHndl);
 
+extern int64_t afv_get_group_id(afv_hndl *pHndl);
+
+extern int64_t afv_get_group_size(afv_hndl *pHndl);
+
 #endif

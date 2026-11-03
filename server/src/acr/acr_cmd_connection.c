@@ -46,6 +46,9 @@ void *acr_cmd_connection_up(void *arg) {
 
         log_trace("Attempting to accept new connection");
 
+        struct timespec ael_start;
+        clock_gettime(CLOCK_MONOTONIC, &ael_start);
+
         aim_entry_t *pCli = aim_add_entry(pCtx->pAIM);
         if (!pCli) {
             log_error("Failed to retrieve memory for new AIM entry");
@@ -169,6 +172,7 @@ void *acr_cmd_connection_up(void *arg) {
         }
 
         log_trace("New connection accepted.");
+        _acr_emit(pCtx, pCli, eAEL_CONNECT, true, -1, NULL, &ael_start);
         // Deal with AIM
         if (aim_enqueue(pCtx->pAIM, pCli) != 0) {
             log_fatal("Could Not Enqueue! A thread lost a connection");
@@ -192,6 +196,9 @@ void *acr_cmd_connection_down(void *arg) {
     struct aurora_command_ctx *pCtx = arg;
 
     log_info("Closing Connection");
+
+    // Emit before AFV is destroyed (rank/group still readable)
+    _acr_emit(pCtx, pCtx->pInstance, eAEL_DISCONNECT, true, -1, NULL, NULL);
 
     // Run the command stuffs
     arm_destroy_instance(&pCtx->pInstance->pARM);

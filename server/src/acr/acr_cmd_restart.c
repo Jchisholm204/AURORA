@@ -47,12 +47,24 @@ void *acr_cmd_restart(void *arg) {
     afv_checkpoint_t *pCheckpoint = NULL;
     size_t *amr_restore_order = NULL;
     bool restart_fail = true;
+    struct timespec ael_start;
+    clock_gettime(CLOCK_MONOTONIC, &ael_start);
+    int64_t ael_version = -1;
+    char ael_name[AFV_CKPT_NAME_LEN] = {0};
 
     // Load the checkpoint from disk
     pCheckpoint = _acr_cmd_restart_init(pInstance);
     if (!pCheckpoint) {
         log_error("Checkpoint Load Failure");
         goto RESTART_FAIL;
+    }
+
+    { // Capture identity for AEL before the checkpoint is destroyed
+        ael_version = afv_checkpoint_version(pCheckpoint);
+        const char *name = afv_checkpoint_name(pCheckpoint);
+        if (name) {
+            memcpy(ael_name, name, strnlen(name, AFV_CKPT_NAME_LEN));
+        }
     }
 
     const size_t arm_n_regions = arm_get_n_remote_regions(pInstance->pARM);
@@ -237,6 +249,9 @@ RESTART_FAIL:
     if (restart_fail) {
         pInstance->error_counter++;
     }
+
+    _acr_emit(pCtx, pInstance, eAEL_RESTART, !restart_fail, ael_version,
+              ael_name, &ael_start);
 
     // Deal with AIM
     if (aim_enqueue(pCtx->pAIM, pCtx->pInstance) != 0) {

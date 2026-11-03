@@ -9,6 +9,7 @@
  * @copyright Copyright (c) 2026
  */
 
+#include "ael/ael.h"
 #include "aim.h"
 
 #ifndef _ACR_ACR_H_
@@ -18,6 +19,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <threads.h>
+#include <time.h>
 
 // Command Scratchpad working memory size (5MB)
 #ifndef ACR_CMD_CTX_SCRATCH_SIZE
@@ -26,6 +28,7 @@
 
 struct aurora_command_ctx {
     aim_hndl *pAIM;
+    ael_hndl *pAEL;
     aim_entry_t *pInstance;
     int flags;
     // Command Scratch Size Buffer
@@ -45,6 +48,7 @@ struct aurora_command_runner_hndl
     atomic_int refcount;
     _Atomic(uint64_t) thread_ctx_head_idx;
     aim_hndl *pAIM;
+    ael_hndl *pAEL;
     struct aurora_command_ctx *thread_contexts;
     size_t max_workers;
 }
@@ -64,7 +68,7 @@ typedef void *(*ACR_cmd_fn)(void *);
 typedef struct aurora_command_runner_hndl acr_hndl;
 typedef enum aurora_command_runner_error_e eACR_error;
 
-extern acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers);
+extern acr_hndl *acr_init(aim_hndl *pAIM, ael_hndl *pAEL, size_t max_workers);
 
 extern eACR_error acr_finalize(acr_hndl **ppHndl);
 
@@ -85,6 +89,11 @@ extern void *acr_cmd_connection_down(void *);
 extern eACR_error _acr_ctx_release(struct aurora_command_ctx *pCtx);
 extern eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx,
                                          int count);
+
+// Emit an AEL event for the context instance (no-op if AEL is disabled)
+extern void _acr_emit(struct aurora_command_ctx *pCtx, aim_entry_t *pInstance,
+                      enum eAEL_type type, bool ok, int64_t version,
+                      const char *name, const struct timespec *pStart);
 
 #endif
 

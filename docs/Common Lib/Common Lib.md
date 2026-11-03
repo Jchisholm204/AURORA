@@ -9,3 +9,4 @@
 - [AURORA Operating Configuration - AOC](AURORA%20Operating%20Configuration%20-%20AOC.md)
 - [AURORA Region Manager - ARM](AURORA%20Region%20Manager%20-%20ARM.md)
 - [AURORA File Versioning - AFV](AURORA%20File%20Versioning%20-%20AFV.md)
+- [AURORA External Logger - AEL](AURORA%20External%20Logger%20-%20AEL.md)

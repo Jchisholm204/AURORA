@@ -22,7 +22,7 @@
 #include <threads.h>
 #include <unistd.h>
 
-acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
+acr_hndl *acr_init(aim_hndl *pAIM, ael_hndl *pAEL, size_t max_workers) {
     if (!pAIM) {
         log_warn("NULL Parameter");
         return NULL;
@@ -37,6 +37,7 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
         return NULL;
     }
     pHndl->pAIM = pAIM;
+    pHndl->pAEL = pAEL;
     pHndl->refcount = 0;
     pHndl->max_workers = max_workers;
 
@@ -50,6 +51,7 @@ acr_hndl *acr_init(aim_hndl *pAIM, size_t max_workers) {
         pHndl->thread_contexts[i].__restricted.pHndl = pHndl;
         pHndl->thread_contexts[i].pInstance = NULL;
         pHndl->thread_contexts[i].pAIM = pHndl->pAIM;
+        pHndl->thread_contexts[i].pAEL = pHndl->pAEL;
     }
     pHndl->thread_contexts[max_workers - 1].__restricted.next = 0xFFFFFFFF;
     pHndl->thread_contexts[max_workers - 1].__restricted.pHndl = NULL;
@@ -137,6 +139,7 @@ eACR_error acr_run(acr_hndl *pHndl, aim_entry_t *pInstance, int flags,
 
     // Always just ensure this matches..
     pCCtx->pAIM = pHndl->pAIM;
+    pCCtx->pAEL = pHndl->pAEL;
     assert(pCCtx->pAIM == pHndl->pAIM);
 
     // MUST check, set and reset this every time
@@ -212,4 +215,33 @@ eACR_error _acr_ctx_release_retry(struct aurora_command_ctx *pCtx, int count) {
         log_error("Failed to release after %d / %d attempts", attempts, count);
     }
     return acr_status;
+}
+
+void _acr_emit(struct aurora_command_ctx *pCtx, aim_entry_t *pInstance,
+               enum eAEL_type type, bool ok, int64_t version, const char *name,
+               const struct timespec *pStart) {
+    if (!pCtx || !pCtx->pAEL || !pInstance) {
+        return;
+    }
+    afv_hndl *pAFV = pInstance->pAFV;
+
+    ael_packet_t packet = {0};
+    packet.type = (uint8_t) type;
+    packet.status = ok ? eAEL_STATUS_OK : eAEL_STATUS_FAIL;
+    packet.rank = afv_get_rank(pAFV);
+    packet.group_id = (uint64_t) afv_get_group_id(pAFV);
+    packet.group_size = afv_get_group_size(pAFV);
+    packet.version = version;
+    if (name) {
+        memcpy(packet.name, name, strnlen(name, AEL_NAME_LEN));
+    }
+    if (pStart) {
+        struct timespec end;
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        packet.duration_ms =
+            (double) (end.tv_sec - pStart->tv_sec) * 1e3 +
+            (double) (end.tv_nsec - pStart->tv_nsec) / 1e6;
+    }
+
+    (void) ael_emit(pCtx->pAEL, &packet);
 }
