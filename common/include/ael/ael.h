@@ -71,9 +71,6 @@ struct aurora_external_logger_hndl
 #endif
 ;
 
-typedef enum aurora_external_logger_error_e eAEL_error;
-typedef struct aurora_external_logger_hndl ael_hndl;
-
 struct aurora_external_logger_message {
     uint64_t rank;
     uint64_t group_id;
@@ -87,6 +84,8 @@ struct aurora_external_logger_message {
     char event_message[AEL_EVENT_MSG_LEN];
 };
 
+typedef enum aurora_external_logger_error_e eAEL_error;
+typedef struct aurora_external_logger_hndl ael_hndl;
 typedef struct aurora_external_logger_message ael_message_t;
 
 /**
@@ -136,8 +135,9 @@ extern eAEL_error ael_send_connect(ael_hndl *pHndl, const char *event_message);
 /**
  * @brief Send a client failure event.
  *
- * The payload contains the exit code in the version field, group size 
- * (from handle initialization) in the size field, and an optional reason string.
+ * The payload contains the exit code in the version field, group size
+ * (from handle initialization) in the size field, and an optional reason
+ * string.
  *
  * @param pHndl AEL handle
  * @param exit_code Failure exit code to store in payload
@@ -145,8 +145,8 @@ extern eAEL_error ael_send_connect(ael_hndl *pHndl, const char *event_message);
  * @return eAEL_OK, or an eAEL_error code
  */
 extern eAEL_error ael_send_failure(ael_hndl *pHndl, int64_t exit_code,
-                                    const char *reason,
-                                    const char *event_message);
+                                   const char *reason,
+                                   const char *event_message);
 
 /**
  * @brief Send a client disconnect event.
