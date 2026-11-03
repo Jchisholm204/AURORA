@@ -35,12 +35,12 @@ struct ael_test_params {
     unsigned long packet_count;
 };
 
-static struct ael_test_params *ael_parse_params(int argc, char **argv);
-static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
+static struct ael_test_params *parse_test_cli_params(int argc, char **argv);
+static eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
                                   eAEL_event event, unsigned long index);
 
 int main(int argc, char **argv) {
-    struct ael_test_params *tp = ael_parse_params(argc, argv);
+    struct ael_test_params *tp = parse_test_cli_params(argc, argv);
     if (!tp) {
         log_error("Failed to parse client arguments");
         return 1;
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 
     for (unsigned long i = 0; i < tp->packet_count; i++) {
         eAEL_event event = ael_event_code(i % (unsigned long) eAEL_N_EVENT);
-        eAEL_error tx_status = _ael_send_event(pHndl, tp->rank, event, i);
+        eAEL_error tx_status = _send_test_event(pHndl, tp->rank, event, i);
         if (tx_status != eAEL_OK) {
             log_error("Failed to send packet %lu (eAEL_error=%d)", i,
                       (int) tx_status);
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
+static eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
                                   eAEL_event event, unsigned long index) {
     char event_message[AEL_EVENT_MSG_LEN];
     char name[AEL_NAME_LEN];
@@ -123,7 +123,7 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
     }
 }
 
-static struct ael_test_params *ael_parse_params(int argc, char **argv) {
+static struct ael_test_params *parse_test_cli_params(int argc, char **argv) {
     struct ael_test_params *tp = malloc(sizeof(struct ael_test_params));
     if (!tp) {
         log_error("Failed to allocate AEL test parameters");

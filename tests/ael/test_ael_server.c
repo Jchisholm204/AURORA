@@ -25,17 +25,17 @@
 
 static volatile sig_atomic_t g_stop = 0;
 
-static void _ael_signal_handler(int signal) {
+static void _signal_handler(int signal) {
     (void) signal;
     g_stop = 1;
 }
 
-static void _ael_log_message(const ael_message_t *msg);
+static void _log_received_message(const ael_message_t *msg);
 
 int main(void) {
     /* Do not use SA_RESTART so poll wakes up on Ctrl+C */
     struct sigaction sa = {
-        .sa_handler = _ael_signal_handler,
+        .sa_handler = _signal_handler,
     };
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
@@ -55,7 +55,7 @@ int main(void) {
         eAEL_error rx_status = ael_recv_message(pHndl, &msg, -1);
 
         if (rx_status == eAEL_OK) {
-            _ael_log_message(&msg);
+            _log_received_message(&msg);
         } else if (rx_status & eAEL_ERR_FATAL) {
             log_error("AEL recv failed (eAEL_error=%d)", (int) rx_status);
             break;
@@ -68,7 +68,7 @@ int main(void) {
     return 0;
 }
 
-static void _ael_log_message(const ael_message_t *msg) {
+static void _log_received_message(const ael_message_t *msg) {
     char from[INET_ADDRSTRLEN] = "0.0.0.0";
     struct in_addr addr = {.s_addr = htonl(msg->from_ip)};
     if (!inet_ntop(AF_INET, &addr, from, sizeof(from))) {

@@ -56,13 +56,13 @@ typedef struct {
     const test_params_t *tp;  // Pointer to shared configuration (const prevents accidental modification)
 } thread_params_t;
 
-static void _ael_usage(const char *prog);
-static test_params_t *ael_parse_params(int argc, char **argv);
-static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
+static void print_usage(const char *prog);
+static test_params_t *parse_multi_client_args(int argc, char **argv);
+static eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
                                   eAEL_event event, unsigned long index);
-static void *thread_func(void *arg);
+static void *client_thread_entry(void *arg);
 
-static void _ael_usage(const char *prog) {
+static void print_usage(const char *prog) {
     fprintf(stderr, "Usage: %s [server_ip] [num_threads] [num_messages] [server_port]\n", prog);
     fprintf(stderr, "Example: %s 127.0.0.1 4 64 8335\n", prog);
     fprintf(stderr, "  - server_ip: IP address of the AEL server (default: 127.0.0.1)\n");
@@ -72,7 +72,7 @@ static void _ael_usage(const char *prog) {
     fprintf(stderr, "Run with no arguments, -h, or --help to print this message.\n");
 }
 
-static test_params_t *ael_parse_params(int argc, char **argv) {
+static test_params_t *parse_multi_client_args(int argc, char **argv) {
     test_params_t *tp = malloc(sizeof(*tp));
     if (!tp) {
         log_error("Failed to allocate AEL test parameters");
@@ -140,12 +140,12 @@ static test_params_t *ael_parse_params(int argc, char **argv) {
     return tp;
 
 fail:
-    _ael_usage(argv[0]);
+    print_usage(argv[0]);
     free(tp);
     return NULL;
 }
 
-static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
+static eAEL_error _send_test_event(ael_hndl *pHndl, uint64_t rank,
                                   eAEL_event event, unsigned long index) {
     char event_message[AEL_EVENT_MSG_LEN];
     char name[AEL_NAME_LEN];
@@ -182,7 +182,7 @@ static eAEL_error _ael_send_event(ael_hndl *pHndl, uint64_t rank,
     }
 }
 
-static void *thread_func(void *arg) {
+static void *client_thread_entry(void *arg) {
     thread_params_t *params = (thread_params_t *) arg;
     const test_params_t *tp = params->tp;  // Dereference config pointer
     
@@ -210,7 +210,7 @@ static void *thread_func(void *arg) {
         // Cycle through all event types, wrapping after the last one
         eAEL_event event = ael_event_code(i % (unsigned long) eAEL_N_EVENT);
         eAEL_error tx_status =
-            _ael_send_event(pHndl, (uint64_t) params->rank, event, i);
+            _send_test_event(pHndl, (uint64_t) params->rank, event, i);
         if (tx_status != eAEL_OK) {
             log_error("Failed to send %s from rank %ld: eAEL_error=%d",
                       ael_event_name(event), params->rank, (int) tx_status);
@@ -233,12 +233,12 @@ int main(int argc, char **argv) {
     // No arguments, -h, or --help: print usage instead of running
     if (argc < 2 || strcmp(argv[1], "-h") == 0 ||
         strcmp(argv[1], "--help") == 0) {
-        _ael_usage(argv[0]);
+        print_usage(argv[0]);
         return 0;
     }
 
     // Parse all arguments into consolidated params struct
-    test_params_t *tp = ael_parse_params(argc, argv);
+    test_params_t *tp = parse_multi_client_args(argc, argv);
     if (!tp) {
         return 1;
     }
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
         pthread_attr_init(&attr);
         pthread_attr_setstacksize(&attr, 8 * 1024 * 1024); // 8MB stack per thread
         
-        status = pthread_create(&threads[i], &attr, thread_func, &thread_params[i]);
+        status = pthread_create(&threads[i], &attr, client_thread_entry, &thread_params[i]);
         pthread_attr_destroy(&attr);
         
         if (status != 0) {
