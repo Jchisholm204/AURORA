@@ -182,6 +182,11 @@ void *acr_cmd_checkpoint(void *arg) {
     // NOP
     acn_tick(pInstance->pACN, eACN_checkpoint);
 
+    (void) ael_send_checkpoint(pInstance->pAEL, eAEL_EVENT_CHECKPOINT_END,
+                               afv_checkpoint_version(pCheckpoint),
+                               arm_n_regions, afv_checkpoint_name(pCheckpoint),
+                               NULL);
+
 CHECKPOINT_FAIL:
     if (pCheckpoint) {
         log_error("Checkpoint Failed");
@@ -259,6 +264,10 @@ afv_checkpoint_t *_acr_cmd_checkpoint_init(aim_entry_t *pInstance) {
         log_error("Checkpoint Creation Failed");
         return NULL;
     }
+
+    (void) ael_send_checkpoint(pInstance->pAEL, eAEL_EVENT_CHECKPOINT_START,
+                               checkpoint_version, arm_n_regions,
+                               checkpoint_name, NULL);
 
     return pCheckpoint;
 }
