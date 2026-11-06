@@ -31,23 +31,26 @@ struct aurora_operating_configuration {
         bool use_error_correction;
     } chkpt_opts;
 
+    size_t el_n_clients;
     struct aurora_operating_configuration_external_logger_client {
         char ip[AOC_IP_LEN];
         uint16_t port;
     } *el_clients;
-    size_t el_n_clients;
 };
 
 typedef struct aurora_operating_configuration opconf_t;
 
-static inline opconf_t *aoc_alloc(char *persistent_path) {
+static inline opconf_t *aoc_alloc(char *persistent_path, size_t n_el_clients) {
     if (!persistent_path) {
         return NULL;
     }
 
-    size_t strsize = strlen(persistent_path) + 1;
-    size_t structsize = sizeof(opconf_t);
-    uint8_t *structbuf = malloc(strsize + structsize);
+    const size_t strsize = strlen(persistent_path) + 1;
+    const size_t el_client_size =
+        n_el_clients *
+        sizeof(struct aurora_operating_configuration_external_logger_client);
+    const size_t structsize = sizeof(opconf_t);
+    const uint8_t *structbuf = malloc(strsize + structsize + el_client_size);
 
     if (!structbuf) {
         // ERROR: Bad Alloc??
@@ -55,13 +58,21 @@ static inline opconf_t *aoc_alloc(char *persistent_path) {
     }
 
     opconf_t *pConfig = (void *) structbuf;
-    pConfig->chkpt_opts.persistent_path = (void *) (structbuf + structsize);
 
     pConfig->group.id = 0;
     pConfig->group.size = -1;
     pConfig->rank = 0;
+    pConfig->el_n_clients = n_el_clients;
+
+    pConfig->chkpt_opts.persistent_path = (void *) (structbuf + structsize);
 
     strcpy(pConfig->chkpt_opts.persistent_path, persistent_path);
+
+    pConfig->el_clients =
+        (struct aurora_operating_configuration_external_logger_client
+             *) (structbuf + structsize + strsize);
+
+    (void) memset(pConfig->el_clients, 0, el_client_size);
 
     return pConfig;
 }

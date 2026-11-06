@@ -53,6 +53,7 @@ typedef struct {
     size_t opt_n_AEL_configs;
 } aul_configuration_t;
 
+typedef struct aul_external_logger_client_configuration aul_el_client_t;
 extern const aul_configuration_t AUL_CONFIG_DEFAULT;
 
 #endif

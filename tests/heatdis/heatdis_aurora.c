@@ -110,6 +110,14 @@ int main(int argc, char *argv[]) {
         aul_conf.opt_hostname = argv[3];
     }
 
+    aul_el_client_t el_localhost = {
+        .ip = "127.0.0.1",
+        .port = 8334,
+    };
+
+    aul_conf.opt_AEL_configs = &el_localhost;
+    aul_conf.opt_n_AEL_configs = 1;
+
     TIME_REGION("Init", rank) {
         if (AUL_Init(&aul_conf) != 0) {
             printf("Error initializing AURORA! Aborting...\n");

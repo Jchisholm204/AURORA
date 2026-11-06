@@ -15,6 +15,7 @@
 #include "aci/aci.h"
 #include "acn/acn.h"
 #include "afv/afv.h"
+#include "ael/ael.h"
 #include "arm/arm.h"
 #include "aul.h"
 #include "aul_configuration.h"
@@ -30,6 +31,7 @@ struct aurora_user_library_context {
     acn_hndl *pACN;
     arm_hndl *pARM;
     afv_hndl *pAFV;
+    ael_hndl *pAEL;
     struct aurora_operating_configuration *pConfig;
 };
 
