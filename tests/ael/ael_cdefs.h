@@ -63,6 +63,21 @@ static inline const char *ael_event_name(eAEL_event code) {
     }
 }
 
+static inline const char *ael_origin_name(eAEL_origin code) {
+    switch (code) {
+    case eAEL_ORIGIN_HOST:
+        return "HOST";
+    case eAEL_ORIGIN_ARE:
+        return "ARE";
+    case eAEL_ORIGIN_SMARTNIC:
+        return "SmartNIC";
+    case eAEL_ORIGIN_MPI:
+        return "MPI";
+    default:
+        return "unknown";
+    }
+}
+
 /**
  * @brief Select an event code by sequence index
  *

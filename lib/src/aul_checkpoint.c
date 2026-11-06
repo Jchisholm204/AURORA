@@ -31,11 +31,20 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
             }
         }
 
+        // Send CHECKPOINT_START event before memory copy
+        size_t n_regions = arm_get_n_local_regions(_aul_ctx.pARM);
+        if (_aul_ctx.pAEL) {
+            ael_send_checkpoint(
+                _aul_ctx.pAEL,
+                eAEL_EVENT_CHECKPOINT_START,
+                version, n_regions, name, NULL);
+        }
+
         TIME_REGION("Memory Copy") {
-            size_t n_regions = arm_get_n_local_regions(_aul_ctx.pARM);
             const amr_hndl *region_list = arm_get_local_regions(_aul_ctx.pARM);
             if (!region_list) {
-                return -2;
+                log_error("NULL region list error");
+                return INT_MIN;
             }
             for (size_t i = 0; i < n_regions; i++) {
                 log_trace("Chpt Rgn %d, id=%d", i, region_list[i].id);
@@ -47,9 +56,18 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
                     log_error("NULL Error");
                 }
             }
+
+            // Send CHECKPOINT_END event after memory copy completes
+            if (_aul_ctx.pAEL) {
+                ael_send_checkpoint(
+                    _aul_ctx.pAEL,
+                    eAEL_EVENT_CHECKPOINT_END,
+                    version, n_regions, name, NULL);
+            }
+
         }
 
-        // Setup the checkpoint name and version
+        // Setup the checkpoint name and version in ACN
         log_debug("Name: %s", name);
         acn_set_name(_aul_ctx.pACN, name);
         acn_set(_aul_ctx.pACN, eACN_version, version);

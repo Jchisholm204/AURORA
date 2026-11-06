@@ -105,7 +105,10 @@ int AUL_Init(const aul_configuration_t *pCFG) {
             snprintf(_aul_ctx.pConfig->el_clients[i].ip, AOC_IP_LEN, "%s",
                      client->ip);
             _aul_ctx.pConfig->el_clients[i].port = client->port;
-            ael_add_recipient(_aul_ctx.pAEL, client->ip, client->port);
+            // ael_add_recipient(_aul_ctx.pAEL, client->ip, client->port);
+            (void) ael_add_recipient(_aul_ctx.pAEL,
+                                     _aul_ctx.pConfig->el_clients[i].ip,
+                                     _aul_ctx.pConfig->el_clients[i].port);
         }
     }
 

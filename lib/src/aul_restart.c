@@ -197,6 +197,12 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
 
     log_trace("Starting Restore");
 
+    // Send RESTORE_START event before loading checkpoint data
+    if (_aul_ctx.pAEL) {
+        ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_RESTORE_START, version, 0,
+                            name, NULL);
+    }
+
     // Complete the Restore
     for (size_t i = 0; i < (size_t) checkpoint_n_regions;
          i++) { // BEGIN Region Loop
@@ -218,6 +224,12 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
     }
 
     restored_version = afv_checkpoint_version(pCheckpoint);
+
+    // Send RESTORE_END event after successful restore
+    if (_aul_ctx.pAEL) {
+        ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_RESTORE_END, version,
+                            checkpoint_n_regions, name, NULL);
+    }
 
 LOCAL_RESTART_FAIL:
 

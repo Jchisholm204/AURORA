@@ -14,6 +14,7 @@
 
 #include "aci/aci.h"
 #include "acn/acn.h"
+#include "ael/ael.h"
 #include "afv/afv.h"
 #include "arm/arm.h"
 
@@ -29,6 +30,7 @@ struct aurora_instance_manager_entry {
     acn_hndl *pACN;
     arm_hndl *pARM;
     afv_hndl *pAFV;
+    ael_hndl *pAEL;
     size_t error_counter;
     union {
 #ifdef AIM_INTERNAL
