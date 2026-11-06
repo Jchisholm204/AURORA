@@ -283,6 +283,38 @@ Reference programs live under `tests/ael/`: `test_ael_server` (listener on port
 8334), `test_ael_client`, `multi_client`, and `test_ael_recv_bad` (malformed and
 hostile datagram rejection).
 
+## Aggregate Listener
+`utilities/ael_listener` builds `ael_listener`, a receive-only test logger
+(enabled by the `BUILD_UTILITIES` CMake option, on by default).
+
+```
+ael_listener PORT [LEVEL] [CSV_LOCATION]
+```
+- `PORT` UDP port to receive on (1..65535).
+- `LEVEL` stdout level, default `group-all`. Does not affect the CSV.
+- `CSV_LOCATION` optional; every valid message is appended as one row. The
+  header is written only when the file is new or empty.
+
+| Level | stdout |
+|---|---|
+| `none` | Listener start/stop and discarded datagrams only |
+| `group-light` | Group connect and disconnect |
+| `group-all` | Every group event |
+| `light` | `group-all`, plus per-rank connect, failure, and disconnect |
+| `all` | `group-all`, plus every per-rank event |
+
+A group is `(origin, group_id)`; its size comes from the `size` field of
+connect/failure payloads. A group event is one event code plus, for
+checkpoint/restore/region events, the `id_version` (checkpoint version or
+region ID). Each group event is logged twice: when the first rank reports it
+(`first (1/N)`) and when the N-th distinct rank does (`complete (N/N)`).
+Duplicate datagrams from a rank are not counted. Until a connect or failure
+reveals the group size, a group event can log `first` but never `complete`.
+
+CSV columns: `origin,event_id,gid,rank,timestamp,id_version,size,name,from_ip,from_port,event_message`.
+`timestamp` is ISO 8601 UTC with milliseconds; `name` and `event_message` are
+quoted per RFC 4180 when they contain commas, quotes, or line breaks.
+
 ## Origin Error Handling
 
 When a packet's origin field contains an invalid value (>= `eAEL_N_ORIGIN`), the receive
