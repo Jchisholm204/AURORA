@@ -121,6 +121,7 @@ Read the agent docs before building or running anything:
 
 ## Guardrails
 
-- Do not modify `results/`, `checkpoints/`, or `build/`; build into `/tmp/opencode`.
+- Do not modify `results/` or `checkpoints/`
+- `build/` should only be modified if its ownership matches the active user from $(whoami)
 - Prefer `grep`/`glob` over reading whole files, and exclude the directories above
   from recursive scans.

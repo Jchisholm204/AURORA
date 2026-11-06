@@ -1,164 +1,268 @@
-# Building Inside the Agent Sandbox
+# Building AURORA
 
-Agent-facing guide: where the code is, and how to compile it **outside** the
-AURORA working tree. Provisioning (compiler, UCX, MPI) is covered in
-[`sandbox.md`](./sandbox.md) — read that first if `cmake` or `ucx_info` are missing.
+General build guide: how to compile from source with configurable paths.
 
-## Finding the code
+**Critical first step**: Read [`sandbox.md`](./sandbox.md) for container environments where dependencies are wiped on restart. On native systems, check your toolchain and MPI setup first.
 
-The checkout is bind-mounted at `/Documents/AURORA`. It is **mutagen-synced** with
-the developer's machine, so it changes under you: `HEAD` moves and files appear
-mid-session. Re-check state before trusting anything you read earlier.
+---
 
+## Prerequisites & Dependencies
+
+### UCX Version Check
 ```bash
-cd /Documents/AURORA
-git -c safe.directory=/Documents/AURORA log --oneline -1
-git -c safe.directory=/Documents/AURORA status --short
+ucx_info -v                       # Should show UCX 1.17+
+ldconfig -p | grep libucp         # Verify in /usr/local/lib, /usr/lib, or /lib64
 ```
 
-The tree is owned by `root:root` but is world-writable (`chmod -R a+rwX`).
-Git reports `dubious ownership`, hence the `-c safe.directory=...` above.
+AURORA requires UCX 1.17+ for the `UCP_AM_SEND_FLAG_COPY_HEADER` flag.
 
-### Layout
+### MPI Requirements
+MPI is **not required** to build the code, but if available it should be used for parallel tests and better performance. OpenMPI is prefered (do not use MPICH or Intel MPI).
+MPI may be installed as a module and not on the default path.
+If MPI is installed as a module (e.g., with LMOD), load the OpenMPI module first before building.
+Check LMOD before determining that MPI is not installed.
 
-| Path | Contents |
+```bash
+module avail | grep openmpi       # Check LMOD first
+mpicc --show-config               # Verify MPI installation
+```
+
+---
+
+## Environment Setup
+
+### Using LMOD Module Systems (if available) to load MPI
+LMOD may need to be sourced to work properly. Do not give up if it's not found on the first try.
+Sourcing `~/.bashrc` or `~/.zshrc` may help to load lmod. On some RHEL systems, lmod requires sourcing its configuration.
+
+```bash
+source ~/.bashrc # or zshrc
+# Check for OpenMPI module (if available)
+module avail | grep -i openmpi || echo "No OpenMPI modules found"
+
+# If modules are available, load OpenMPI first
+module use /apps/modules          # or your modules path
+module load mpi/openmpi-x86_64         # adjust version as needed
+
+# Verify MPI is loaded correctly
+mpicc --show-config | head -5
+which mpicc mpicxx mpirun
+```
+
+### Check Toolchain
+```bash
+which gcc g++ make cmake
+mpicc --version                   # MPI compiler version (if available)
+```
+
+### Provisioning Notes
+Provisioning (compiler, UCX, MPI) is covered in [`sandbox.md`](./sandbox.md) for container environments. On native systems, use the checks above to verify dependencies before building.
+
+---
+
+## Repository Ownership & Build Location
+
+### Locate the Repository
+The repository can be at any path. Examples: `~/AURORA`, `/home/user/AURORA`, a bind mount, or similar.
+
+```bash
+cd <repo_root>  # e.g., ~/AURORA, wherever you cloned it
+git -c safe.directory=$(pwd) log --oneline -1
+git -c safe.directory=$(pwd) status --short
+```
+
+If Git complains about ownership, run:
+```bash
+git config --global --add safe.directory $(pwd)
+```
+
+### Check Repository Ownership
+Determine whether you own the repository by comparing the repo owner with your current user:
+```bash
+stat -c '%U' <repo_root>/         # Should match: $(whoami)
+whoami                            # Your current user
+```
+
+### Build Location Rules
+
+- **If you own the repository (same UID)**:  
+  Build directly into `$(pwd)/build`. No need to specify `BUILD_DIR` to the Makefile (it's the default), and no need for `UCX_HOME` if host-based UCX is fine.
+  ```bash
+  cd <repo_root>
+  make all
+  ```
+
+- **If you don't own the repository** (containers, bind mounts, root-owned):  
+  Specify a separate build directory like `~/build/aurora`, `/tmp/aurora-build`, or any writable path.
+  ```bash
+  cd <repo_root>
+  UCX_HOME=/usr/local make BUILD_DIR=~/build/aurora all
+  # or for ephemeral: UCX_HOME=/usr/local make BUILD_DIR=/tmp/aurora-build all
+  ```
+
+Specify `UCX_HOME=/usr/local` only if the toolchain cannot find UCX automatically (e.g., non-standard installation path).
+
+### Common Build Locations
+
+| Scenario | Recommended Build Directory |
 |---|---|
-| `CMakeLists.txt`, `Makefile` | Top-level build entry points |
-| `cmake/` | Toolchain files, `FindUCX.cmake`, `FindMPI.cmake`, `FindThreads.cmake`, `FindVeLOC.cmake` |
-| `common/` | Static library (`libaroc.a`): protocol + checkpoint format |
-| `common/src/aci/` | Low-level UCX connection layer (`aci*`) |
-| `common/src/acn/` | Connection notifications (`acn*`) |
-| `common/src/ads/` | Discovery service (mDNS) |
-| `common/src/ael/` | AURORA External Logger (`ael`) — network log client/server |
-| `common/src/afv/` | AURORA file format / checkpoint records |
-| `common/src/arm/` | AURORA Region Manager (`arm`) — checkpoint regions, UCX AM messaging |
-| `lib/` | Shared client library (`libaul.so`), public headers in `lib/include/` |
-| `server/src/` | Remote engine (`aurora_remote_engine`): `aim` dispatch, `acr`, `acl` listener, `are` main loop |
-| `tests/` | Test programs, one directory per suite, each with a `build.cmake` |
-| `docs/` | Design docs, server/client API docs, build instructions |
-| `scripts/` | Cluster env scripts, test drivers |
-| `checkpoints/`, `results/` | Data only — **`results/` is ~67 GB**, never copy the repo wholesale |
+| Native systems (own repo) | `$(pwd)/build` (no BUILD_DIR or UCX_HOME needed) |
+| Native systems (don't own repo) | `~/build/aurora`, `~/build-output` |
+| Ephemeral containers | `/tmp/aurora-build` or `/tmp/opencode/aurora-build` |
+| Any absolute path | Any writable directory for the build user |
 
-### Searching
+---
 
-Prefer `grep`/`glob` over reading whole files; the tree is small (~3.2 MB of
-source) but `results/` is enormous and must be excluded:
+## Build Commands
 
+### Standard Build (with tests)
 ```bash
-grep -rn "UCP_AM_SEND_FLAG" --include=*.c --include=*.h common server lib
-glob "common/src/**/*.c"
+cd <repo_root>  # e.g., ~/AURORA, /home/user/AURORA
+make BUILD_DIR=~/build/aurora all
 ```
 
-Ignore `results/`, `checkpoints/`, `build/`, `.cache/` in any recursive scan.
+**Notes:**
+- No need to specify `BUILD_DIR` when building into `$(pwd)/build` (it's the default)
+- No need to specify `UCX_HOME` if host-based UCX is found automatically (most common case)
+- MPI is not required but should be used if available (see instructions on locating MPI)
 
-### Primary entry points
-
-- Server main: `server/src/main.c` → `are_main()` in `server/src/are.c`
-- Client API: `lib/include/aul.h`, defaults in `lib/src/aul_configuration.c`
-- Build wiring: root `CMakeLists.txt`, then `common/`, `server/`, `lib/`, `tests/`
-
-## Build in your own directory, never in `build/`
-
-`/Documents/AURORA/build` is **synced from the developer's host machine** and
-holds a `CMakeCache.txt` with `CMAKE_HOME_DIRECTORY=/home/jacob/Documents/AURORA`
-plus Fedora MPI paths. CMake will refuse to reuse it, and writing into the synced
-tree can push agent artifacts back to the developer's machine.
-
-Build into `/tmp/opencode/aurora-build` instead. `BUILD_DIR` is a plain `:=`
-assignment in the `Makefile`, so a command-line override relocates **all** output.
-`clean` becomes `rm -rf /tmp/opencode/aurora-build`, so it can never delete the
-repo's own `build/` or any source.
-
+### Optimized Build
 ```bash
-cd /Documents/AURORA        # required: toolchain path in the Makefile is relative
-UCX_HOME=/usr/local make BUILD_DIR=/tmp/opencode/aurora-build clean all
+make BUILD_DIR=<BUILD_DIR> -DBUILD_TYPE=Release all
 ```
 
-- `UCX_HOME=/usr/local` is read by `cmake/host-linux-gnu-toolchain.cmake`, which
-  appends it to `CMAKE_PREFIX_PATH`; required because distro UCX (1.13.1) is too
-  old for the AM send flags AURORA uses.
-- The default `gen_cmake_host` target hardcodes `-DBUILD_TESTING=ON`, so tests are
-  always compiled by `make`.
-- Add `BUILD_TYPE=Release` for optimised builds (`BUILD_TYPE ?= Debug` by default).
-
-### Output locations
-
-```
-/tmp/opencode/aurora-build/common/libaroc.a
-/tmp/opencode/aurora-build/lib/libaul.so
-/tmp/opencode/aurora-build/server/aurora_remote_engine
-/tmp/opencode/aurora-build/tests/<test_name>
-/tmp/opencode/aurora-build/compile_commands.json
-```
-
-`compile_commands.json` is generated there — point clangd at it rather than
-expecting one in the source tree.
-
-### Rebuild / reset
-
+### Clean Rebuild (from scratch)
 ```bash
-# incremental (keep objects)
-UCX_HOME=/usr/local make BUILD_DIR=/tmp/opencode/aurora-build build
-
-# from scratch (wipes ONLY the temp dir)
-UCX_HOME=/usr/local make BUILD_DIR=/tmp/opencode/aurora-build clean all
+make BUILD_DIR=<BUILD_DIR> clean all
 ```
+This wipes only the build directory, not your source tree.
 
-If the repo moves to a new commit between builds, prefer a clean rebuild —
-mutagen can rename or add files, and stale objects mask breakage.
-
-### Base package only (no tests)
-
-The Makefile offers no way to pass extra `-D` flags, and `-DBUILD_TESTING=ON` is
-hardcoded. To skip the tests, bypass `gen_cmake_host` and configure directly:
-
+### Build Without Tests
+The default target compiles tests. To skip them (e.g., if MPI is missing or not desired):
 ```bash
-cd /Documents/AURORA
-UCX_HOME=/usr/local cmake \
+cd <repo_root>
+cmake \
     -DCMAKE_TOOLCHAIN_FILE=cmake/host-linux-gnu-toolchain.cmake \
-    -B/tmp/opencode/aurora-build-min \
-    -DCMAKE_BUILD_TYPE=Debug \
+    -B<build_dir> \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DBUILD_TESTING=OFF \
     -G "Unix Makefiles"
-make -C /tmp/opencode/aurora-build-min -j"$(nproc)"
+make -C <build_dir> -j"$(nproc)"
 ```
 
-Use this only when tests are irrelevant — e.g. after removing OpenMPI, since five
-test targets link `AURORA::mpi` and the generate step fails without it.
+Replace `<repo_root>` and `<build_dir>` with your actual paths.
 
-## Verifying a build
+---
 
+## Verifying a Build
+
+### Check Configure Output
 ```bash
-# configure actually found the right deps
-grep -E "UCX_FOUND|MPI_C_COMPILER:" /tmp/opencode/aurora-build/CMakeCache.txt
-
-# right UCX version at runtime?
-ldd /tmp/opencode/aurora-build/server/aurora_remote_engine | grep libuc
-# expect: /usr/local/lib/libucp.so.0   (1.17.0)
-
-# tests present? VeLOC ones must be absent when VeLOC is not installed
-find /tmp/opencode/aurora-build/tests -maxdepth 1 -type f -perm -u+x
+grep -E "UCX_FOUND|MPI_C_COMPILER:" <build_dir>/CMakeCache.txt
 ```
 
-A healthy configure prints `Found UCX though CMake` and `Found MPI with CMAKE`,
-plus a benign `Failed to find VELOC` warning.
+Expected: `UCX_FOUND=1`. `MPI_C_COMPILER` will be set if MPI was found and used, empty otherwise.
 
-## Running things (limited)
+### Verify Runtime Library Linking
+```bash
+ldd <build_dir>/server/aurora_remote_engine | grep libuc
+# Should show UCX at common locations: /usr/local/lib, /usr/lib, /lib64
+```
 
-- `aurora_remote_engine` must be running for client tests to connect. Its
-  `argv[1]` is a **log file path**, not a flag — `--help` creates a file named
-  `--help` in the cwd. Start it as:
-  `./aurora_remote_engine /tmp/opencode/server.log &`
-- `mpirun` hangs in this sandbox (no usable TCP interface), so the MPI tests
-  (`test_discovery_mpi`, `block_test_aurora`, `heatdis_*`) will not run here.
-- No RDMA hardware: UCX works, AURORA's async-progress path does not engage.
+### List Test Binaries (if compiled with tests)
+```bash
+find <build_dir>/tests -maxdepth 1 -type f -perm -u+x
+```
+
+A healthy configure prints:
+- `Found UCX through CMake`
+- `Found MPI with CMAKE` (or `Failed to find MPI` if MPI was not available/loaded)
+- `Failed to find VELOC` (warning, benign if VeLOC not installed)
+
+---
+
+## Running Artifacts
+
+### Starting the Remote Engine
+```bash
+./<build_dir>/server/aurora_remote_engine <log_file_path> &
+```
+
+Note: `argv[1]` is a **log file path**, not a flag. Running with `--help` creates a file named literally `--help`.
+
+### MPI Limitations
+- In some environments (e.g., containers without proper network interfaces), `mpirun` may hang
+- MPI-based tests (`test_discovery_mpi`, `block_test_aurora`, `heatdis_*`) may not run without additional configuration
+- This does not affect single-process builds or non-MPI tests
+
+### RDMA Hardware
+AURORA's asynchronous progress path requires UCX-compatible RDMA hardware. Builds work without it, but async-progress features won't engage.
+
+---
+
+## Troubleshooting
+
+### "Failed to find UCX" from `FindUCX.cmake`
+**Cause**: Distorted multiarch search or missing UCX headers.
+
+**Solutions**:
+1. Ensure one of your UCX install paths is used: `/usr/local`, `/usr`, `/lib64`
+2. If using distro-packaged UCX, add: `-DCMAKE_LIBRARY_ARCHITECTURE=x86_64-linux-gnu`
+3. Check that `libucp.so.*` exists at your UCX location and is visible to `ldconfig`
+
+### "error: 'UCP_AM_SEND_FLAG_COPY_HEADER' undeclared"
+**Cause**: UCX version < 1.17.0. AURORA requires UCX 1.17+ for this flag.
+
+**Fix**: Rebuild UCX from source (see [`sandbox.md`](./sandbox.md) Step 2).
+
+### CMake Refuses to Reuse Existing Cache
+**Cause**: `CMAKE_HOME_DIRECTORY` in cache points to a different repo path.
+
+**Fix**: Clean and rebuild:
+```bash
+make BUILD_DIR=<your_build_dir> clean all
+# Optional: Add UCX_HOME=<ucx_prefix> only if toolchain can't find UCX automatically
+```
+
+### Linker Error with MPI Tests (libucp not found)
+**Cause**: UCX library path mismatch or multiarch search suppression in cross mode.
+
+**Fix**:
+1. Verify UCX exists at one of your common locations: `/usr/local/lib`, `/usr/lib`, `/lib64`
+2. Run `ldd <artifact> | grep libucp` to confirm correct linkage
+3. If using distro-packaged UCX, purge dev headers: `sudo apt-get purge -y libucx-dev`
+
+### "dubious ownership" from Git
+**Cause**: Repository owned by root but working as non-root user.
+
+**Fix**:
+```bash
+git config --global --add safe.directory $(pwd)
+```
+
+Or adjust permissions (containers may require this):
+```bash
+sudo chmod -R a+rwX <repo_root>
+```
+
+---
 
 ## Etiquette
 
-- Do not modify `build/`, `results/`, or `checkpoints/`.
-- Check `git status` first; the developer frequently has uncommitted work in the
-  tree. Never revert or reformat files you did not create.
-- Keep all generated artifacts under `/tmp/opencode/`.
-- The sandbox is ephemeral: `/tmp` and `/usr/local` are wiped on restart, so
-  rebuild from the script in [`sandbox.md`](./sandbox.md) when tools go missing.
+- Do not modify `results/` or `checkpoints/`
+- Check `git status` before committing; the repo may have uncommitted changes from the developer's side.
+- Use `grep`/`glob` over reading whole files; exclude `results/`, `checkpoints/` from scans.
+- Keep generated artifacts in your configured `BUILD_DIR`.
+
+---
+
+## Container-Specific Notes
+
+If you're running inside a container/sandbox:
+
+- `/tmp` is ephemeral — use it for `BUILD_DIR` and temporary tool downloads
+- `/usr/local` is typically wiped on restart — rebuild UCX from scratch as needed
+- The repo location may vary (`/mnt/repo`, `/workspace/AURORA`, bind mounts, etc.)
+- Always configure paths explicitly rather than relying on defaults
+
+For container re-provisioning scripts and minimal setup instructions, see [`sandbox.md`](./sandbox.md).
