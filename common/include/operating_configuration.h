@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define AOC_IP_LEN (3 * 4 + 5)
+
 struct aurora_operating_configuration {
     uint64_t rank;
     struct {
@@ -28,6 +30,12 @@ struct aurora_operating_configuration {
         char *persistent_path;
         bool use_error_correction;
     } chkpt_opts;
+
+    struct aurora_operating_configuration_external_logger_client {
+        char ip[AOC_IP_LEN];
+        uint16_t port;
+    } *el_clients;
+    size_t el_n_clients;
 };
 
 typedef struct aurora_operating_configuration opconf_t;
