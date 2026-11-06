@@ -1,6 +1,7 @@
 /**
  * @file main.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
+ * @author Connor Leung (https://github.com/connor-leung)
  * @author Claude Opus 5.5 (claude-opus-5-5) Claude Code
  * @brief AEL aggregate listener entry point
  * @version 0.2
