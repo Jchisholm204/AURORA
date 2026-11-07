@@ -27,6 +27,11 @@ enum eAULConnMode {
     eACMode_N
 };
 
+struct aul_external_logger_client_configuration {
+    char *ip;
+    uint16_t port;
+};
+
 typedef struct {
     // MPI
     uint64_t rank;
@@ -44,8 +49,11 @@ typedef struct {
 
     // Logging
     char *opt_log_file;
+    struct aul_external_logger_client_configuration *opt_AEL_configs;
+    size_t opt_n_AEL_configs;
 } aul_configuration_t;
 
+typedef struct aul_external_logger_client_configuration aul_el_client_t;
 extern const aul_configuration_t AUL_CONFIG_DEFAULT;
 
 #endif

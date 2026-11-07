@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#define AOC_IP_LEN (3 * 4 + 5)
+
 struct aurora_operating_configuration {
     uint64_t rank;
     struct {
@@ -28,18 +30,52 @@ struct aurora_operating_configuration {
         char *persistent_path;
         bool use_error_correction;
     } chkpt_opts;
+
+    size_t el_n_clients;
+    struct aurora_operating_configuration_external_logger_client {
+        char ip[AOC_IP_LEN];
+        uint16_t port;
+    } *el_clients;
 };
 
 typedef struct aurora_operating_configuration opconf_t;
 
-static inline opconf_t *aoc_alloc(char *persistent_path) {
+static inline opconf_t *aoc_ptr_init(void *ptr) {
+    if (!ptr) {
+        return NULL;
+    }
+
+    opconf_t *pConfig = (opconf_t *) ptr;
+
+    const size_t elclient_offset = sizeof(opconf_t);
+    const size_t elclient_size =
+        sizeof(struct aurora_operating_configuration_external_logger_client) *
+        pConfig->el_n_clients;
+    const size_t str_offset = elclient_offset + elclient_size;
+
+    if (pConfig->el_n_clients == 0) {
+        pConfig->el_clients = NULL;
+    } else {
+        pConfig->el_clients = (void *) ((char *) ptr + elclient_offset);
+    }
+
+    pConfig->chkpt_opts.persistent_path = ((char *) pConfig + str_offset);
+
+    return pConfig;
+}
+
+static inline opconf_t *aoc_alloc(char *persistent_path, size_t n_el_clients) {
     if (!persistent_path) {
         return NULL;
     }
 
-    size_t strsize = strlen(persistent_path) + 1;
-    size_t structsize = sizeof(opconf_t);
-    uint8_t *structbuf = malloc(strsize + structsize);
+    const size_t str_size = strlen(persistent_path) + 1;
+    const size_t elclient_size =
+        n_el_clients *
+        sizeof(struct aurora_operating_configuration_external_logger_client);
+
+    const uint8_t *structbuf =
+        malloc(sizeof(opconf_t) + elclient_size + str_size);
 
     if (!structbuf) {
         // ERROR: Bad Alloc??
@@ -47,13 +83,18 @@ static inline opconf_t *aoc_alloc(char *persistent_path) {
     }
 
     opconf_t *pConfig = (void *) structbuf;
-    pConfig->chkpt_opts.persistent_path = (void *) (structbuf + structsize);
 
     pConfig->group.id = 0;
     pConfig->group.size = -1;
     pConfig->rank = 0;
+    pConfig->el_n_clients = n_el_clients;
+
+    // Initialize internal pointers (el_n_clients must be set prior)
+    pConfig = aoc_ptr_init((void *) structbuf);
 
     strcpy(pConfig->chkpt_opts.persistent_path, persistent_path);
+
+    (void) memset(pConfig->el_clients, 0, elclient_size);
 
     return pConfig;
 }
@@ -75,6 +116,9 @@ static inline size_t aoc_size(
     }
     size_t size = 0;
     size += sizeof(struct aurora_operating_configuration);
+    size +=
+        pConfig->el_n_clients *
+        sizeof(struct aurora_operating_configuration_external_logger_client);
     if (pConfig->chkpt_opts.persistent_path) {
         size += strlen(pConfig->chkpt_opts.persistent_path) + 1;
     }

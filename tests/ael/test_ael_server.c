@@ -75,12 +75,19 @@ static void _log_received_message(const ael_message_t *msg) {
         (void) snprintf(from, sizeof(from), "0x%08x", msg->from_ip);
     }
 
-    log_info("rx from=%s:%u rank=%" PRIu64 " group_id=%" PRIu64 " ts=%" PRIu64
-             " ev=%s",
-             from, (unsigned) msg->from_port, msg->rank, msg->group_id,
-             msg->timestamp_ns, ael_event_name(msg->event));
-    log_info("  id_version=%" PRId64 " size=%" PRIu64 " name=\"%.*s\"",
-             msg->payload.id_version, msg->payload.size, AEL_NAME_LEN,
-             msg->payload.name);
-    log_info("  event=\"%.*s\"", AEL_EVENT_MSG_LEN, msg->event_message);
+    log_info("%s (%s): id=%d gid=%d ts=%ld pyld=(idv=%d size=%ld name=%s) "
+             "from=(%s:%d)",
+             ael_event_name(msg->event), ael_origin_name(msg->origin),
+             msg->rank, msg->group_id, msg->timestamp_ns,
+             msg->payload.id_version, msg->payload.size, msg->payload.name,
+             from, msg->from_port);
+
+    //     log_info("rx from=%s:%u rank=%" PRIu64 " group_id=%" PRIu64
+    //              " ts=%" PRIu64 " ev=%s",
+    //              from, (unsigned) msg->from_port, msg->rank, msg->group_id,
+    //              msg->timestamp_ns, ael_event_name(msg->event));
+    // log_info("  id_version=%" PRId64 " size=%" PRIu64 " name=\"%.*s\"",
+    //          msg->payload.id_version, msg->payload.size, AEL_NAME_LEN,
+    //          msg->payload.name);
+    // log_info("  event=\"%.*s\"", AEL_EVENT_MSG_LEN, msg->event_message);
 }
