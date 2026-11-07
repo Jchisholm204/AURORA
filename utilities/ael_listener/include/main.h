@@ -27,6 +27,8 @@ enum listener_level_e {
     eLISTENER_LEVEL_LIGHT,
     /* group-all, plus every per-rank event */
     eLISTENER_LEVEL_ALL,
+    /* Number of levels; must remain last */
+    eLISTENER_LEVEL_COUNT,
 };
 
 typedef enum listener_level_e eLISTENER_level;
