@@ -1,6 +1,5 @@
 /**
  * @file main.c
- * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @author Connor Leung (https://github.com/connor-leung)
  * @author Claude Opus 5.5 (claude-opus-5-5) Claude Code
  * @brief AEL aggregate listener: logs AEL events to stdout and a CSV
@@ -10,7 +9,7 @@
  *
  * @copyright Copyright (c) 2026
  *
- * Usage: ael_listener PORT [LEVEL] [CSV_LOCATION]
+ * Usage: ael_listener [PORT [LEVEL [CSV_LOCATION]]]
  */
 
 #include "main.h"
@@ -22,6 +21,7 @@
 #include "log.h"
 
 #include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <signal.h>
@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LISTENER_DEFAULT_PORT 8334
 #define LISTENER_DEFAULT_LEVEL eLISTENER_LEVEL_GROUP_ALL
 
 static volatile sig_atomic_t g_stop = 0;
@@ -36,15 +37,13 @@ static volatile sig_atomic_t g_stop = 0;
 static const struct {
     const char *name;
     eLISTENER_level level;
-} g_levels[] = {
-    {"none", eLISTENER_LEVEL_NONE},
-    {"group-light", eLISTENER_LEVEL_GROUP_LIGHT},
-    {"group-all", eLISTENER_LEVEL_GROUP_ALL},
-    {"light", eLISTENER_LEVEL_LIGHT},
-    {"all", eLISTENER_LEVEL_ALL},
+} g_levels[eLISTENER_LEVEL_COUNT] = {
+    [eLISTENER_LEVEL_NONE] = {"none", eLISTENER_LEVEL_NONE},
+    [eLISTENER_LEVEL_GROUP_LIGHT] = {"group-light", eLISTENER_LEVEL_GROUP_LIGHT},
+    [eLISTENER_LEVEL_GROUP_ALL] = {"group-all", eLISTENER_LEVEL_GROUP_ALL},
+    [eLISTENER_LEVEL_LIGHT] = {"light", eLISTENER_LEVEL_LIGHT},
+    [eLISTENER_LEVEL_ALL] = {"all", eLISTENER_LEVEL_ALL},
 };
-
-#define N_LEVELS (sizeof(g_levels) / sizeof(g_levels[0]))
 
 struct listener_stats {
     uint64_t received;
@@ -58,9 +57,10 @@ static void _signal_handler(int signal) {
 }
 
 static void _print_usage(const char *prog) {
-    fprintf(stderr, "Usage: %s PORT [LEVEL] [CSV_LOCATION]\n", prog);
+    fprintf(stderr, "Usage: %s [PORT [LEVEL [CSV_LOCATION]]]\n", prog);
     fprintf(stderr, "  PORT          UDP port to receive AEL messages on "
-                    "(1..65535)\n");
+                    "(1..65535, default: %d)\n",
+            LISTENER_DEFAULT_PORT);
     fprintf(stderr, "  LEVEL         stdout logging level (default: %s):\n",
             g_levels[LISTENER_DEFAULT_LEVEL].name);
     fprintf(stderr, "                  none         internal listener events "
@@ -88,7 +88,7 @@ static bool _parse_port(const char *str, uint16_t *pPort) {
 }
 
 static bool _parse_level(const char *str, eLISTENER_level *pLevel) {
-    for (size_t i = 0; i < N_LEVELS; i++) {
+    for (size_t i = 0; i < eLISTENER_LEVEL_COUNT; i++) {
         if (strcmp(str, g_levels[i].name) == 0) {
             *pLevel = g_levels[i].level;
             return true;
@@ -119,25 +119,34 @@ static bool _rank_visible(eLISTENER_level level, eAEL_event event) {
     return false;
 }
 
-static void _log_group(const ael_message_t *pMsg,
-                       const listener_group_result_t *pRes) {
-    if (pRes->duplicate || (!pRes->first && !pRes->last)) {
+static void _log_group(const listener_groups_t *pGroups,
+                       const ael_message_t *pMsg, eLISTENER_group state) {
+    assert(pGroups != NULL);
+    assert(pMsg != NULL);
+    if ((state & eLISTENER_GROUP_DUPLICATE) ||
+        !(state & (eLISTENER_GROUP_FIRST | eLISTENER_GROUP_LAST))) {
         return;
     }
 
-    char key[32] = "";
-    if (pRes->keyed) {
-        (void) snprintf(key, sizeof(key), " id=%" PRId64, pRes->key);
+    char id[32] = "";
+    if (state & eLISTENER_GROUP_KEYED) {
+        (void) snprintf(id, sizeof(id), " id=%" PRId64,
+                        pMsg->payload.id_version);
     }
+    size_t done = listener_groups_get_ranks_done(
+        pGroups, pMsg->origin, pMsg->group_id, pMsg->event,
+        pMsg->payload.id_version);
+    uint64_t group_size =
+        listener_groups_get_size(pGroups, pMsg->origin, pMsg->group_id);
     char size[24] = "?";
-    if (pRes->size > 0) {
-        (void) snprintf(size, sizeof(size), "%" PRIu64, pRes->size);
+    if (group_size > 0) {
+        (void) snprintf(size, sizeof(size), "%" PRIu64, group_size);
     }
 
-    const char *phase = pRes->last ? "complete" : "first";
+    const char *phase = (state & eLISTENER_GROUP_LAST) ? "complete" : "first";
     log_info("[group %s:%" PRIu64 "] %s%s %s (%zu/%s) rank=%" PRIu64,
              listener_origin_name(pMsg->origin), pMsg->group_id,
-             listener_event_name(pMsg->event), key, phase, pRes->count, size,
+             listener_event_name(pMsg->event), id, phase, done, size,
              pMsg->rank);
 }
 
@@ -149,6 +158,9 @@ static void _log_group(const ael_message_t *pMsg,
  */
 static void _escape(char *dst, size_t dst_len, const char *src,
                     size_t src_len) {
+    assert(dst != NULL);
+    assert(dst_len > 0);
+    assert(src != NULL);
     size_t o = 0;
     for (size_t i = 0; i < src_len && src[i] != '\0'; i++) {
         unsigned char c = (unsigned char) src[i];
@@ -171,6 +183,7 @@ static void _escape(char *dst, size_t dst_len, const char *src,
 }
 
 static void _log_rank(const ael_message_t *pMsg) {
+    assert(pMsg != NULL);
     char ts[32];
     char ip[INET_ADDRSTRLEN];
     char name[4 * AEL_NAME_LEN + 1];
@@ -189,16 +202,20 @@ static void _log_rank(const ael_message_t *pMsg) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 2 || argc > 4 || strcmp(argv[1], "-h") == 0 ||
-        strcmp(argv[1], "--help") == 0) {
+    if (argc > 1 &&
+        (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
         _print_usage(argv[0]);
         return argc == 2 ? 0 : 1;
     }
+    if (argc > 4) {
+        _print_usage(argv[0]);
+        return 1;
+    }
 
-    uint16_t port = 0;
+    uint16_t port = LISTENER_DEFAULT_PORT;
     eLISTENER_level level = LISTENER_DEFAULT_LEVEL;
     const char *csv_path = argc > 3 ? argv[3] : NULL;
-    if (!_parse_port(argv[1], &port) ||
+    if ((argc > 1 && !_parse_port(argv[1], &port)) ||
         (argc > 2 && !_parse_level(argv[2], &level))) {
         _print_usage(argv[0]);
         return 1;
@@ -263,15 +280,16 @@ int main(int argc, char *argv[]) {
             stats.csv_rows++;
         }
 
-        listener_group_result_t res;
-        if (!listener_groups_record(pGroups, &msg, &res)) {
+        eLISTENER_group group = listener_groups_record(pGroups, &msg);
+        if (group & LISTENER_GROUP_ERR_MASK) {
+            log_error("Group Error: %d", (int) group);
             goto cleanup;
         }
         if (_rank_visible(level, msg.event)) {
             _log_rank(&msg);
         }
         if (_group_visible(level, msg.event)) {
-            _log_group(&msg, &res);
+            _log_group(pGroups, &msg, group);
         }
     }
 

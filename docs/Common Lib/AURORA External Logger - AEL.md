@@ -288,11 +288,11 @@ hostile datagram rejection).
 (enabled by the `BUILD_UTILITIES` CMake option, on by default).
 
 ```
-ael_listener PORT [LEVEL] [CSV_LOCATION]
+ael_listener [PORT [LEVEL [CSV_LOCATION]]]
 ```
-- `PORT` UDP port to receive on (1..65535).
+- `PORT` UDP port to receive on (1..65535), default `8334`.
 - `LEVEL` stdout level, default `group-all`. Does not affect the CSV.
-- `CSV_LOCATION` optional; every valid message is appended as one row. The
+- `CSV_LOCATION` optional, default none; every valid message is appended as one row. The
   header is written only when the file is new or empty.
 
 | Level | stdout |
@@ -308,8 +308,11 @@ connect/failure payloads. A group event is one event code plus, for
 checkpoint/restore/region events, the `id_version` (checkpoint version or
 region ID). Each group event is logged twice: when the first rank reports it
 (`first (1/N)`) and when the N-th distinct rank does (`complete (N/N)`).
-Duplicate datagrams from a rank are not counted. Until a connect or failure
-reveals the group size, a group event can log `first` but never `complete`.
+Duplicate datagrams from a rank are not counted. A connect or failure with
+`size` 0 is a sender fault: it is logged as a warning and does not set the
+size. Until a valid size is received (e.g. the listener started after the
+connects, or they were lost), a group event can log `first` but never
+`complete`.
 
 CSV columns: `origin,event_id,gid,rank,timestamp,id_version,size,name,from_ip,from_port,event_message`.
 `timestamp` is ISO 8601 UTC with milliseconds; `name` and `event_message` are
