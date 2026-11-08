@@ -36,6 +36,7 @@ set(GENERIC_COMPILE_OPTIONS
 )
 
 option(BUILD_TESTING "Enable Compilation of Test Files" OFF)
+option(BUILD_UTILITIES "Enable Compilation of Utilities" ON)
 
 # Libraries
 include(${CMAKE_SOURCE_DIR}/cmake/FindUCX.cmake)
@@ -59,6 +60,10 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
+if(BUILD_UTILITIES)
+    # Loop in the utilities
+    add_subdirectory(utilities/ael_listener)
+endif()
 
 # Install
 
