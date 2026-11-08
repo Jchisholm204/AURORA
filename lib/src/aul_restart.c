@@ -71,7 +71,7 @@ int AUL_Test(const int version, const char *name) {
 
 int AUL_Restart_remote(const int version,
                        const char name[static AUL_NAME_LEN]) {
-    if (!_aul_ctx.pACI | !_aul_ctx.pARM) {
+    if (!_aul_ctx.pACI || !_aul_ctx.pARM) {
         log_fatal("Not Initialized");
     }
 

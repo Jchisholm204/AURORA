@@ -98,7 +98,8 @@ int AUL_Init(const aul_configuration_t *pCFG) {
 
     // Copy External Logger clients if any
     if (pCFG->opt_AEL_configs && pCFG->opt_n_AEL_configs > 0) {
-        for (size_t i = 0; i < pCFG->opt_n_AEL_configs; i++) {
+        for (size_t i = 0; i < pCFG->opt_n_AEL_configs && i < AOC_MAX_CLIENTS;
+             i++) {
             struct aul_external_logger_client_configuration *client =
                 &pCFG->opt_AEL_configs[i];
 

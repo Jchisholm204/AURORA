@@ -81,8 +81,7 @@ void *acr_cmd_connection_up(void *arg) {
         return NULL;
     }
 
-    if (!ads_data_rx->config.data ||
-        ads_data_rx->config.size == aoc_size(ads_data_rx->config.data)) {
+    if (!ads_data_rx->config.data) {
         log_error("No/Invalid Configuration??");
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
