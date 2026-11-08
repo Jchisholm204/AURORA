@@ -24,11 +24,11 @@ static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *pPacket) {
     assert(pPacket != NULL);
 
     if (pHndl->socket.fd < 0) {
-        log_error("AEL send: closed socket");
+        log_debug("AEL send: closed socket");
         return eAEL_ERR_SOCKET | eAEL_ERR_FATAL;
     }
     if (pHndl->recipient_count == 0 || !pHndl->send_peers) {
-        log_error("AEL send: no send peers configured");
+        log_debug("AEL send: no send peers configured");
         return eAEL_ERR_SEND | eAEL_ERR_FATAL;
     }
 
@@ -42,14 +42,14 @@ static eAEL_error _ael_send(ael_hndl *pHndl, ael_packet_t *pPacket) {
                    (const struct sockaddr *) pPeer, sizeof(struct sockaddr_in));
 
         if (tx_bytes < 0) {
-            log_error("AEL sendto peer %zu failed: %s", i, strerror(errno));
+            log_warn("AEL sendto peer %zu failed: %s", i, strerror(errno));
             if (status == eAEL_OK) {
                 status = eAEL_ERR_SEND;
             }
             continue;
         }
         if ((size_t) tx_bytes != sizeof(ael_packet_t)) {
-            log_error("AEL short send to peer %zu: %zd of %zu bytes", i,
+            log_warn("AEL short send to peer %zu: %zd of %zu bytes", i,
                       tx_bytes, sizeof(ael_packet_t));
             if (status == eAEL_OK) {
                 status = eAEL_ERR_SIZE;

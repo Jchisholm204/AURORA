@@ -48,6 +48,17 @@ int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
         log_error("%d", arm_status);
         return -arm_status;
     }
+
+    // Send REGION_ADD event after successful region registration
+    eAEL_error ael_status =
+        ael_send_region(_aul_ctx.pAEL, eAEL_EVENT_REGION_ADD, (int64_t) mem_id,
+                        size, "", NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
+
     return 0;
 }
 
@@ -81,7 +92,19 @@ int AUL_Mem_unprotect(const uint64_t mem_id) {
     eARM_error arm_status = eARM_OK;
     arm_status = arm_remove(_aul_ctx.pARM, &amr);
     if (arm_status != eARM_OK) {
+        log_error("Arm Remove Error: %d", arm_status);
         return -arm_status;
     }
+
+    // Send REGION_REMOVE event after successful region removal
+    eAEL_error ael_status =
+        ael_send_region(_aul_ctx.pAEL, eAEL_EVENT_REGION_REMOVE,
+                        (int64_t) mem_id, 0, "", NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
+
     return 0;
 }

@@ -70,7 +70,8 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     log_trace("\tOpt GID: %d", pCFG->opt_group_id);
     log_trace("\tOpt GSize: %d", pCFG->opt_group_size);
 
-    _aul_ctx.pConfig = aoc_alloc(pCFG->persistent_path);
+    _aul_ctx.pConfig =
+        aoc_alloc(pCFG->persistent_path, pCFG->opt_n_AEL_configs);
     if (!_aul_ctx.pConfig) {
         log_error("Configuration Failed");
         if (_aul_ctx.log_file) {
@@ -83,9 +84,35 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     _aul_ctx.pConfig->rank = pCFG->rank;
     _aul_ctx.pConfig->group.id = pCFG->opt_group_id;
     _aul_ctx.pConfig->group.size = pCFG->opt_group_size;
-    _aul_ctx.pConfig->group.size = pCFG->opt_group_size;
     _aul_ctx.pConfig->chkpt_opts.use_error_correction =
         pCFG->use_error_correction;
+
+    _aul_ctx.pAEL = ael_create_instance(eAEL_ORIGIN_MPI, _aul_ctx.pConfig->rank,
+                                        _aul_ctx.pConfig->group.id,
+                                        _aul_ctx.pConfig->group.size, 0,
+                                        _aul_ctx.pConfig->log_opts.n_clients);
+
+    if (!_aul_ctx.pAEL) {
+        log_warn("External Logging Disabled");
+    }
+
+    // Copy External Logger clients if any
+    if (pCFG->opt_AEL_configs && pCFG->opt_n_AEL_configs > 0) {
+        for (size_t i = 0; i < pCFG->opt_n_AEL_configs && i < AOC_MAX_CLIENTS;
+             i++) {
+            struct aul_external_logger_client_configuration *client =
+                &pCFG->opt_AEL_configs[i];
+
+            snprintf(_aul_ctx.pConfig->log_opts.cli_list[i].ip, AOC_IP_LEN,
+                     "%s", client->ip);
+            _aul_ctx.pConfig->log_opts.cli_list[i].port = client->port;
+            eAEL_error ael_status =
+                ael_add_recipient(_aul_ctx.pAEL, client->ip, client->port);
+            if (ael_status != eAEL_OK) {
+                log_warn("Configuration Failed = 0x%x", ael_status);
+            }
+        }
+    }
 
     _aul_ctx.pAFV =
         afv_create_instance(_aul_ctx.pConfig->rank, _aul_ctx.pConfig->group.id,
@@ -95,12 +122,20 @@ int AUL_Init(const aul_configuration_t *pCFG) {
 
     if (!_aul_ctx.pAFV) {
         log_fatal("Configuration Failed");
+        ael_destroy_instance(&_aul_ctx.pAEL);
         aoc_free(&_aul_ctx.pConfig);
         if (_aul_ctx.log_file) {
             fclose(_aul_ctx.log_file);
             _aul_ctx.log_file = NULL;
         }
         return -2;
+    }
+
+    eAEL_error ael_status = ael_send_connect(_aul_ctx.pAEL, NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
     }
 
     ads_exchange_data_t ads_data_tx = {0};
@@ -219,11 +254,15 @@ int AUL_Finalize(void) {
         fclose(_aul_ctx.log_file);
         _aul_ctx.log_file = NULL;
     }
+    (void) ael_send_disconnect(_aul_ctx.pAEL, NULL);
+
     // All handlers placed here must be able to handle a hardfault
+
     aoc_free(&_aul_ctx.pConfig);
     arm_destroy_instance(&_aul_ctx.pARM);
     acn_destroy_instance(&_aul_ctx.pACN);
     aci_destroy_instance(&_aul_ctx.pACI);
     afv_destroy_instance(&_aul_ctx.pAFV);
+    ael_destroy_instance(&_aul_ctx.pAEL);
     return 0;
 }
