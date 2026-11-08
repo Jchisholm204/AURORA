@@ -58,6 +58,7 @@ aim_hndl *aim_init(size_t max_workers) {
         pHndl->workers[i].pACN = NULL;
         pHndl->workers[i].pARM = NULL;
         pHndl->workers[i].pAFV = NULL;
+        pHndl->workers[i].pAEL = NULL;
         pHndl->workers[i].error_counter = 0;
     }
 

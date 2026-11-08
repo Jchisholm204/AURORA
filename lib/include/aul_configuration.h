@@ -49,8 +49,8 @@ typedef struct {
 
     // Logging
     char *opt_log_file;
-    struct aul_external_logger_client_configuration *opt_AEL_configs;
     size_t opt_n_AEL_configs;
+    struct aul_external_logger_client_configuration *opt_AEL_configs;
 } aul_configuration_t;
 
 typedef struct aul_external_logger_client_configuration aul_el_client_t;

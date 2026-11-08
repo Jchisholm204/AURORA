@@ -102,6 +102,8 @@ eAEL_error ael_add_recipient(ael_hndl *pHndl, const char *ip, uint16_t port) {
         return eAEL_ERR_COUNT | eAEL_ERR_FATAL;
     }
 
+    log_debug("Adding Peer %s:%d", ip, port);
+
     struct sockaddr_in addr = {.sin_family = AF_INET};
     int rc = inet_pton(AF_INET, ip, &addr.sin_addr);
     if (rc != 1) {

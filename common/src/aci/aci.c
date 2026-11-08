@@ -101,8 +101,10 @@ int aci_connect_instance(aci_hndl *pHndl, aurora_blob_t *local_info,
 
     ucp_worker_release_address(pHndl->ucp_worker, local_info->data);
     local_info->data = NULL;
+    local_info->size = 0;
     free(remote_info->data);
     remote_info->data = NULL;
+    remote_info->size = 0;
 
     log_trace("ACI connected");
 
