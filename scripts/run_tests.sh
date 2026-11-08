@@ -55,6 +55,8 @@ function submit_test(){
 #     '16' \ # extra parameters -> heatdis mpi procs
 #     '8' # extra parameters -> headis server threads
 
+# Nov 2 2026, ran only AURORA headis tests to get the revised restart times
+
 HEATDIS_MEM_MIN=64
 HEATDIS_MEM_MAX=1024
 for ((i = $HEATDIS_MEM_MIN; i <= $HEATDIS_MEM_MAX; i=i*2)); do
@@ -75,54 +77,54 @@ for ((i = $HEATDIS_MEM_MIN; i <= $HEATDIS_MEM_MAX; i=i*2)); do
         '16'
 
     # Run VeloC Tests
-    submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-        'heatdis_veloc' \
-        10 \
-        "$i" \
-        '64'
-
-    submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
-        'heatdis_veloc' \
-        10 \
-        "$i" \
-        '128'
+    # submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+    #     'heatdis_veloc' \
+    #     10 \
+    #     "$i" \
+    #     '64'
+    #
+    # submit_test 'heat_distribution_veloc.zsh' '08:00:00' '2' \
+    #     'heatdis_veloc' \
+    #     10 \
+    #     "$i" \
+    #     '128'
 
     # Run Original (unmodified) heatdis benchmark
-    submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-        'heatdis_orig' \
-        10 \
-        "$i" \
-        '64' 
-
-    submit_test 'heat_distribution.zsh' '08:00:00' '2' \
-        'heatdis_orig' \
-        10 \
-        "$i" \
-        '64' 
+    # submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+    #     'heatdis_orig' \
+    #     10 \
+    #     "$i" \
+    #     '64' 
+    #
+    # submit_test 'heat_distribution.zsh' '08:00:00' '2' \
+    #     'heatdis_orig' \
+    #     10 \
+    #     "$i" \
+    #     '64' 
 done
 
 
 # Heatmap Tests
 # Mem in MB
-HEATMAP_MEM='16384'
-HEATMAP_PROCS='128'
-submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora_heatmap' \
-    10 \
-    "${HEATMAP_MEM}" \
-    "${HEATMAP_PROCS}" \
-    '8'
-
-submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora_heatmap' \
-    10 \
-    "${HEATMAP_MEM}" \
-    "${HEATMAP_PROCS}" \
-    '16'
-
-submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
-    'block_test_aurora_heatmap' \
-    10 \
-    "${HEATMAP_MEM}" \
-    "${HEATMAP_PROCS}" \
-    '32'
+# HEATMAP_MEM='16384'
+# HEATMAP_PROCS='128'
+# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+#     'block_test_aurora_heatmap' \
+#     10 \
+#     "${HEATMAP_MEM}" \
+#     "${HEATMAP_PROCS}" \
+#     '8'
+#
+# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+#     'block_test_aurora_heatmap' \
+#     10 \
+#     "${HEATMAP_MEM}" \
+#     "${HEATMAP_PROCS}" \
+#     '16'
+#
+# submit_test 'block_test_aurora.zsh' '4:00:00' '2' \
+#     'block_test_aurora_heatmap' \
+#     10 \
+#     "${HEATMAP_MEM}" \
+#     "${HEATMAP_PROCS}" \
+#     '32'
