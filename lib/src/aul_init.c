@@ -121,12 +121,20 @@ int AUL_Init(const aul_configuration_t *pCFG) {
 
     if (!_aul_ctx.pAFV) {
         log_fatal("Configuration Failed");
+        ael_destroy_instance(&_aul_ctx.pAEL);
         aoc_free(&_aul_ctx.pConfig);
         if (_aul_ctx.log_file) {
             fclose(_aul_ctx.log_file);
             _aul_ctx.log_file = NULL;
         }
         return -2;
+    }
+
+    eAEL_error ael_status = ael_send_connect(_aul_ctx.pAEL, NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
     }
 
     ads_exchange_data_t ads_data_tx = {0};
@@ -235,13 +243,6 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         log_fatal("Failed to create ARM");
         (void) AUL_Finalize();
         return -1;
-    }
-
-    eAEL_error ael_status = ael_send_connect(_aul_ctx.pAEL, NULL);
-    // Don't report no clients failures
-    if (ael_status != eAEL_OK &&
-        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
-        log_warn("AEL Failure 0x%x", ael_status);
     }
 
     return 0;

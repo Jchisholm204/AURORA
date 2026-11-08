@@ -71,7 +71,7 @@ int AUL_Test(const int version, const char *name) {
 
 int AUL_Restart_remote(const int version,
                        const char name[static AUL_NAME_LEN]) {
-    if (!_aul_ctx.pACI) {
+    if (!_aul_ctx.pACI | !_aul_ctx.pARM) {
         log_fatal("Not Initialized");
     }
 
@@ -94,6 +94,16 @@ int AUL_Restart_remote(const int version,
         return INT_MIN;
     }
 
+    const size_t arm_n_regions = arm_get_n_local_regions(_aul_ctx.pARM);
+    eAEL_error ael_status =
+        ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_RESTORE_START, version,
+                            arm_n_regions, name, NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
+
     // Setup the version and name we want
     acn_set_name(_aul_ctx.pACN, name);
     acn_set(_aul_ctx.pACN, eACN_version, ((int64_t) version));
@@ -106,6 +116,14 @@ int AUL_Restart_remote(const int version,
         acn_status = acn_await(_aul_ctx.pACN, eACN_restore);
         usleep(10000);
     } while (acn_status == eACN_ERR_TIMEOUT);
+
+    ael_status = ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_RESTORE_END,
+                                     version, arm_n_regions, name, NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
 
     if (acn_status != eACN_OK) {
         log_fatal("ACN Error: %d", acn_status);
@@ -197,7 +215,6 @@ int AUL_Restart_local(const int version, const char name[static AUL_NAME_LEN]) {
 
     log_trace("Starting Restore");
 
-    // Send RESTORE_START event before loading checkpoint data
     eAEL_error ael_status =
         ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_RESTORE_START, version,
                             arm_n_regions, name, NULL);

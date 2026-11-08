@@ -2,15 +2,17 @@
  * @file operating_configuration.h
  * @author Jacob Chisholm (https://Jchisholm204.github.io)
  * @brief Defines the Operation Mode Configuration for AURORA
- * @version 0.1
+ * @version 0.2
  * @date Created: 2026-03-31
- * @modified Last Modified: 2026-03-31
+ * @modified Last Modified: 2026-11-08
  *
  * @copyright Copyright (c) 2026
  */
 
 #ifndef _OPERATING_CONFIGURATION_H_
 #define _OPERATING_CONFIGURATION_H_
+#include "log.h"
+
 #include <malloc.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -19,6 +21,9 @@
 
 // String size of an IPv4 address (including null terminator)
 #define AOC_IP_LEN (sizeof("xxx.xxx.xxx.xxx"))
+#ifndef AOC_MAX_CLIENTS
+#define AOC_MAX_CLIENTS 256
+#endif
 
 struct aurora_operating_configuration {
     uint64_t rank;
@@ -50,16 +55,22 @@ typedef struct aurora_operating_configuration opconf_t;
  * @return Operating Configuration with correctly configured pointers.
  */
 static inline opconf_t *aoc_ptr_init(void *ptr) {
-    if (!ptr) {
+    opconf_t *pConfig = (opconf_t *) ptr;
+    if (!pConfig) {
         return NULL;
     }
 
-    opconf_t *pConfig = (opconf_t *) ptr;
-
+    const size_t n_clients = pConfig->log_opts.n_clients;
     const size_t elclient_offset = sizeof(opconf_t);
     const size_t elclient_size =
         sizeof(struct aurora_operating_configuration_external_logger_client) *
-        pConfig->log_opts.n_clients;
+        n_clients;
+
+    if (n_clients > AOC_MAX_CLIENTS) {
+        // Overflow Error
+        return NULL;
+    }
+
     const size_t str_offset = elclient_offset + elclient_size;
 
     if (pConfig->log_opts.n_clients == 0) {
@@ -76,6 +87,12 @@ static inline opconf_t *aoc_ptr_init(void *ptr) {
 static inline opconf_t *aoc_alloc(char *persistent_path, size_t n_el_clients) {
     if (!persistent_path) {
         return NULL;
+    }
+
+    if (n_el_clients > AOC_MAX_CLIENTS) {
+        log_warn("Requested %ld exceeds maximum %d", n_el_clients,
+                 AOC_MAX_CLIENTS);
+        n_el_clients = AOC_MAX_CLIENTS;
     }
 
     const size_t str_size = strlen(persistent_path) + 1;
@@ -97,6 +114,7 @@ static inline opconf_t *aoc_alloc(char *persistent_path, size_t n_el_clients) {
     pConfig->group.size = -1;
     pConfig->rank = 0;
     pConfig->log_opts.n_clients = n_el_clients;
+    pConfig->chkpt_opts.use_error_correction = false;
 
     // Initialize internal pointers (el_n_clients must be set prior)
     pConfig = aoc_ptr_init((void *) structbuf);
@@ -129,12 +147,20 @@ static inline void aoc_free(struct aurora_operating_configuration **ppConfig) {
 static inline size_t aoc_size(
     const struct aurora_operating_configuration *pConfig) {
     if (!pConfig) {
+        log_error("NULL Parameter");
         return 0;
     }
+
+    size_t n_clients = pConfig->log_opts.n_clients;
+    if (n_clients > AOC_MAX_CLIENTS) {
+        log_error("Overflow");
+        n_clients = AOC_MAX_CLIENTS;
+    }
+
     size_t size = 0;
     size += sizeof(struct aurora_operating_configuration);
     size +=
-        pConfig->log_opts.n_clients *
+        n_clients *
         sizeof(struct aurora_operating_configuration_external_logger_client);
     if (pConfig->chkpt_opts.persistent_path) {
         size += strlen(pConfig->chkpt_opts.persistent_path) + 1;

@@ -31,21 +31,23 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
             }
         }
 
-        // Send CHECKPOINT_START event before memory copy
         size_t n_regions = arm_get_n_local_regions(_aul_ctx.pARM);
-        if (_aul_ctx.pAEL) {
-            ael_send_checkpoint(
-                _aul_ctx.pAEL,
-                eAEL_EVENT_CHECKPOINT_START,
-                version, n_regions, name, NULL);
+        const amr_hndl *region_list = arm_get_local_regions(_aul_ctx.pARM);
+        if (!region_list) {
+            log_error("NULL region list error");
+            return INT_MIN;
+        }
+
+        // Send CHECKPOINT_START event before memory copy
+        eAEL_error ael_status =
+            ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_CHECKPOINT_START,
+                                version, n_regions, name, NULL);
+        if (ael_status != eAEL_OK &&
+            ael_status != (eAEL_ERR_SEND | eAEL_ERR_FATAL)) {
+            log_warn("AEL Failure 0x%x", ael_status);
         }
 
         TIME_REGION("Memory Copy") {
-            const amr_hndl *region_list = arm_get_local_regions(_aul_ctx.pARM);
-            if (!region_list) {
-                log_error("NULL region list error");
-                return INT_MIN;
-            }
             for (size_t i = 0; i < n_regions; i++) {
                 log_trace("Chpt Rgn %d, id=%d", i, region_list[i].id);
                 const void *pActive = (void *) region_list[i].pActive_memory;
@@ -56,15 +58,14 @@ int AUL_Checkpoint(const int version, const char name[static AUL_NAME_LEN]) {
                     log_error("NULL Error");
                 }
             }
-
-            // Send CHECKPOINT_END event after memory copy completes
-            if (_aul_ctx.pAEL) {
-                ael_send_checkpoint(
-                    _aul_ctx.pAEL,
-                    eAEL_EVENT_CHECKPOINT_END,
-                    version, n_regions, name, NULL);
-            }
-
+        } // END Timed Region "Memory Copy"
+        // Send CHECKPOINT_END event after memory copy completes
+        ael_status =
+            ael_send_checkpoint(_aul_ctx.pAEL, eAEL_EVENT_CHECKPOINT_END,
+                                version, n_regions, name, NULL);
+        if (ael_status != eAEL_OK &&
+            ael_status != (eAEL_ERR_SEND | eAEL_ERR_FATAL)) {
+            log_warn("AEL Failure 0x%x", ael_status);
         }
 
         // Setup the checkpoint name and version in ACN

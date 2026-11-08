@@ -81,24 +81,31 @@ void *acr_cmd_connection_up(void *arg) {
         return NULL;
     }
 
-    opconf_t *pConfig = aoc_ptr_init(ads_data_rx->config.data);
-
-    if (!pConfig || ads_data_rx->config.size == sizeof(opconf_t)) {
+    if (!ads_data_rx->config.data ||
+        ads_data_rx->config.size == aoc_size(ads_data_rx->config.data)) {
         log_error("No/Invalid Configuration??");
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
-        pConfig = NULL;
         aim_remove_entry(pCtx->pAIM, pCli);
         (void) _acr_ctx_release_retry(pCtx, 2);
         return NULL;
     }
 
-    else {
-        log_debug("rank=%d", pConfig->rank);
-        log_debug("group_id=%d", pConfig->group.id);
-        log_debug("group_size=%d", pConfig->group.size);
-        log_debug("path=%s", pConfig->chkpt_opts.persistent_path);
+    opconf_t *pConfig = aoc_ptr_init(ads_data_rx->config.data);
+    if (!pConfig) {
+        log_error("No/Invalid Configuration??");
+        acn_destroy_instance(&pCli->pACN);
+        aci_destroy_instance(&pCli->pACI);
+        aim_remove_entry(pCtx->pAIM, pCli);
+        (void) _acr_ctx_release_retry(pCtx, 2);
+        return NULL;
     }
+
+    log_debug("connection=(rank=%d gid=%d gsize=%d) "
+              "chkpt_opts(ec=%d pp=%s) log=(n=%d)",
+              pConfig->rank, pConfig->group.id, pConfig->group.size,
+              pConfig->chkpt_opts.use_error_correction,
+              pConfig->chkpt_opts.persistent_path, pConfig->log_opts.n_clients);
 
     int aci_status = 0;
     BENCH("aci_connect", {
@@ -110,7 +117,7 @@ void *acr_cmd_connection_up(void *arg) {
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
+        aoc_free(&pConfig);
         (void) _acr_ctx_release_retry(pCtx, 2);
         return NULL;
     }
@@ -122,7 +129,7 @@ void *acr_cmd_connection_up(void *arg) {
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
+        aoc_free(&pConfig);
         (void) _acr_ctx_release_retry(pCtx, 2);
         return NULL;
     }
@@ -135,7 +142,7 @@ void *acr_cmd_connection_up(void *arg) {
         acn_destroy_instance(&pCli->pACN);
         aci_destroy_instance(&pCli->pACI);
         aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
+        aoc_free(&pConfig);
         (void) _acr_ctx_release_retry(pCtx, 2);
         return NULL;
     }
@@ -155,7 +162,7 @@ void *acr_cmd_connection_up(void *arg) {
         aci_destroy_instance(&pCli->pACI);
         ael_destroy_instance(&pCli->pAEL);
         aim_remove_entry(pCtx->pAIM, pCli);
-        aoc_free((opconf_t **) &ads_data_rx->config.data);
+        aoc_free(&pConfig);
         (void) _acr_ctx_release_retry(pCtx, 2);
         return NULL;
     }
@@ -169,8 +176,8 @@ void *acr_cmd_connection_up(void *arg) {
         log_warn("External Logging Disabled");
     }
 
-    for (size_t i = 0; i < pConfig->log_opts.n_clients; i++) {
-        assert(pConfig->log_opts.cli_list != NULL);
+    for (size_t i = 0;
+         i < pConfig->log_opts.n_clients && pConfig->log_opts.cli_list; i++) {
         eAEL_error err =
             ael_add_recipient(pCli->pAEL, pConfig->log_opts.cli_list[i].ip,
                               pConfig->log_opts.cli_list[i].port);
@@ -180,10 +187,16 @@ void *acr_cmd_connection_up(void *arg) {
     }
 
     // Send CONNECT event immediately after setup (mirrors client behavior)
-    (void) ael_send_connect(pCli->pAEL, "Server connection established");
+    eAEL_error ael_status =
+        ael_send_connect(pCli->pAEL, "Server connection established");
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
 
     // Free the configuration chunk
-    aoc_free((opconf_t **) &ads_data_rx->config.data);
+    aoc_free(&pConfig);
 
     if (ads_data_rx) {
         free(ads_data_rx);

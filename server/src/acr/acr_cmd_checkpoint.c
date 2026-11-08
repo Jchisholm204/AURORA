@@ -168,7 +168,9 @@ void *acr_cmd_checkpoint(void *arg) {
 
     { // BEGIN Checkpoint Verification
         int64_t checkpoint_version = afv_checkpoint_version(pCheckpoint);
-        const char *const checkpoint_name = afv_checkpoint_name(pCheckpoint);
+        char checkpoint_name[AFV_CKPT_NAME_LEN] = "null";
+        memcpy(checkpoint_name, afv_checkpoint_name(pCheckpoint),
+               AFV_CKPT_NAME_LEN);
 
         eAFV_verif checkpoint_verification = afv_checkpoint_verify(pCheckpoint);
         if (checkpoint_verification != eAFV_VERIF_OK) {
