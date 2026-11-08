@@ -223,10 +223,16 @@ void *acr_cmd_restart(void *arg) {
                  ACN_NAME_LEN, checkpoint_name, checkpoint_version);
     } // END Notify Client of Completion
 
-    (void) ael_send_checkpoint(pInstance->pAEL, eAEL_EVENT_RESTORE_END,
-                               afv_checkpoint_version(pCheckpoint),
-                               arm_get_n_remote_regions(pInstance->pARM),
-                               afv_checkpoint_name(pCheckpoint), NULL);
+    eAEL_error ael_status =
+        ael_send_checkpoint(pInstance->pAEL, eAEL_EVENT_RESTORE_END,
+                            afv_checkpoint_version(pCheckpoint),
+                            arm_get_n_remote_regions(pInstance->pARM),
+                            afv_checkpoint_name(pCheckpoint), NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
 
     restart_fail = false;
 RESTART_FAIL:

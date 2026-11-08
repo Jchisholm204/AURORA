@@ -166,26 +166,37 @@ void *acr_cmd_checkpoint(void *arg) {
 
     } // END Region Loop
 
-    eAFV_verif checkpoint_verification = afv_checkpoint_verify(pCheckpoint);
-    if (checkpoint_verification != eAFV_VERIF_OK) {
-        log_error("Checkpoint Verification Failed 0x%x",
-                  checkpoint_verification);
-        goto CHECKPOINT_FAIL;
-    }
-    checkpoint_verification = afv_checkpoint_close(&pCheckpoint);
-    if (checkpoint_verification != eAFV_VERIF_OK) {
-        log_error("Checkpoint Verification Failed 0x%x",
-                  checkpoint_verification);
-        goto CHECKPOINT_FAIL;
-    }
+    { // BEGIN Checkpoint Verification
+        int64_t checkpoint_version = afv_checkpoint_version(pCheckpoint);
+        const char *const checkpoint_name = afv_checkpoint_name(pCheckpoint);
 
-    // NOP
-    acn_tick(pInstance->pACN, eACN_checkpoint);
+        eAFV_verif checkpoint_verification = afv_checkpoint_verify(pCheckpoint);
+        if (checkpoint_verification != eAFV_VERIF_OK) {
+            log_error("Checkpoint Verification Failed 0x%x",
+                      checkpoint_verification);
+            goto CHECKPOINT_FAIL;
+        }
+        checkpoint_verification = afv_checkpoint_close(&pCheckpoint);
+        if (checkpoint_verification != eAFV_VERIF_OK) {
+            log_error("Checkpoint Verification Failed 0x%x",
+                      checkpoint_verification);
+            goto CHECKPOINT_FAIL;
+        }
 
-    (void) ael_send_checkpoint(pInstance->pAEL, eAEL_EVENT_CHECKPOINT_END,
-                               afv_checkpoint_version(pCheckpoint),
-                               arm_n_regions, afv_checkpoint_name(pCheckpoint),
-                               NULL);
+        // NOP
+        acn_tick(pInstance->pACN, eACN_checkpoint);
+
+        eAEL_error ael_status =
+            ael_send_checkpoint(pInstance->pAEL, eAEL_EVENT_CHECKPOINT_END,
+                                checkpoint_version, arm_n_regions,
+                                checkpoint_name, NULL);
+        // Don't report no clients failures
+        if (ael_status != eAEL_OK &&
+            ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+            log_warn("AEL Failure 0x%x", ael_status);
+        }
+
+    } // END Checkpoint Verification
 
 CHECKPOINT_FAIL:
     if (pCheckpoint) {

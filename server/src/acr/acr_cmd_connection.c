@@ -17,6 +17,7 @@
 #include "log.h"
 #include "operating_configuration.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -160,9 +161,9 @@ void *acr_cmd_connection_up(void *arg) {
     }
 
     // AEL - mirror lib/src/aul_init.c lines 90-110
-    pCli->pAEL =
-        ael_create_instance(eAEL_ORIGIN_ARE, 0, pConfig->group.id,
-                            pConfig->group.size, 0, pConfig->el_n_clients);
+    pCli->pAEL = ael_create_instance(eAEL_ORIGIN_ARE, 0, pConfig->group.id,
+                                     pConfig->group.size, 0,
+                                     pConfig->log_opts.n_clients);
 
     if (!pCli->pAEL) {
         log_warn("External Logging Disabled");
@@ -170,10 +171,11 @@ void *acr_cmd_connection_up(void *arg) {
 
     // Add recipients using proper API call (mirror lib/src/aul_init.c lines
     // 100-110)
-    for (size_t i = 0; i < pConfig->el_n_clients; i++) {
+    for (size_t i = 0; i < pConfig->log_opts.n_clients; i++) {
+        assert(pConfig->log_opts.cli_list != NULL);
         eAEL_error err =
-            ael_add_recipient(pCli->pAEL, pConfig->el_clients[i].ip,
-                              pConfig->el_clients[i].port);
+            ael_add_recipient(pCli->pAEL, pConfig->log_opts.cli_list[i].ip,
+                              pConfig->log_opts.cli_list[i].port);
         if (err != eAEL_OK) {
             log_error("Failed to add AEL recipient %zu: 0x%x", i, err);
         }

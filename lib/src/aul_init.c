@@ -90,7 +90,7 @@ int AUL_Init(const aul_configuration_t *pCFG) {
     _aul_ctx.pAEL = ael_create_instance(eAEL_ORIGIN_MPI, _aul_ctx.pConfig->rank,
                                         _aul_ctx.pConfig->group.id,
                                         _aul_ctx.pConfig->group.size, 0,
-                                        _aul_ctx.pConfig->el_n_clients);
+                                        _aul_ctx.pConfig->log_opts.n_clients);
 
     if (!_aul_ctx.pAEL) {
         log_warn("External Logging Disabled");
@@ -102,13 +102,14 @@ int AUL_Init(const aul_configuration_t *pCFG) {
             struct aul_external_logger_client_configuration *client =
                 &pCFG->opt_AEL_configs[i];
 
-            snprintf(_aul_ctx.pConfig->el_clients[i].ip, AOC_IP_LEN, "%s",
-                     client->ip);
-            _aul_ctx.pConfig->el_clients[i].port = client->port;
-            // ael_add_recipient(_aul_ctx.pAEL, client->ip, client->port);
-            (void) ael_add_recipient(_aul_ctx.pAEL,
-                                     _aul_ctx.pConfig->el_clients[i].ip,
-                                     _aul_ctx.pConfig->el_clients[i].port);
+            snprintf(_aul_ctx.pConfig->log_opts.cli_list[i].ip, AOC_IP_LEN,
+                     "%s", client->ip);
+            _aul_ctx.pConfig->log_opts.cli_list[i].port = client->port;
+            eAEL_error ael_status =
+                ael_add_recipient(_aul_ctx.pAEL, client->ip, client->port);
+            if (ael_status != eAEL_OK) {
+                log_warn("Configuration Failed = 0x%x", ael_status);
+            }
         }
     }
 

@@ -17,7 +17,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#define AOC_IP_LEN (3 * 4 + 5)
+// String size of an IPv4 address (including null terminator)
+#define AOC_IP_LEN (sizeof("xxx.xxx.xxx.xxx"))
 
 struct aurora_operating_configuration {
     uint64_t rank;
@@ -31,15 +32,23 @@ struct aurora_operating_configuration {
         bool use_error_correction;
     } chkpt_opts;
 
-    size_t el_n_clients;
-    struct aurora_operating_configuration_external_logger_client {
-        char ip[AOC_IP_LEN];
-        uint16_t port;
-    } *el_clients;
+    struct {
+        size_t n_clients;
+        struct aurora_operating_configuration_external_logger_client {
+            char ip[AOC_IP_LEN];
+            uint16_t port;
+        } *cli_list;
+    } log_opts;
 };
 
 typedef struct aurora_operating_configuration opconf_t;
 
+/**
+ * @brief Initialize AOC pointer offsets: sizes must be initialized first
+ *
+ * @param ptr Raw block pointer
+ * @return Operating Configuration with correctly configured pointers.
+ */
 static inline opconf_t *aoc_ptr_init(void *ptr) {
     if (!ptr) {
         return NULL;
@@ -50,13 +59,13 @@ static inline opconf_t *aoc_ptr_init(void *ptr) {
     const size_t elclient_offset = sizeof(opconf_t);
     const size_t elclient_size =
         sizeof(struct aurora_operating_configuration_external_logger_client) *
-        pConfig->el_n_clients;
+        pConfig->log_opts.n_clients;
     const size_t str_offset = elclient_offset + elclient_size;
 
-    if (pConfig->el_n_clients == 0) {
-        pConfig->el_clients = NULL;
+    if (pConfig->log_opts.n_clients == 0) {
+        pConfig->log_opts.cli_list = NULL;
     } else {
-        pConfig->el_clients = (void *) ((char *) ptr + elclient_offset);
+        pConfig->log_opts.cli_list = (void *) ((char *) ptr + elclient_offset);
     }
 
     pConfig->chkpt_opts.persistent_path = ((char *) pConfig + str_offset);
@@ -87,14 +96,16 @@ static inline opconf_t *aoc_alloc(char *persistent_path, size_t n_el_clients) {
     pConfig->group.id = 0;
     pConfig->group.size = -1;
     pConfig->rank = 0;
-    pConfig->el_n_clients = n_el_clients;
+    pConfig->log_opts.n_clients = n_el_clients;
 
     // Initialize internal pointers (el_n_clients must be set prior)
     pConfig = aoc_ptr_init((void *) structbuf);
 
     strcpy(pConfig->chkpt_opts.persistent_path, persistent_path);
 
-    (void) memset(pConfig->el_clients, 0, elclient_size);
+    if (pConfig->log_opts.cli_list) {
+        (void) memset(pConfig->log_opts.cli_list, 0, elclient_size);
+    }
 
     return pConfig;
 }
@@ -109,6 +120,12 @@ static inline void aoc_free(struct aurora_operating_configuration **ppConfig) {
     }
 }
 
+/**
+ * @brief Gets the block pointer size of an AOC object
+ *
+ * @param pConfig AOC object to get the block size of
+ * @return
+ */
 static inline size_t aoc_size(
     const struct aurora_operating_configuration *pConfig) {
     if (!pConfig) {
@@ -117,7 +134,7 @@ static inline size_t aoc_size(
     size_t size = 0;
     size += sizeof(struct aurora_operating_configuration);
     size +=
-        pConfig->el_n_clients *
+        pConfig->log_opts.n_clients *
         sizeof(struct aurora_operating_configuration_external_logger_client);
     if (pConfig->chkpt_opts.persistent_path) {
         size += strlen(pConfig->chkpt_opts.persistent_path) + 1;
