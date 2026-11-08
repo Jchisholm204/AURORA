@@ -237,7 +237,12 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         return -1;
     }
 
-    (void) ael_send_connect(_aul_ctx.pAEL, NULL);
+    eAEL_error ael_status = ael_send_connect(_aul_ctx.pAEL, NULL);
+    // Don't report no clients failures
+    if (ael_status != eAEL_OK &&
+        ael_status != (eAEL_ERR_FATAL | eAEL_ERR_SEND)) {
+        log_warn("AEL Failure 0x%x", ael_status);
+    }
 
     return 0;
 }

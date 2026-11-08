@@ -169,8 +169,6 @@ void *acr_cmd_connection_up(void *arg) {
         log_warn("External Logging Disabled");
     }
 
-    // Add recipients using proper API call (mirror lib/src/aul_init.c lines
-    // 100-110)
     for (size_t i = 0; i < pConfig->log_opts.n_clients; i++) {
         assert(pConfig->log_opts.cli_list != NULL);
         eAEL_error err =
