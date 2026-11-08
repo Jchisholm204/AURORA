@@ -60,7 +60,7 @@ static inline opconf_t *aoc_ptr_init(void *ptr) {
         return NULL;
     }
 
-    const size_t n_clients = pConfig->log_opts.n_clients;
+    size_t n_clients = pConfig->log_opts.n_clients;
     const size_t elclient_offset = sizeof(opconf_t);
     const size_t elclient_size =
         sizeof(struct aurora_operating_configuration_external_logger_client) *
@@ -68,7 +68,9 @@ static inline opconf_t *aoc_ptr_init(void *ptr) {
 
     if (n_clients > AOC_MAX_CLIENTS) {
         // Overflow Error
-        return NULL;
+        log_warn("OOB");
+        n_clients = AOC_MAX_CLIENTS;
+        pConfig->log_opts.n_clients = AOC_MAX_CLIENTS;
     }
 
     const size_t str_offset = elclient_offset + elclient_size;
@@ -118,6 +120,13 @@ static inline opconf_t *aoc_alloc(char *persistent_path, size_t n_el_clients) {
 
     // Initialize internal pointers (el_n_clients must be set prior)
     pConfig = aoc_ptr_init((void *) structbuf);
+    if (!pConfig) {
+        // Should never happen
+        log_fatal("Bad Alloc??");
+        free((void *) structbuf);
+        structbuf = NULL;
+        return NULL;
+    }
 
     strcpy(pConfig->chkpt_opts.persistent_path, persistent_path);
 
