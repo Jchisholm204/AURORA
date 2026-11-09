@@ -62,22 +62,28 @@ extern ads_hndl *ads_init(void) {
     }
 
     { // PMIx BEGIN 
-        pmix_status_t pmix_status;
+        pmix_status_t pmix_status = PMIX_SUCCESS;
         pmix_proc_t *all_procs;
         pmix_value_t pmix_value;
         size_t nprocs;
-        pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
+
+        if (!PMIx_Initialized()) pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
         if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
 
-        log_info("PMIx Server proc %d @ %s", pHndl->pmix_proc.rank, pHndl->pmix_proc.nspace);
+        // log_info("PMIx Server proc %d @ %s", pHndl->pmix_proc.rank, pHndl->pmix_proc.nspace);
         pmix_status = PMIx_Resolve_peers("localhost-0.tail6b59c6.ts.net", NULL, &all_procs, &nprocs);
         for (size_t i = 0; i < nprocs; i++) log_info("Server sees proc %d @ %s", all_procs[i].rank, all_procs[i].nspace);
 
-        pmix_status = PMIx_Value_load(&pmix_value, &pHndl->pmix_proc, PMIX_PROC);
-        pmix_status = PMIx_Put(PMIX_LOCAL, "server", &pmix_value);
-
+        // pmix_status = PMIx_Value_load(&pmix_value, &pHndl->pmix_proc, PMIX_PROC);
+        // pmix_status = PMIx_Put(PMIX_LOCAL, "aurora_remote", &pmix_value);
+        size_t ninfo = 2;
+        pmix_info_t info[ninfo];
+        pmix_persistence_t persistence = PMIX_PERSIST_FIRST_READ;
+        pmix_status = PMIx_Info_load(&info[0], "remote_engine", &pHndl->pmix_proc, PMIX_PROC);
+        pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
+        pmix_status = PMIx_Publish(info, ninfo);
     }
-    
+     
     pHndl->mdns_sock = mdns_socket_open_ipv4(NULL);
     mdns_socket_setup_ipv4(pHndl->mdns_sock, NULL);
 
@@ -114,6 +120,7 @@ extern ads_hndl *ads_init(void) {
         free(pHndl);
         return NULL;
     }
+    
 
     return pHndl;
 }
@@ -129,13 +136,18 @@ extern int ads_finalize(ads_hndl **ppHndl) {
         pmix_status = PMIx_Finalize(NULL, 0);
         if (pmix_status != PMIX_SUCCESS) log_error("Failed to finalize the PMIx Client");
     }
+
+    
     mdns_socket_close((*ppHndl)->mdns_sock);
     close((*ppHndl)->tcp_sock);
+    
+
     free((*ppHndl));
     *ppHndl = NULL;
     return 0;
 }
 
+// This does not need to get called
 extern int ads_accept_any(ads_hndl *pHndl) {
     if (!pHndl) {
         return -1;
@@ -158,11 +170,80 @@ extern int ads_accept_any(ads_hndl *pHndl) {
     }
 }
 
+int prepend_index_key(const char *src, char *dest, size_t dest_len, int id) {
+    if (!src || !dest || dest_len == 0)
+        return -1;
+
+    int written = snprintf(dest, dest_len, "%d-%s", id, src);
+
+    // Check for truncation
+    if (written < 0 || (size_t)written >= dest_len) {
+        return -1;
+    }
+
+    return 0;
+}
+
 extern ads_exchange_data_t *ads_exchange(int sock_fd,
                                          ads_exchange_data_t *pTxData) {
     if (!pTxData) {
         return NULL;
     }
+
+    { // PMIx BEGIN
+        size_t ads_exchange_size = sizeof(ads_exchange_data_t);
+        size_t ninfo = 5;
+        pmix_info_t info[ninfo];
+        PMIx_Info_load(&info[0], "header", &ads_exchange_size, PMIX_SIZE);
+        pmix_byte_object_t bos[3];
+        // this takes a char *
+        
+        // PMIx_Byte_object_load neq PMIx 4.2
+        // PMIx_Byte_object_load(&bos[0], pTxData->comm.data, pTxData->comm.size);
+        bos[0].bytes = pTxData->comm.data;
+        bos[0].size = pTxData->comm.size;
+        // PMIx_Byte_object_load(&bos[1], pTxData->notif.data, pTxData->notif.size);
+        bos[1].bytes = pTxData->notif.data;
+        bos[1].size = pTxData->notif.size;
+        // PMIx_Byte_object_load(&bos[2], pTxData->config.data, pTxData->config.size);
+        bos[2].bytes = pTxData->config.data;
+        bos[2].size = pTxData->config.size;
+
+        // 7 is just the max length among strs
+        char comm_key[7];
+        char notif_key[7];
+        char config_key[7];
+ 
+        prepend_index_key("comm", comm_key, 7, sock_fd);
+        prepend_index_key("notif", notif_key, 7, sock_fd);
+        prepend_index_key("config", config_key, 7, sock_fd);
+        PMIx_Info_load(&info[1], comm_key, &bos[0], PMIX_BYTE_OBJECT);
+        PMIx_Info_load(&info[2], notif_key, &bos[1], PMIX_BYTE_OBJECT);
+        PMIx_Info_load(&info[3], config_key, &bos[2], PMIX_BYTE_OBJECT);
+
+        pmix_persistence_t persistence = PMIX_PERSIST_FIRST_READ;
+        PMIx_Info_load(&info[4], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
+
+        // temporary attempt to combine into one large message
+        size_t total_size = pTxData->comm.size + pTxData->notif.size + pTxData->config.size;
+        char *buffer = malloc(total_size);
+        size_t offset = 0;
+
+        memcpy(buffer + offset, pTxData->comm.data, pTxData->comm.size);
+        offset += pTxData->comm.size;
+        
+        memcpy(buffer + offset, pTxData->notif.data, pTxData->notif.size);
+        offset += pTxData->notif.size;
+
+        memcpy(buffer + offset, pTxData->config.data, pTxData->config.size);
+        offset += pTxData->config.size;
+
+        log_info("combined mf is %zu and %s", total_size, buffer);
+
+        PMIx_Publish(info, ninfo);
+
+    }
+
     // Transmit Data to client side
     send(sock_fd, pTxData, sizeof(ads_exchange_data_t), 0);
     send(sock_fd, pTxData->comm.data, pTxData->comm.size, 0);
@@ -259,16 +340,32 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
     }
 
     { // PMIx BEGIN
-        pmix_status_t pmix_status;
+        pmix_status_t pmix_status = PMIX_SUCCESS;
         pmix_proc_t client_proc;
         pmix_proc_t *all_procs;
         size_t nprocs;
-        pmix_status = PMIx_Init(&client_proc, NULL, 0);
+        if (!PMIx_Initialized()) pmix_status = PMIx_Init(&client_proc, NULL, 0);
         if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to initialize with error %s", PMIx_Error_string(pmix_status));
 
         log_info("PMIx client %d @ %s", client_proc.rank, client_proc.nspace);
         pmix_status = PMIx_Resolve_peers("localhost-0.tail6b59c6.ts.net", NULL, &all_procs, &nprocs);
         for (size_t i = 0; i < nprocs; i++) log_info("Client sees proc %d @ %s", all_procs[i].rank, all_procs[i].nspace);
+
+        pmix_pdata_t pdata = PMIX_LOOKUP_STATIC_INIT;
+        PMIx_Load_key(pdata.key, "remote_engine");
+        size_t ndata = 1;
+        size_t ninfo = 2;
+        pmix_info_t info[ninfo];
+        pmix_data_range_t range = PMIX_RANGE_SESSION;
+        PMIx_Info_load(&info[0], PMIX_RANGE, &range, PMIX_DATA_RANGE);
+        pmix_status = PMIx_Lookup(&pdata, ndata, NULL, 0);
+
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx Lookup failed with %s.", PMIx_Error_string(pmix_status));
+
+        log_info("Got proc %d/%s with key %s and val %s", pdata.proc.rank, pdata.proc.nspace, pdata.key, PMIx_Value_string(&pdata.value));
+
+
+        
     }
 
     log_trace("Connecting to %s", pConf->opt_server_ip);

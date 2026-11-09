@@ -17,6 +17,8 @@ int main(int argc, char **argv) {
     // 1. Initialize MPI environment
     MPI_Init(&argc, &argv);
 
+    fprintf(stderr, "MPI Initialized!\n");
+
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -26,6 +28,7 @@ int main(int argc, char **argv) {
     cfg.rank = rank;
     cfg.opt_group_id = rank;
     cfg.opt_group_size = size;
+    // cfg.opt_hostname = "localhost-0.tail6b59c6.ts.net";
     int ini_s = AUL_Init(&cfg);
 
     if (rank == 0) {
