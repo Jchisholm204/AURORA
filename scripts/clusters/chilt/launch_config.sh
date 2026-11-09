@@ -21,4 +21,4 @@ export AURORA_LAUNCH_PLATFORM="ssh"
 export AURORA_CLUSTER_CHECKPOINT_DIR="/mnt/beegfs/checkpoints"
 
 # Temporary directory to use during testing
-export AURORA_CLUSTER_TMP_DIR="$HOME/mnt/beegfs/tmp"
+export AURORA_CLUSTER_TMP_DIR="/mnt/beegfs/tmp"
