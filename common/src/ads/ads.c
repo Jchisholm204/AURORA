@@ -170,6 +170,7 @@ extern int ads_accept_any(ads_hndl *pHndl) {
     }
 }
 
+// Temporary, is there a better solution?
 int prepend_index_key(const char *src, char *dest, size_t dest_len, int id) {
     if (!src || !dest || dest_len == 0)
         return -1;
@@ -192,6 +193,7 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
 
     { // PMIx BEGIN
         size_t ads_exchange_size = sizeof(ads_exchange_data_t);
+        pmix_status_t pmix_status = PMIX_SUCCESS;
         size_t ninfo = 5;
         pmix_info_t info[ninfo];
         PMIx_Info_load(&info[0], "header", &ads_exchange_size, PMIX_SIZE);
@@ -224,23 +226,23 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
         pmix_persistence_t persistence = PMIX_PERSIST_FIRST_READ;
         PMIx_Info_load(&info[4], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
 
-        // temporary attempt to combine into one large message
-        size_t total_size = pTxData->comm.size + pTxData->notif.size + pTxData->config.size;
-        char *buffer = malloc(total_size);
-        size_t offset = 0;
-
-        memcpy(buffer + offset, pTxData->comm.data, pTxData->comm.size);
-        offset += pTxData->comm.size;
-        
-        memcpy(buffer + offset, pTxData->notif.data, pTxData->notif.size);
-        offset += pTxData->notif.size;
-
-        memcpy(buffer + offset, pTxData->config.data, pTxData->config.size);
-        offset += pTxData->config.size;
-
-        log_info("combined mf is %zu and %s", total_size, buffer);
-
         PMIx_Publish(info, ninfo);
+
+        size_t npdata = 3;
+        ninfo = 1;
+        pmix_pdata_t pdata[npdata];
+        pmix_pdata_t dummy = PMIX_LOOKUP_STATIC_INIT;
+        for (size_t i = 0; i < npdata; i++) {
+            pdata[i] = dummy; // for some reason complains here about STATIC_INIT
+        }
+        PMIx_Load_key(pdata[0].key, "comm");
+        PMIx_Load_key(pdata[1].key, "notif");
+        PMIx_Load_key(pdata[2].key, "config");
+
+        pmix_info_t linfo[ninfo];
+        pmix_data_range_t range = PMIX_RANGE_SESSION;
+        PMIx_Info_load(&linfo[0], PMIX_RANGE, &range, PMIX_DATA_RANGE);
+        pmix_status = PMIx_Lookup(pdata, npdata, linfo, ninfo);
 
     }
 
@@ -354,11 +356,11 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
         pmix_pdata_t pdata = PMIX_LOOKUP_STATIC_INIT;
         PMIx_Load_key(pdata.key, "remote_engine");
         size_t ndata = 1;
-        size_t ninfo = 2;
+        size_t ninfo = 1;
         pmix_info_t info[ninfo];
         pmix_data_range_t range = PMIX_RANGE_SESSION;
         PMIx_Info_load(&info[0], PMIX_RANGE, &range, PMIX_DATA_RANGE);
-        pmix_status = PMIx_Lookup(&pdata, ndata, NULL, 0);
+        pmix_status = PMIx_Lookup(&pdata, ndata, info, ninfo);
 
         if (pmix_status != PMIX_SUCCESS) log_error("PMIx Lookup failed with %s.", PMIx_Error_string(pmix_status));
 
