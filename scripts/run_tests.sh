@@ -1,9 +1,9 @@
 #!/usr/bin/env zsh
 
-source ${AURORA_SCRIPT_DIR}/env.sh
+source "${0:A:h}/env.sh"
 
 if [[ $DEBUG ]]; then
-    echo ${ATH_NODES}
+    echo ${AURORA_CLUSTER_NODES_STR}
     echo ${AURORA_LOG_DIR}
     echo "EXPORTS:"
     for EXPORT in ${AURORA_EXPORT_LIST}; do
@@ -11,9 +11,6 @@ if [[ $DEBUG ]]; then
     done
 fi
 
-local ATH_JOB_NODES="${ATH_TEST_NODES},${ATH_BACKEND_NODES}"
-local ATH_JOB_NODE_LIST=( ${(s:,:)ATH_JOB_NODES} )
-export ATH_JOB_NODE_COUNT=${#ATH_JOB_NODE_LIST}
 export AURORA_EXPORT_LIST
 
 function submit_test(){
@@ -21,31 +18,51 @@ function submit_test(){
     local JOB_TIME=$2
     local JOB_N_NODES=$3
     local JOB_NAME=$4
-    echo "Running JOB:"
-    echo " NAME: ${JOB_NAME}"
-    echo " TIME: ${JOB_TIME}"
-    echo " SCRIPT: ${JOB_SCRIPT}"
-    # Launch without sbatch
-    if [[ $DEF_LOCAL_LAUNCH ]]; then
-        ${AURORA_TESTS_DIR}/${JOB_SCRIPT} \
-            $JOB_NAME \
-            'rome005' \
-            'romebf3a005' \
-            "${@[5,-1]}"
-    else
-        # Launch with Sbatch
-        sbatch --export=${(j:,:)AURORA_EXPORT_LIST} \
-            --output="${AURORA_LOG_DIR}/${JOB_NAME}/slurm-%j.log" \
-            --job-name=${JOB_NAME} \
-            --nodes='2' \
-            --nodelist='rome005,romebf3a005' \
-            --time="${JOB_TIME}" \
+
+    local NODE_ENTRY
+    for NODE_ENTRY in $AURORA_CLUSTER_NODES; do
+        local -a NODE_PAIR=(${(s:,:)NODE_ENTRY})
+        local TEST_NODE=${NODE_PAIR[1]}
+        local BACKEND_NODE=${NODE_PAIR[2]:-${NODE_PAIR[1]}}
+        local JOB_FULL_NAME="${JOB_NAME}_${TEST_NODE}"
+        local LOG_DIR="${AURORA_LOG_DIR}/${JOB_FULL_NAME}"
+        mkdir -p "$LOG_DIR"
+
+        echo "Running JOB:"
+        echo " NAME: ${JOB_FULL_NAME}"
+        echo " TIME: ${JOB_TIME}"
+        echo " SCRIPT: ${JOB_SCRIPT}"
+        echo " TEST_NODE: ${TEST_NODE}"
+        echo " BACKEND_NODE: ${BACKEND_NODE}"
+
+        if [[ $AURORA_LAUNCH_PLATFORM == "slurm" ]]; then
+            local N_NODES=${#NODE_PAIR}
+            local NODELIST="${TEST_NODE}"
+            if [[ $N_NODES -ge 2 ]]; then
+                NODELIST="${TEST_NODE},${BACKEND_NODE}"
+            fi
+            # Launch with Sbatch
+            sbatch --export=${(j:,:)AURORA_EXPORT_LIST} \
+                --output="${LOG_DIR}/slurm-%j.log" \
+                --job-name="${JOB_FULL_NAME}" \
+                --nodes="${N_NODES}" \
+                --nodelist="${NODELIST}" \
+                --partition="${SBATCH_PARTITION}" \
+                --time="${JOB_TIME}" \
+                ${AURORA_TESTS_DIR}/${JOB_SCRIPT} \
+                "${JOB_FULL_NAME}" \
+                "${TEST_NODE}" \
+                "${BACKEND_NODE}" \
+                "${@[5,-1]}"
+        else
+            # Launch without sbatch
             ${AURORA_TESTS_DIR}/${JOB_SCRIPT} \
-            $JOB_NAME \
-            'rome005' \
-            'romebf3a005' \
-            "${@[5,-1]}"
-    fi
+                "${JOB_FULL_NAME}" \
+                "${TEST_NODE}" \
+                "${BACKEND_NODE}" \
+                "${@[5,-1]}"
+        fi
+    done
 }
 
 # submit_test 'test script name.zsh' 'hh:mm:ss' 'number of nodes' \

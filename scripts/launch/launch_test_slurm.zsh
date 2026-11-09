@@ -1,11 +1,11 @@
 #!/usr/bin/env zsh
 
-# Test Launcher: BlueField
+# Test Launcher: Slurm
 
 # Generic Front/Back-End SLURM Batch Launch Script
 # -> Launches the test and backend programs with srun and MPI
 
-function ath_launch_test_bf(){
+function ath_launch_test_slurm(){
     local ATH_JOB_NAME=$1
     local ATH_JOB_LOG_DIR=$2 
     local ATH_TEST_EXE=$3
@@ -75,7 +75,7 @@ ATH_TEST_PROCS=$5
 ATH_BACKEND_EXE=$6
 ATH_BACKEND_NODES=$7
 
-ath_launch_test_bf \
+ath_launch_test_slurm \
     ${ATH_JOB_NAME} \
     ${ATH_JOB_LOG_DIR} \
     ${ATH_TEST_EXE} \

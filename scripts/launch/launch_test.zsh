@@ -3,9 +3,9 @@
 # Test Launcher
 
 # Generic Front/Back-End Launch Script
-# -> Mode BF: Launches the BF backend launcher
-# -> Mode None: Launches the no backend launcher
-# -> Mode Host: Launches the Host + Host launcher
+# -> Mode host: Launches the backend and test on the local node
+# -> Mode slurm: Launches the backend with srun and the test with MPI
+# -> Mode none: Launches only the test
 
 function ath_launch_test(){
     local ATH_JOB_NAME=$1
@@ -15,8 +15,14 @@ function ath_launch_test(){
     local ATH_TEST_PROCS=$5
     local ATH_BACKEND_EXE=$6
     local ATH_BACKEND_NODES=$7
+
+    local ATH_LAUNCHER="${AURORA_LAUNCH_DIR}/launch_test_${AURORA_LAUNCH_PLATFORM}.zsh"
+    if [[ ! -f "$ATH_LAUNCHER" ]]; then
+        printf "Error: Unknown launch platform '%s'\n" "$AURORA_LAUNCH_PLATFORM" >&2
+        return 1
+    fi
     
-    ${AURORA_LAUNCH_DIR}/launch_test_${AURORA_BACKEND_PLATFORM}.zsh \
+    "$ATH_LAUNCHER" \
         ${ATH_JOB_NAME} \
         ${ATH_JOB_LOG_DIR} \
         ${ATH_TEST_EXE} \

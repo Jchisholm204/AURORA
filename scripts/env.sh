@@ -7,8 +7,8 @@
 #   offset from the installation directory
 
 # local AURORA_CLUSTER_NAME="odp0k"
-local AURORA_CLUSTER_NAME="rome"
-local AURORA_LOG_DIR="results/0.0.3"
+local AURORA_CLUSTER_NAME="odp0k"
+local AURORA_LOG_DIR="results/0.0.5"
 
 # -- END User Environment Variables -- 
 
@@ -75,11 +75,15 @@ function ath_setup_env(){
         'AURORA_LAUNCH_DIR'
         'AURORA_CLUSTER_DIR'
         'AURORA_LOG_DIR'
+        # Platform Exports
+        'AURORA_LAUNCH_PLATFORM'
         # Slurm Exports
         'SBATCH_PARTITION'
         'SLURM_PARTITION'
         # Cluster Exports
         'AURORA_CLUSTER_NODES'
+        'AURORA_CLUSTER_NODES_STR'
+        'AURORA_CLUSTER_TEST_NODES'
         'AURORA_CLUSTER_BACKEND_NODES'
         'AURORA_CLUSTER_CHECKPOINT_DIR'
         'AURORA_CLUSTER_TMP_DIR'
@@ -113,14 +117,6 @@ function ath_verify_cluster_config(){
         return 3
     fi
 
-    # if [[ "${AURORA_BACKEND_PLATFORM}" == 'bf' ]]; then
-    # elif [[ "${AURORA_BACKEND_PLATFORM}" == 'host' ]]; then
-    # elif [[ "${AURORA_BACKEND_PLATFORM}" == 'none' ]]; then
-    # else
-    #     printf "Error: AURORA_BACKEND_PLATFORM must be in ('bf', 'host', 'none') \n" >&2
-    #     return 4
-    # fi
-
     return 0
 }
 
@@ -130,6 +126,21 @@ function ath_source_cluster_config(){
     if ath_verify_cluster_config "$CLUSTER_NAME"; then
         # Source Launch Configuration
         source $AURORA_CLUSTER_DIR/launch_config.sh
+
+        # Verify the launch platform is valid
+        case "$AURORA_LAUNCH_PLATFORM" in
+            host|slurm|none) ;;
+            *)
+                printf "Error: AURORA_LAUNCH_PLATFORM must be in ('host', 'slurm', 'none')\n" >&2
+                return 4
+                ;;
+        esac
+        # Slurm launch requires a client,backend node pair
+        if [[ "$AURORA_LAUNCH_PLATFORM" == "slurm" && "${AURORA_CLUSTER_NODES[1]}" != *,* ]]; then
+            printf "Error: slurm launch requires 'client,backend' node entries\n" >&2
+            return 5
+        fi
+
         # Must compress the array into a string to share across scripts
         export AURORA_CLUSTER_NODES_STR="${(j: :)AURORA_CLUSTER_NODES}"
         # Seperate the lists for easy access in tests

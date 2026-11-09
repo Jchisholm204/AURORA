@@ -22,9 +22,9 @@ export AURORA_CLUSTER_NODES=(
     # "rome008,romebf3a008"
 )
 
-# Set the backend platform (bf (for arm devices), host, none)
-# export ATH_BACKEND_PLATFORM="none"
-export AURORA_BACKEND_PLATFORM="bf"
+# Set the launch platform (host, slurm, none)
+# slurm with a "client,backend" pair launches the backend on the BlueField
+export AURORA_LAUNCH_PLATFORM="slurm"
 
 # Set the checkpoint directory to use on this cluster
 export AURORA_CLUSTER_CHECKPOINT_DIR="$HOME/exafs/checkpoints"

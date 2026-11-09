@@ -38,11 +38,16 @@ function build_gen_cmake() {
         AIM_MAX_WORKERS="-DAIM_MAX_WORKERS=${AIM_MAX_WORKERS}"
     fi
 
+    local TOOLCHAIN_FILE="cmake/${BUILD_ARCH}-linux-gnu-toolchain.cmake"
+    if [[ "$BUILD_ARCH" == "x86_64" ]]; then
+        TOOLCHAIN_FILE="cmake/host-linux-gnu-toolchain.cmake"
+    fi
+
     local PDIR=$(pwd)
     cd "${AURORA_TOP_DIR}"
 
 	cmake \
-		-DCMAKE_TOOLCHAIN_FILE=cmake/${BUILD_ARCH}-linux-gnu-toolchain.cmake \
+		-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE} \
 		-B${BUILD_DIR} \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
@@ -116,32 +121,38 @@ local BACKEND_BUILD_DIR=$2
 local ACR_MAX_WORKERS=$3
 local AIM_MAX_WORKERS=$4
 
-if [[ "${AURORA_BACKEND_PLATFORM}" == 'bf' ]]; then
-    rm -rf "$TEST_BUILD_DIR"
-    rm -rf "$BACKEND_BUILD_DIR"
-    build \
-        'x86_64' \
-        'ON' \
-        $TEST_BUILD_DIR \
-        $ACR_MAX_WORKERS \
-        $AIM_MAX_WORKERS
-    build \
-        'aarch64' \
-        'OFF' \
-        $BACKEND_BUILD_DIR \
-        $ACR_MAX_WORKERS \
-        $AIM_MAX_WORKERS
-# elif [[ "${aurora_backend_platform}" == 'host' ]]; then
-else
-    rm -rf "$TEST_BUILD_DIR"
-    rm -rf "$BACKEND_BUILD_DIR"
-    build \
-        'x86_64' \
-        'ON' \
-        $TEST_BUILD_DIR \
-        $ACR_MAX_WORKERS \
-        $AIM_MAX_WORKERS
-    ln -s "${TEST_BUILD_DIR}" "${BACKEND_BUILD_DIR}"
-fi
+case "${AURORA_LAUNCH_PLATFORM}" in
+    host|none)
+        rm -rf "$TEST_BUILD_DIR"
+        rm -rf "$BACKEND_BUILD_DIR"
+        build \
+            'x86_64' \
+            'ON' \
+            $TEST_BUILD_DIR \
+            $ACR_MAX_WORKERS \
+            $AIM_MAX_WORKERS
+        ln -s "${TEST_BUILD_DIR}" "${BACKEND_BUILD_DIR}"
+        ;;
+    slurm)
+        rm -rf "$TEST_BUILD_DIR"
+        rm -rf "$BACKEND_BUILD_DIR"
+        build \
+            'x86_64' \
+            'ON' \
+            $TEST_BUILD_DIR \
+            $ACR_MAX_WORKERS \
+            $AIM_MAX_WORKERS
+        build \
+            'aarch64' \
+            'OFF' \
+            $BACKEND_BUILD_DIR \
+            $ACR_MAX_WORKERS \
+            $AIM_MAX_WORKERS
+        ;;
+    *)
+        printf "Error: Unknown launch platform '%s'\n" "$AURORA_LAUNCH_PLATFORM" >&2
+        return 1
+        ;;
+esac
 
 # -- BUILD --

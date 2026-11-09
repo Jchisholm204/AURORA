@@ -2,12 +2,11 @@
 
 # Test Launcher: Host
 
-# Generic Front/Back-End SLURM Batch Launch Script
+# Generic Front/Back-End Local Launch Script
+# -> Launches the backend locally on the test node
 # -> Launches the test program with MPI
-# -> Launches the backend on non duplicate hosts (1 backend per host)
-# -> Hosts can be specified multiple times
 
-function ath_launch_test(){
+function ath_launch_test_host(){
     local ATH_JOB_NAME=$1
     local ATH_JOB_LOG_DIR=$2 
     local ATH_TEST_EXE=$3
@@ -23,16 +22,7 @@ function ath_launch_test(){
     # Backend Launch
     source $AURORA_CLUSTER_DIR/env.sh 'x86_64'
 
-    # len(split(csv)->array)->int
-    local ATH_BACKEND_NODES_ARR=(${(s:,:)ATH_BACKEND_NODES})
-    local N_BACKEND_NODES=${#ATH_BACKEND_NODES_ARR}
-
-    srun --label \
-        --export=ALL \
-        --nodelist="${ATH_BACKEND_NODES}" \
-        --nodes="${N_BACKEND_NODES}" \
-        --job-name="ARE_${ATH_JOB_NAME}" \
-        ${=ATH_BACKEND_EXE} \
+    ${=ATH_BACKEND_EXE} \
         > "${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_backend.log" 2>&1 &
     BACKEND_PID=$!
 
@@ -40,8 +30,6 @@ function ath_launch_test(){
     sleep 2
 
     # Test Launch
-    source $AURORA_CLUSTER_DIR/env.sh "x86_64"
-
     mpirun \
         -np ${ATH_TEST_PROCS} \
         --oversubscribe \
@@ -59,8 +47,8 @@ function ath_launch_test(){
         wait $BACKEND_PID 2>/dev/null
     fi
 
-        # Wait for scancel
-        sleep 2
+    # Wait for server shutdown
+    sleep 2
 }
 
 # RUN
@@ -73,7 +61,7 @@ ATH_TEST_PROCS=$5
 ATH_BACKEND_EXE=$6
 ATH_BACKEND_NODES=$7
 
-ath_launch_test \
+ath_launch_test_host \
     ${ATH_JOB_NAME} \
     ${ATH_JOB_LOG_DIR} \
     ${ATH_TEST_EXE} \
@@ -81,7 +69,3 @@ ath_launch_test \
     ${ATH_TEST_PROCS} \
     ${ATH_BACKEND_EXE} \
     ${ATH_BACKEND_NODES} \
-
-
-
-
