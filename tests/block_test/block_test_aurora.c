@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     // 2. Initialize AUL (Ideally on all ranks if they perform local I/O)
     aul_configuration_t cfg = AUL_CONFIG_DEFAULT;
     cfg.rank = rank;
-    cfg.opt_group_id = rank;
+    cfg.opt_group_id = 0;
     cfg.opt_group_size = n_ranks;
     cfg.persistent_path = argv[2];
     if (argc >= 4) {

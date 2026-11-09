@@ -48,7 +48,7 @@ int AUL_Init(const aul_configuration_t *pCFG) {
         return -1;
     }
 
-    log_set_level(LOG_DEBUG);
+    log_set_level(LOG_TRACE);
 
     // Setup the log file
     if (pCFG->opt_log_file) {
