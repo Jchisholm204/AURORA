@@ -17,6 +17,7 @@ function setup_env() {
 
     if [[ $ARCH != $LOCAL_ARCH && $ARCH == "aarch64" ]]; then
         echo "Loading Cross Compilation Tools"
+        source /etc/profile.d/modules.sh
         module use $HOME/.modules/modfiles
         module use /global/modules/modfiles
         module load hpcx/2.51-aarch64
@@ -25,11 +26,13 @@ function setup_env() {
 
     if [[ "${ARCH}" == 'aarch64' ]]; then
         echo "aarch64 environment ready"
+        source /usr/share/lmod/lmod/init/$SHELL
         module use /global/modules/modfiles
         module load hpcx/2.51-aarch64
     fi
 
     if [[ "${ARCH}" == 'x86_64' ]]; then
+        source /etc/profile.d/modules.sh
         module use $HOME/.modules/modfiles
         module use /global/modules/modfiles
         module load veloc
