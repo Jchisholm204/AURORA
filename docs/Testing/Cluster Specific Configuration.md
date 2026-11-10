@@ -42,22 +42,30 @@ export AURORA_CLUSTER_NODES=(
 )
 ```
 
->!NOTE 
-> The `ATH_BACKEND_PLATFOM` variable must be set to the right operating mode for the server to launch correctly.
+>!NOTE
+> `AURORA_LAUNCH_PLATFORM` must be set to the right operating mode for the
+> server to launch correctly.
 
-#### `ATH_BACKEND_PLATFOM`
-Determines the launch mechanism used for the server.
-Possible options include:
+#### `AURORA_LAUNCH_PLATFORM`
+Determines how the backend and client are launched. Possible options:
 ```sh
-export ATH_BACKEND_PLATFORM="none"
-export ATH_BACKEND_PLATFORM="bf"
+export AURORA_LAUNCH_PLATFORM="host"   # local server + local mpirun
+export AURORA_LAUNCH_PLATFORM="slurm"  # server via srun on the backend node
+export AURORA_LAUNCH_PLATFORM="ssh"    # server over SSH on the backend node
+export AURORA_LAUNCH_PLATFORM="none"   # external backend, client only
 ```
 
 >!NOTE
-> Only one ATH platform can be specified at a time.
-> Use of `none` assumes that the backend will be run externally.
-> IE, the testing environment will not launch the backend.
+> Only one launch platform can be specified at a time.
+> `slurm` and `ssh` require `"client,backend"` node pairs.
+> `host` uses single-node entries.
+> Use of `none` assumes that the backend will be run externally; the testing
+> environment will not launch the backend.
 > Options are case-sensitive.
+
+#### `AURORA_SSH_USER`, `AURORA_SSH_OPTS`, `AURORA_REMOTE_ENV` (optional)
+Overrides for `ssh` launches. SSH is assumed to be userless and passwordless by
+default; set `AURORA_SSH_USER` only when a username is required.
 
 
 #### `AURORA_CLUSTER_CHECKPOINT_DIR`

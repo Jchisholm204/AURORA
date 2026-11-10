@@ -25,10 +25,13 @@ function ath_launch_test_slurm(){
     local ATH_BACKEND_NODES_ARR=(${(s:,:)ATH_BACKEND_NODES})
     local N_BACKEND_NODES=${#ATH_BACKEND_NODES_ARR}
 
+    # One task (server) per backend node
     srun --label \
         --export=ALL \
         --nodelist="${ATH_BACKEND_NODES}" \
         --nodes="${N_BACKEND_NODES}" \
+        --ntasks="${N_BACKEND_NODES}" \
+        --ntasks-per-node=1 \
         --job-name="${ATH_JOB_NAME}_backend" \
         ${=ATH_BACKEND_EXE} \
         > "${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_backend.log" 2>&1 &

@@ -162,25 +162,44 @@ Each entry corresponds to a Slurm job node. Names must match actual Slurm hostna
 
 ---
 
-#### `AURORA_BACKEND_PLATFORM`
+#### `AURORA_LAUNCH_PLATFORM`
 
-Determines the server launch mechanism:
+Single switch that determines how the backend and client are launched:
 
 ```zsh
-export AURORA_BACKEND_PLATFORM="none"  # External backend, no server launch
+export AURORA_LAUNCH_PLATFORM="host"   # Local server + local mpirun
 # or
-export AURORA_BACKEND_PLATFORM="bf"    # BlueField ARM backend (launch via srun)
+export AURORA_LAUNCH_PLATFORM="slurm"  # Server via srun on the backend node
 # or
-export AURORA_BACKEND_PLATFORM="host"   # Host-based emulation (single x86_64 node)
+export AURORA_LAUNCH_PLATFORM="ssh"    # Server over SSH on the backend node
+# or
+export AURORA_LAUNCH_PLATFORM="none"   # External backend, client only
 ```
 
-**Important**: Only one platform can be specified at a time. The string is case-sensitive.
+**Important**: Only one launch platform can be specified at a time. The string is case-sensitive.
 
 | Platform | Description | Use Case |
 |----------|-------------|----------|
-| `none` | External backend | When server runs separately; tests only run on x86_64 nodes |
-| `bf` | BlueField ARM | When testing on clusters with BF2/BF3 DPU nodes |
-| `host` | Host emulation | Development mode; both test and backend on same architecture |
+| `host` | Local backend + local `mpirun` | Development on a single x86_64 node |
+| `slurm` | Backend via `srun`, client via `mpirun` | Clusters with BlueField nodes under Slurm |
+| `ssh` | One backend per backend node over SSH | Clusters with BlueField nodes but no Slurm |
+| `none` | External backend | When the server runs separately; client only |
+
+`slurm` and `ssh` require `"client,backend"` node pairs; `host` uses single-node
+entries.
+
+Optional platform variables:
+
+```zsh
+# SSH overrides (userless, passwordless SSH is the default)
+# export AURORA_SSH_USER="$USER"
+# export AURORA_SSH_OPTS="-o BatchMode=yes"
+# export AURORA_REMOTE_ENV="$HOME/aurora/remote_env.sh"
+```
+
+Both `slurm` and `ssh` cross-compile the aarch64 backend on the x86_64 host, so
+`env.sh` must load the ARM cross-compilation toolchain for the `aarch64`
+argument.
 
 ---
 
@@ -230,8 +249,8 @@ export AURORA_CLUSTER_NODES=(
     "rome005,romebf3a005"
 )
 
-# Set the backend platform (bf (for arm devices), host, none)
-export AURORA_BACKEND_PLATFORM="bf"
+# Set the launch platform (host, slurm, ssh, none)
+export AURORA_LAUNCH_PLATFORM="slurm"
 
 # Set the checkpoint directory to use on this cluster
 export AURORA_CLUSTER_CHECKPOINT_DIR="$HOME/exafs/checkpoints"
@@ -239,6 +258,34 @@ export AURORA_CLUSTER_CHECKPOINT_DIR="$HOME/exafs/checkpoints"
 # Temporary directory to use during testing
 export AURORA_CLUSTER_TMP_DIR="$HOME/exafs/tmp/checkpoints"
 ```
+
+## Example: SSH cluster (`chilt`)
+
+```zsh
+#!/usr/bin/env zsh
+
+# chilt specific test configuration script
+
+export SBATCH_PARTITION=''
+export SLURM_PARTITION=$SBATCH_PARTITION
+
+export AURORA_CLUSTER_NODES=(
+    "dummy02,dummy02bf1"
+)
+
+export AURORA_LAUNCH_PLATFORM="ssh"
+
+# Optional overrides; SSH is userless/passwordless by default
+# export AURORA_SSH_USER="$USER"
+# export AURORA_SSH_OPTS="-o BatchMode=yes"
+
+export AURORA_CLUSTER_CHECKPOINT_DIR="/mnt/beegfs/checkpoints"
+export AURORA_CLUSTER_TMP_DIR="/mnt/beegfs/tmp"
+```
+
+The SSH platform assumes the repository, build, log, and checkpoint paths
+resolve identically on the client and backend nodes (for example, a shared
+`/mnt/beegfs` mount).
 
 ---
 
@@ -249,7 +296,8 @@ Before adding a new cluster, ensure:
 - [ ] `env.sh` loads all required modules (CMake, GCC, MPI, UCX)
 - [ ] `env.sh` supports architecture argument (`x86_64`, `aarch64`, `none`)
 - [ ] `launch_config.sh` defines `AURORA_CLUSTER_NODES` array
-- [ ] `launch_config.sh` sets `AURORA_BACKEND_PLATFORM` to a valid value
+- [ ] `launch_config.sh` sets `AURORA_LAUNCH_PLATFORM` to a valid value
+- [ ] `slurm` / `ssh` clusters use `"client,backend"` pairs
 - [ ] Both checkpoint and tmp directories use absolute paths without trailing `/`
 - [ ] Directory structure matches: `scripts/clusters/<CLUSTER_NAME>/`
 - [ ] Both scripts have execute permissions (`chmod +x`)
@@ -269,7 +317,7 @@ source scripts/clusters/<CLUSTER_NAME>/launch_config.sh
 
 # Verify exports
 echo "Cluster Nodes: ${AURORA_CLUSTER_NODES[@]}"
-echo "Backend Platform: $AURORA_BACKEND_PLATFORM"
+echo "Launch Platform: $AURORA_LAUNCH_PLATFORM"
 echo "Checkpoint Dir: $AURORA_CLUSTER_CHECKPOINT_DIR"
 echo "Tmp Dir: $AURORA_CLUSTER_TMP_DIR"
 ```

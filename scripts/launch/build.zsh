@@ -120,7 +120,6 @@ local BACKEND_BUILD_DIR=$2
 # Optional Parameters
 local ACR_MAX_WORKERS=$3
 local AIM_MAX_WORKERS=$4
-
 case "${AURORA_LAUNCH_PLATFORM}" in
     host|none)
         rm -rf "$TEST_BUILD_DIR"
@@ -133,7 +132,7 @@ case "${AURORA_LAUNCH_PLATFORM}" in
             $AIM_MAX_WORKERS
         ln -s "${TEST_BUILD_DIR}" "${BACKEND_BUILD_DIR}"
         ;;
-    slurm)
+    slurm|ssh)
         rm -rf "$TEST_BUILD_DIR"
         rm -rf "$BACKEND_BUILD_DIR"
         build \
@@ -142,6 +141,7 @@ case "${AURORA_LAUNCH_PLATFORM}" in
             $TEST_BUILD_DIR \
             $ACR_MAX_WORKERS \
             $AIM_MAX_WORKERS
+        # Cross-compile the aarch64 backend on the x86_64 host
         build \
             'aarch64' \
             'OFF' \

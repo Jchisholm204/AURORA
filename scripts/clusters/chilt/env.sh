@@ -16,11 +16,13 @@ function setup_env() {
     echo "Setting up $ARCH environment for $LOCAL_ARCH"
 
     if [[ $ARCH != $LOCAL_ARCH && $ARCH == "aarch64" ]]; then
-        echo "Cross Compilation is not supported on this cluster"
+        echo "Loading Cross Compilation Tools"
+        module use $HOME/.modules/modfiles
+        module load gcc-arm/15.2
     fi
 
     if [[ "${ARCH}" == 'aarch64' ]]; then
-        echo "Nothing to load..."
+        echo "aarch64 environment ready"
     fi
 
     if [[ "${ARCH}" == 'x86_64' ]]; then

@@ -132,14 +132,30 @@ Set in [`scripts/clusters/<CLUSTER_NAME>/launch_config.sh`](clusters/rome/launch
 
 ---
 
-### `AURORA_BACKEND_PLATFORM`
+### `AURORA_LAUNCH_PLATFORM`
 
 - **Type**: String
-- **Valid Values**: `none`, `bf`, `host`
-- **Description**: Determines how the server backend is launched.
-  - `none`: External backend (tests run standalone)
-  - `bf`: BlueField ARM nodes (launch via srun on aarch64)
-  - `host`: Host emulation (both test and backend on x86_64)
+- **Valid Values**: `host`, `slurm`, `ssh`, `none`
+- **Description**: Single switch that selects how both the backend and the client are launched.
+  - `host`: local server and local `mpirun` (single-node entries)
+  - `slurm`: server via `srun` on the backend node of a pair, client via `mpirun`
+  - `ssh`: one server per backend node started over SSH, client via `mpirun`
+  - `none`: external/persistent server; client only
+
+`slurm` and `ssh` require `"client,backend"` pairs in `AURORA_CLUSTER_NODES`.
+
+---
+
+### `AURORA_SSH_USER` / `AURORA_SSH_OPTS` / `AURORA_REMOTE_ENV`
+
+- **Type**: String (optional)
+- **Description**: SSH launch overrides.
+  - `AURORA_SSH_USER`: prepended as `user@` to the backend host. Leave unset for
+    userless SSH configured by the cluster admin.
+  - `AURORA_SSH_OPTS`: extra `ssh` options, word-split (for example
+    `-o BatchMode=yes`).
+  - `AURORA_REMOTE_ENV`: optional script sourced on the backend node before
+    starting the server.
 
 ---
 

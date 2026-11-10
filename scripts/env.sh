@@ -77,6 +77,10 @@ function ath_setup_env(){
         'AURORA_LOG_DIR'
         # Platform Exports
         'AURORA_LAUNCH_PLATFORM'
+        # SSH Exports
+        'AURORA_SSH_USER'
+        'AURORA_SSH_OPTS'
+        'AURORA_REMOTE_ENV'
         # Slurm Exports
         'SBATCH_PARTITION'
         'SLURM_PARTITION'
@@ -129,15 +133,16 @@ function ath_source_cluster_config(){
 
         # Verify the launch platform is valid
         case "$AURORA_LAUNCH_PLATFORM" in
-            host|slurm|none) ;;
+            host|slurm|ssh|none) ;;
             *)
-                printf "Error: AURORA_LAUNCH_PLATFORM must be in ('host', 'slurm', 'none')\n" >&2
+                printf "Error: AURORA_LAUNCH_PLATFORM must be in ('host', 'slurm', 'ssh', 'none')\n" >&2
                 return 4
                 ;;
         esac
-        # Slurm launch requires a client,backend node pair
-        if [[ "$AURORA_LAUNCH_PLATFORM" == "slurm" && "${AURORA_CLUSTER_NODES[1]}" != *,* ]]; then
-            printf "Error: slurm launch requires 'client,backend' node entries\n" >&2
+        # Remote backend launches require a client,backend node pair
+        if [[ "$AURORA_LAUNCH_PLATFORM" == (slurm|ssh) && "${AURORA_CLUSTER_NODES[1]}" != *,* ]]; then
+            printf "Error: %s launch requires 'client,backend' node entries\n" \
+                "$AURORA_LAUNCH_PLATFORM" >&2
             return 5
         fi
 
