@@ -9,8 +9,8 @@ export SLURM_PARTITION=$SBATCH_PARTITION
 # Export Possible Launch Pair Configurations
 # Each should be "node-hostname,bf-hostname"
 export AURORA_CLUSTER_NODES=(
-	# "dummy01,dummy01bf1"
-	"dummy02,dummy02bf1"
+	# "dummy01,dummy01bf2"
+	"dummy02,dummy02bf2"
 )
 
 # Set the launch platform (host, slurm, ssh, none)
