@@ -7,7 +7,7 @@
 #   offset from the installation directory
 
 # local AURORA_CLUSTER_NAME="odp0k"
-local AURORA_CLUSTER_NAME="odp0k"
+local AURORA_CLUSTER_NAME="chilt"
 local AURORA_LOG_DIR="results/0.0.5"
 
 # -- END User Environment Variables -- 
