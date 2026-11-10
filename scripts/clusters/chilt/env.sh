@@ -18,11 +18,15 @@ function setup_env() {
     if [[ $ARCH != $LOCAL_ARCH && $ARCH == "aarch64" ]]; then
         echo "Loading Cross Compilation Tools"
         module use $HOME/.modules/modfiles
+        module use /global/modules/modfiles
+        module load hpcx/2.51-aarch64
         module load gcc-arm/15.2
     fi
 
     if [[ "${ARCH}" == 'aarch64' ]]; then
         echo "aarch64 environment ready"
+        module use /global/modules/modfiles
+        module load hpcx/2.51-aarch64
     fi
 
     if [[ "${ARCH}" == 'x86_64' ]]; then
