@@ -7,22 +7,22 @@ from matplotlib.ticker import ScalarFormatter
 # ==========================================
 # CONFIGURATION - Adjust parameters here
 # ==========================================
-TESTS_VERSION = "0.0.3"
+TESTS_VERSION = "0.0.5"
 RESULTS_DIR = f"./results/{TESTS_VERSION}"
 OUTPUT_DIR = f"{RESULTS_DIR}/figures"
 
 # 1. MULTI-CSV INPUT CONFIGURATION:
 INPUT_DATASETS = [
     {"path": f"{RESULTS_DIR}/heatdis_aurora_restore_times.csv", "label": "AURORA"},
-    {"path": f"{RESULTS_DIR}/heatdis_veloc_restore_times.csv", "label": "VELOC"},
+    # {"path": f"{RESULTS_DIR}/heatdis_veloc_restore_times.csv", "label": "VELOC"},
 ]
 
 # 2. TARGET THREAD FILTERING:
 # Filter server threads when applicable (e.g., AURORA)
-TARGET_SERVER_THREADS = 16
+TARGET_SERVER_THREADS = 8
 
 # 3. CORE COUNTS TO PLOT:
-PROC_COUNTS = [64, 128]
+PROC_COUNTS = [4, 8]
 
 # 4. ERROR BAR METRIC CONFIGURATION:
 # Options: 'sd' (Standard Deviation across trials) or 'se' (Standard Error of Mean)

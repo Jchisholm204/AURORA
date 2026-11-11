@@ -74,15 +74,15 @@ if __name__ == "__main__":
     # ==========================================
     # CONFIGURABLE VARIABLES
     # ==========================================
-    VERSION = '0.0.3'
-    TEST = 'heatdis_orig'
+    VERSION = '0.0.5'
+    TEST = 'heatdis_aurora'
     INPUT_LOG_DIR = f"./results/{VERSION}/{TEST}/"
     # To collect final times
-    OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_final_times.csv"
-    PATTERN = TEST_FP
+    # OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_final_times.csv"
+    # PATTERN = TEST_FP
     # To collect restore times
-    # OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_restore_times.csv"
-    # PATTERN = RESTORE_FP
+    OUTPUT_CSV_PATH = f"./results/{VERSION}/{TEST}_restore_times.csv"
+    PATTERN = RESTORE_FP
     # ==========================================
 
     print(f"Scanning target test logs in: {INPUT_LOG_DIR}")
