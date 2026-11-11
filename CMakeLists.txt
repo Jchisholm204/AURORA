@@ -37,6 +37,8 @@ set(GENERIC_COMPILE_OPTIONS
 
 option(BUILD_TESTING "Enable Compilation of Test Files" OFF)
 option(BUILD_UTILITIES "Enable Compilation of Utilities" ON)
+option(AUL_DEFAULT_RESTART_REMOTE
+       "Perform AUL_Restart() on the DPU instead of the host" OFF)
 
 # Libraries
 include(${CMAKE_SOURCE_DIR}/cmake/FindUCX.cmake)

@@ -15,6 +15,10 @@ target_include_directories(${LIB_TARG} PUBLIC
 
 target_compile_options(${LIB_TARG} PRIVATE ${GENERIC_COMPILE_OPTIONS})
 
+if(AUL_DEFAULT_RESTART_REMOTE)
+    target_compile_definitions(${LIB_TARG} PUBLIC AUL_DEFAULT_RESTART_REMOTE)
+endif()
+
 target_link_libraries(${LIB_TARG} PRIVATE 
     ${CMAKE_PROJECT_NAME}::aroc
     ${COMMON_LIBRARIES}

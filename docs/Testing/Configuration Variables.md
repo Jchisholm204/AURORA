@@ -205,6 +205,15 @@ Passed to `cmake()` during the build step (via [`scripts/launch/build.zsh`](laun
 
 ---
 
+### `AUL_DEFAULT_RESTART_REMOTE`
+
+- **Type**: Boolean (`ON` / `OFF`)
+- **Default**: `OFF`
+- **Description**: Build AURORA clients with DPU-offloaded restore. Equivalent to defining `AUL_DEFAULT_RESTART_REMOTE` before including `aul.h`; see [Client Lib](../../Client%20Lib/Client%20Lib.md).
+- **Example**: `-DAUL_DEFAULT_RESTART_REMOTE=ON`
+
+---
+
 ### `VELOC_INSTALL_DIR`
 
 - **Type**: String (absolute path, optional)

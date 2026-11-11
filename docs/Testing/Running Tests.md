@@ -8,7 +8,11 @@ spawn the configured test jobs.
 
 Each test family is enabled with a top-level `true`/`false` selector in
 `run_tests.sh` (`RUN_HEATDIS_AURORA`, `RUN_HEATDIS_VELOC`,
-`RUN_HEATDIS_ORIGINAL`, `RUN_BLOCK_AURORA`).
+`RUN_HEATDIS_ORIGINAL`, `RUN_BLOCK_AURORA`, `RUN_BLOCK_AURORA_OFFLOAD`).
+
+`RUN_BLOCK_AURORA_OFFLOAD` runs the same block test through
+`block_test_aurora_offload.zsh`, which builds it with
+`AUL_DEFAULT_RESTART_REMOTE` defined so restores are performed on the DPU.
 
 #### `submit_test`
 
@@ -35,8 +39,8 @@ For `slurm` and `ssh`, all selected pairs are launched as **one** aggregated job
 For `host` and `none`, each configured pair still runs independently as its own
 local job; `N_NODES` is ignored.
 
-A single-node job keeps the name `<name>_<test_node>`. A multi-node job is named
-`<name>_multi`.
+A single-node job is named `<name>`. A multi-node job is named `<name>_multi`.
+Node names are not appended to job or log directory names.
 
 > **Note**
 > The test programs currently treat the backend argument as a single hostname.

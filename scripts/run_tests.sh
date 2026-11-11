@@ -20,6 +20,10 @@ RUN_HEATDIS_ORIGINAL=false
 # AURORA blocking read/write heatmap: block_test_aurora at 16 GB per process
 # with 128 MPI procs, sweeping the backend worker count (8, 16, 32).
 RUN_BLOCK_AURORA=true
+#
+# AURORA blocking read/write heatmap with DPU-offloaded restore: same test as
+# above, compiled with AUL_DEFAULT_RESTART_REMOTE so restores run on the DPU.
+RUN_BLOCK_AURORA_OFFLOAD=false
 
 # -- Test Parameters --
 # Number of trial iterations to run for every test
@@ -229,4 +233,15 @@ if [[ $RUN_BLOCK_AURORA == "true" ]]; then
 	# 	"${HEATMAP_MEM}" \
 	# 	"${HEATMAP_PROCS}" \
 	# 	'32'
+fi
+
+# DPU-offloaded restart heatmap tests
+if [[ $RUN_BLOCK_AURORA_OFFLOAD == "true" ]]; then
+	submit_test 'block_test_aurora_offload.zsh' '4:00:00' \
+		'block_test_aurora_offload_heatmap' \
+		'1' \
+		"${TEST_N_RUNS}" \
+		"${HEATMAP_MEM}" \
+		"${HEATMAP_PROCS}" \
+		'8'
 fi

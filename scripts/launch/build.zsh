@@ -43,6 +43,11 @@ function build_gen_cmake() {
         TOOLCHAIN_FILE="cmake/host-linux-gnu-toolchain.cmake"
     fi
 
+    local AUL_RESTART_REMOTE_OPT=""
+    if [[ ${AUL_DEFAULT_RESTART_REMOTE} == "ON" ]]; then
+        AUL_RESTART_REMOTE_OPT="-DAUL_DEFAULT_RESTART_REMOTE=ON"
+    fi
+
     local PDIR=$(pwd)
     cd "${AURORA_TOP_DIR}"
 
@@ -54,6 +59,7 @@ function build_gen_cmake() {
 		-DBUILD_TESTING=${BUILD_TESTS} \
         ${ACR_MAX_WORKERS} \
         ${AIM_MAX_WORKERS} \
+        ${AUL_RESTART_REMOTE_OPT} \
 		-G "Unix Makefiles" 
     cd "${PDIR}"
 }
