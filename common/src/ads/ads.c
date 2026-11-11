@@ -61,37 +61,16 @@ extern ads_hndl *ads_init(void) {
         return NULL;
     }
 
-    { // PMIx BEGIN 
-        pmix_status_t pmix_status = PMIX_SUCCESS;
-        pmix_proc_t *all_procs;
-        pmix_value_t pmix_value;
-        size_t nprocs;
+    // pHndl->mdns_sock = mdns_socket_open_ipv4(NULL);
+    // mdns_socket_setup_ipv4(pHndl->mdns_sock, NULL);
 
-        if (!PMIx_Initialized()) pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
-
-        // log_info("PMIx Server proc %d @ %s", pHndl->pmix_proc.rank, pHndl->pmix_proc.nspace);
-        pmix_status = PMIx_Resolve_peers("localhost-0.tail6b59c6.ts.net", NULL, &all_procs, &nprocs);
-        for (size_t i = 0; i < nprocs; i++) log_info("Server sees proc %d @ %s", all_procs[i].rank, all_procs[i].nspace);
-
-        // pmix_status = PMIx_Value_load(&pmix_value, &pHndl->pmix_proc, PMIX_PROC);
-        // pmix_status = PMIx_Put(PMIX_LOCAL, "aurora_remote", &pmix_value);
-        size_t ninfo = 2;
-        pmix_info_t info[ninfo];
-        pmix_persistence_t persistence = PMIX_PERSIST_FIRST_READ;
-        pmix_status = PMIx_Info_load(&info[0], "remote_engine", &pHndl->pmix_proc, PMIX_PROC);
-        pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
-        pmix_status = PMIx_Publish(info, ninfo);
-    }
-     
-    pHndl->mdns_sock = mdns_socket_open_ipv4(NULL);
-    mdns_socket_setup_ipv4(pHndl->mdns_sock, NULL);
-
-    int loop = 1;
+    // int loop = 1;
+    /*
     if (setsockopt(pHndl->mdns_sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop,
                    sizeof(loop)) < 0) {
         log_error("Failed to set IP_MULTICAST_LOOP");
     }
+    */
 
     pHndl->tcp_sock = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in addr = {
@@ -107,7 +86,7 @@ extern ads_hndl *ads_init(void) {
     int ec = bind(pHndl->tcp_sock, (struct sockaddr *) &addr, sizeof(addr));
     if (ec != 0) {
         log_error("Bind to port %d failed eith e=%d", ADS_CONN_PORT, ec);
-        mdns_socket_close(pHndl->mdns_sock);
+        // mdns_socket_close(pHndl->mdns_sock);
         close(pHndl->tcp_sock);
         free(pHndl);
         return NULL;
@@ -115,13 +94,42 @@ extern ads_hndl *ads_init(void) {
     ec = listen(pHndl->tcp_sock, ADS_LISTEN_N);
     if (ec != 0) {
         log_error("listener failed eith e=%d", ec);
-        mdns_socket_close(pHndl->mdns_sock);
+        // mdns_socket_close(pHndl->mdns_sock);
         close(pHndl->tcp_sock);
         free(pHndl);
         return NULL;
     }
-    
 
+    { // PMIx BEGIN 
+        pmix_status_t pmix_status = PMIX_SUCCESS;
+        if (!PMIx_Initialized()) pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
+
+
+        log_info("Server proc = %s:%d", pHndl->pmix_proc.nspace, pHndl->pmix_proc.rank);
+        size_t ninfo = 3;
+        pmix_info_t info[ninfo];
+        pmix_persistence_t persistence = PMIX_PERSIST_PROC;
+        bool overwrite = true;
+
+        struct sockaddr_in pmix_addr;
+        socklen_t pmix_addr_len = sizeof(pmix_addr);
+        getsockname(pHndl->tcp_sock, (struct sockaddr *)&pmix_addr, &pmix_addr_len);
+        pmix_byte_object_t bo;
+        bo.bytes = (char *)&pmix_addr;
+        bo.size = sizeof(struct sockaddr_in);
+        pmix_status = PMIx_Info_load(&info[0], "server_sock_addr", &bo, PMIX_BYTE_OBJECT);
+        pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
+        pmix_status = PMIx_Info_load(&info[2], "prte.pub.replace", &overwrite, PMIX_BOOL);
+        pmix_status = PMIx_Publish(info, ninfo);
+
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx Publish failed with %s", PMIx_Error_string(pmix_status));
+
+        // pmix_proc_t wildcard_proc = PMIX_PROC_STATIC_INIT;
+        // PMIx_Load_procid(&wildcard_proc, pHndl->pmix_proc.nspace, PMIX_RANK_WILDCARD);
+        // pmix_status = PMIx_Get(&wildcard_proc, "comm", NULL, 0, NULL);
+    }
+     
     return pHndl;
 }
 
@@ -132,13 +140,16 @@ extern int ads_finalize(ads_hndl **ppHndl) {
         return -1;
 
     { // PMIx BEGIN
-        pmix_status_t pmix_status;
+        pmix_status_t pmix_status = PMIX_SUCCESS;
+        char *keys[] = {"server_sock_addr"};
+        pmix_status = PMIx_Unpublish(keys, NULL, 0);
+        if (pmix_status != PMIX_SUCCESS) log_error("Failed to unpublish addr %s", PMIx_Error_string(pmix_status));
         pmix_status = PMIx_Finalize(NULL, 0);
         if (pmix_status != PMIX_SUCCESS) log_error("Failed to finalize the PMIx Client");
     }
 
-    
-    mdns_socket_close((*ppHndl)->mdns_sock);
+     
+    // mdns_socket_close((*ppHndl)->mdns_sock);
     close((*ppHndl)->tcp_sock);
     
 
@@ -152,22 +163,30 @@ extern int ads_accept_any(ads_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
+
+    
     fd_set readfds;
     int max_fd = (pHndl->mdns_sock > pHndl->tcp_sock) ? pHndl->mdns_sock
                                                       : pHndl->tcp_sock;
+    max_fd = pHndl->tcp_sock;
     while (1) {
         FD_ZERO(&readfds);
-        FD_SET(pHndl->mdns_sock, &readfds);
+        // FD_SET(pHndl->mdns_sock, &readfds);
         FD_SET(pHndl->tcp_sock, &readfds);
         select(max_fd + 1, &readfds, NULL, NULL, NULL);
+        /*
         if (FD_ISSET(pHndl->mdns_sock, &readfds)) {
             mdns_socket_listen(pHndl->mdns_sock, pHndl->mdns_buf, MDNS_BUF_SIZE,
                                _ads_mdns_callback, pHndl);
         }
+        */
         if (FD_ISSET(pHndl->tcp_sock, &readfds)) {
             return accept(pHndl->tcp_sock, NULL, NULL);
         }
     }
+    
+
+    return 0;
 }
 
 // Temporary, is there a better solution?
@@ -191,13 +210,20 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
         return NULL;
     }
 
+    // ads_exchange_data_t *pRx = malloc(sizeof(ads_exchange_data_t));
+    
     { // PMIx BEGIN
+      /*
+        pmix_rank_t pmix_rank = (pmix_rank_t) sock_fd;
         size_t ads_exchange_size = sizeof(ads_exchange_data_t);
         pmix_status_t pmix_status = PMIX_SUCCESS;
+
+                 
         size_t ninfo = 5;
         pmix_info_t info[ninfo];
         PMIx_Info_load(&info[0], "header", &ads_exchange_size, PMIX_SIZE);
         pmix_byte_object_t bos[3];
+        pmix_value_t put_vals[3];
         // this takes a char *
         
         // PMIx_Byte_object_load neq PMIx 4.2
@@ -215,19 +241,47 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
         char comm_key[7];
         char notif_key[7];
         char config_key[7];
- 
-        prepend_index_key("comm", comm_key, 7, sock_fd);
-        prepend_index_key("notif", notif_key, 7, sock_fd);
-        prepend_index_key("config", config_key, 7, sock_fd);
+
+        // change to operate on who owns it right now
+        prepend_index_key("comm", comm_key, 7, pmix_rank);
+        prepend_index_key("notif", notif_key, 7, pmix_rank);
+        prepend_index_key("config", config_key, 7, pmix_rank);
         PMIx_Info_load(&info[1], comm_key, &bos[0], PMIX_BYTE_OBJECT);
         PMIx_Info_load(&info[2], notif_key, &bos[1], PMIX_BYTE_OBJECT);
         PMIx_Info_load(&info[3], config_key, &bos[2], PMIX_BYTE_OBJECT);
+        PMIx_Value_load(&put_vals[0], &bos[0], PMIX_BYTE_OBJECT);
+        PMIx_Value_load(&put_vals[1], &bos[1], PMIX_BYTE_OBJECT);
+        PMIx_Value_load(&put_vals[2], &bos[2], PMIX_BYTE_OBJECT);
 
         pmix_persistence_t persistence = PMIX_PERSIST_FIRST_READ;
         PMIx_Info_load(&info[4], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
 
-        PMIx_Publish(info, ninfo);
+        pmix_pdata_t mpdata = PMIX_LOOKUP_STATIC_INIT;
+        PMIx_Load_key(mpdata.key, "remote_engine");
+        PMIx_Lookup(&mpdata, 1, NULL, 0);
 
+        if (mpdata.proc.rank == pmix_rank) {
+            pmix_pdata_t ppdata = PMIX_LOOKUP_STATIC_INIT;
+            PMIx_Load_key(ppdata.key, comm_key);
+            pmix_status = PMIx_Lookup(&ppdata, 1, NULL, 0);
+            // also should check partial_success
+            if (pmix_status == PMIX_ERR_NOT_FOUND) {
+                pmix_status = PMIx_Publish(info, ninfo);
+            }
+
+            size_t nqueries = 1;
+            pmix_query_t *queries = PMIx_Query_create(nqueries);
+            char *keys[] = {PMIX_QUERY_PROC_TABLE, NULL};
+            queries->keys = keys;
+
+            size_t nresults = 0;
+            pmix_info_t *results = NULL;
+            PMIx_Query_info(queries, nqueries, &results, &nresults);
+
+            for (size_t i = 0; i < nresults; i++) log_info("%s", PMIx_Info_string(&results[i]));
+        }
+
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx Lookup failed %s.", PMIx_Error_string(pmix_status));
         size_t npdata = 3;
         ninfo = 1;
         pmix_pdata_t pdata[npdata];
@@ -235,15 +289,19 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
         for (size_t i = 0; i < npdata; i++) {
             pdata[i] = dummy; // for some reason complains here about STATIC_INIT
         }
-        PMIx_Load_key(pdata[0].key, "comm");
-        PMIx_Load_key(pdata[1].key, "notif");
-        PMIx_Load_key(pdata[2].key, "config");
+
+        prepend_index_key("comm", comm_key, 7, sock_fd);
+        prepend_index_key("notif", notif_key, 7, sock_fd);
+        prepend_index_key("config", config_key, 7, sock_fd);
+        PMIx_Load_key(pdata[0].key, comm_key);
+        PMIx_Load_key(pdata[1].key, notif_key);
+        PMIx_Load_key(pdata[2].key, config_key);
 
         pmix_info_t linfo[ninfo];
         pmix_data_range_t range = PMIX_RANGE_SESSION;
         PMIx_Info_load(&linfo[0], PMIX_RANGE, &range, PMIX_DATA_RANGE);
         pmix_status = PMIx_Lookup(pdata, npdata, linfo, ninfo);
-
+        */
     }
 
     // Transmit Data to client side
@@ -341,20 +399,14 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
         return NULL;
     }
 
-    { // PMIx BEGIN
         pmix_status_t pmix_status = PMIX_SUCCESS;
         pmix_proc_t client_proc;
-        pmix_proc_t *all_procs;
-        size_t nprocs;
         if (!PMIx_Initialized()) pmix_status = PMIx_Init(&client_proc, NULL, 0);
+        log_info("Client proc = %s:%d", client_proc.nspace, client_proc.rank);
         if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to initialize with error %s", PMIx_Error_string(pmix_status));
 
-        log_info("PMIx client %d @ %s", client_proc.rank, client_proc.nspace);
-        pmix_status = PMIx_Resolve_peers("localhost-0.tail6b59c6.ts.net", NULL, &all_procs, &nprocs);
-        for (size_t i = 0; i < nprocs; i++) log_info("Client sees proc %d @ %s", all_procs[i].rank, all_procs[i].nspace);
-
         pmix_pdata_t pdata = PMIX_LOOKUP_STATIC_INIT;
-        PMIx_Load_key(pdata.key, "remote_engine");
+        PMIx_Load_key(pdata.key, "server_sock_addr");
         size_t ndata = 1;
         size_t ninfo = 1;
         pmix_info_t info[ninfo];
@@ -366,15 +418,14 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
 
         log_info("Got proc %d/%s with key %s and val %s", pdata.proc.rank, pdata.proc.nspace, pdata.key, PMIx_Value_string(&pdata.value));
 
-
-        
-    }
+        // return ads_exchange(pdata.proc.rank, pTxData);
 
     log_trace("Connecting to %s", pConf->opt_server_ip);
 
     char target_ip[64];
     ads_conf_t conf;
     conf = *pConf;
+    /*
     if (conf.opt_server_ip == NULL) {
         log_trace("Using Dynamic Discovery to find server");
         conf.opt_server_ip = target_ip;
@@ -402,6 +453,7 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
             return NULL;
         }
     }
+    */
 
     struct timeval tv = {
         .tv_sec = conf.timeout_ms / 1000,
@@ -418,11 +470,13 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
         .sin_family = AF_INET,
         .sin_port = htons(ADS_CONN_PORT),
     };
-    inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
+    memcpy(&addr, pdata.value.data.bo.bytes, sizeof(struct sockaddr_in));
+    // inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
     if (connect(sd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         log_warn("Failed to connect to server socket");
         return NULL;
     }
+    
     return ads_exchange(sd, pTxData);
 }
 
