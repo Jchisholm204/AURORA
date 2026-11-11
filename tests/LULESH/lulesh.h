@@ -1,3 +1,6 @@
+#ifndef _LULESH_H_
+#define _LULESH_H_
+
 #if !defined(USE_MPI)
 # error "You should specify USE_MPI=0 or USE_MPI=1 on the compile line"
 #endif
@@ -6,11 +9,9 @@
 // OpenMP will be compiled in if this flag is set to 1 AND the compiler beging
 // used supports it (i.e. the _OPENMP symbol is defined)
 #define USE_OMP 0
-#define enable_fti 1
 
 #if USE_MPI
 #include <mpi.h>
-#include <fti.h>
 
 /*
    define one of these three symbols:
@@ -420,23 +421,6 @@ class Domain {
    // Maximum number of block neighbors 
    MPI_Request recvRequest[26] ; // 6 faces + 12 edges + 8 corners 
    MPI_Request sendRequest[26] ; // 6 faces + 12 edges + 8 corners 
-
-   //
-   // Functions to write and read application checkpoint
-   // Implementation --> lulesh-util.cc
-   //
-
-   // Add FTI protection to data objects
-   friend void FTI_Protect_LULESH(Domain& locDom, struct cmdLineOpts &opts, double start);
-
-   /* Read the second to last checkpoint file */
-   //friend void ApplicationCheckpointRead(
-     //  Domain& domain, struct cmdLineOpts &opts, double &start, std::stringstream& iss);
-
-   /* Take checkpoint after each checkpoint interval defined by -cp in command line */
-   //friend void ApplicationCheckpointWrite(
-       //Domain& domain, struct cmdLineOpts &opts, double start, std::stringstream& oss);
-   //friend size_t sizeofCheckpoint(int rank, Domain& domain, struct cmdLineOpts &opts, double start);
 #endif
 
   //private:
@@ -604,12 +588,8 @@ struct cmdLineOpts {
    Int_t cost; // -c
    Int_t balance; // -b
    Int_t cpInterval; // -cp
-   Int_t procfi; // -procfi
-   Int_t nodefi; // -nodefi
-   Int_t cp2f; // -cp2f
-   Int_t cp2m; // -cp2m
-   Int_t cp2a; // -cp2a
-   Int_t level; // -level
+   char *ckptPath; // -ckpt
+   char *ckptHost; // -ckpt-host
 };
 
 
@@ -628,6 +608,7 @@ void VerifyAndWriteFinalOutput(Real_t elapsed_time,
                                Domain& locDom,
                                Int_t nx,
                                Int_t numRanks);
+void ProtectLULESH(Domain& locDom);
 
 // lulesh-viz
 void DumpToVisit(Domain& domain, int numFiles, int myRank, int numRanks);
@@ -647,3 +628,5 @@ void CommMonoQ(Domain& domain);
 // lulesh-init
 void InitMeshDecomp(Int_t numRanks, Int_t myRank,
                     Int_t *col, Int_t *row, Int_t *plane, Int_t *side);
+
+#endif

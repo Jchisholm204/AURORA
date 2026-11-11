@@ -144,6 +144,7 @@ Additional BSD Notice
 
 */
 #include "lulesh.h"
+#include "lulesh-checkpoint.h"
 
 #include <climits>
 #include <vector>
@@ -153,19 +154,11 @@ Additional BSD Notice
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/wait.h>
 
 #include <iostream>
-#include <unistd.h>
 
 #if _OPENMP
 # include <omp.h>
-#endif
-
-#ifdef TIMER
-double acc_write_time=0;
 #endif
 
 /*********************************/
@@ -2699,11 +2692,6 @@ void LagrangeLeapFrog(Domain& domain)
 /******************************************/
 int main(int argc, char *argv[])
 {
-#ifdef TIMER
-   double elapsed_time;
-   struct timeval startt;
-   struct timeval endd;
-#endif
 #ifdef _OPENMP
    int thread_support;
 
@@ -2717,29 +2705,11 @@ int main(int argc, char *argv[])
 #else
    MPI_Init(&argc, &argv);
 #endif
-#ifdef TIMER
-   gettimeofday(&startt, NULL) ;
-#endif
-
-
-#ifdef TIMER
-   struct timeval tv;
-   gettimeofday( &tv, NULL );
-   double ts = tv.tv_sec + tv.tv_usec / 1000000.0;
-   char hostname[64];
-   gethostname(hostname, 64);
-   printf("TIMESTAMP START/RESTART: %lf (s) node %s daemon %d\n", ts, hostname, getpid());
-   fflush(stdout);
-#endif
 
     Domain *locDom ;
     Int_t numRanks ;
     Int_t myRank ;
     struct cmdLineOpts opts;
-
-if (enable_fti) {
-    FTI_Init(argv[1], MPI_COMM_WORLD);
-}
 
 #if USE_MPI
     double start;
@@ -2747,17 +2717,18 @@ if (enable_fti) {
     timeval start;
 #endif
 
-#if USE_MPI   
+#if USE_MPI
     Domain_member fieldData ;
 #endif
 
-#if USE_MPI 
+#if USE_MPI
     MPI_Comm_size(MPI_COMM_WORLD, &numRanks) ;
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank) ;
 #else
     numRanks = 1;
     myRank = 0;
 #endif
+
     /* Set defaults that can be overridden by command line opts */
     opts.its = 9999999;
     opts.nx  = 30;
@@ -2769,155 +2740,79 @@ if (enable_fti) {
     opts.balance = 1;
     opts.cost = 1;
     opts.cpInterval = 0;
-    opts.procfi = 0;
-    opts.nodefi = 0;
-    opts.cp2f = 0;
-    opts.cp2m = 0;
-    opts.cp2a = 0;
-    opts.level = 0;
-
-   //char hostname[65];
-   gethostname(hostname, 65);
-   printf("%s daemon %d rank %d\n", hostname, (int) getpid(), myRank);
-   //sleep(5);
+    opts.ckptPath = NULL;
+    opts.ckptHost = NULL;
 
     ParseCommandLineOptions(argc, argv, myRank, &opts);
+    LULESH_CKPT_INIT(opts);
 
-    /* Restart MPI application form a checkpoint *-/
-    if (state == OMPI_REINIT_RESTARTED || state == OMPI_REINIT_REINITED) {
-#if USE_MPI
-        struct timeval tv;
-        gettimeofday( &tv, NULL );
-        double ts = tv.tv_sec + tv.tv_usec / 1000000.0;
-        printf("TIMESTAMP RESTART %lf s rank %d %s\n", ts, myRank, ( OMPI_REINIT_REINITED == state ? "REINITED" : "RESTARTED" ) );
-
-        struct timeval start_ts, end_ts;
-        gettimeofday( &start_ts, NULL );
-
-        locDom = new Domain();
-        int survivor = ( OMPI_REINIT_REINITED == state ) ? 1 : 0;
-        ApplicationCheckpointRead(*locDom, opts, start, ss);
-
-        gettimeofday( &end_ts, NULL );
-        double dtime = ( end_ts.tv_sec - start_ts.tv_sec ) + ( end_ts.tv_usec - start_ts.tv_usec ) / 1000000.0;
-        printf("TIME READCP app %lf s rank %d\n", dtime, myRank );
-        // XXX: Disable FI, assumes 1 failure
-        opts.procfi = 0;
-        opts.nodefi = 0;
-#endif
-    } else {
-*/
-        if ((myRank == 0) && (opts.quiet == 0)) {
-            printf("Running problem size %d^3 per domain until completion\n", opts.nx);
-            printf("Num processors: %d\n", numRanks);
+    if ((myRank == 0) && (opts.quiet == 0)) {
+        printf("Running problem size %d^3 per domain until completion\n", opts.nx);
+        printf("Num processors: %d\n", numRanks);
 #if _OPENMP
-            printf("Num threads: %d\n", omp_get_max_threads());
+        printf("Num threads: %d\n", omp_get_max_threads());
 #endif
-            printf("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
-            printf("To run other sizes, use -s <integer>.\n");
-            printf("To run a fixed number of iterations, use -i <integer>.\n");
-            printf("To run a more or less balanced region set, use -b <integer>.\n");
-            printf("To change the relative costs of regions, use -c <integer>.\n");
-            printf("To print out progress, use -p\n");
-            printf("To write an output file for VisIt, use -v\n");
-            printf("See help (-h) for more options\n\n");
-        }
-
-        // Set up the mesh and decompose. Assumes regular cubes for now
-        Int_t col, row, plane, side;
-        InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);
-
-        // Build the main data structure and initialize it
-        locDom = new Domain(numRanks, col, row, plane, opts.nx,
-                side, opts.numReg, opts.balance, opts.cost) ;
-
-
-#if USE_MPI
-        fieldData = &Domain::nodalMass ;
-
-        // Initial domain boundary communication
-        CommRecv(*locDom, MSG_COMM_SBN, 1,
-                locDom->sizeX() + 1, locDom->sizeY() + 1, locDom->sizeZ() + 1,
-                true, false) ;
-        CommSend(*locDom, MSG_COMM_SBN, 1, &fieldData,
-                locDom->sizeX() + 1, locDom->sizeY() + 1, locDom->sizeZ() +  1,
-                true, false) ;
-        CommSBN(*locDom, 1, &fieldData) ;
-
-        // End initialization
-        MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-        // BEGIN timestep to solution */
-#if USE_MPI
-        start = MPI_Wtime();
-#else
-        //timeval start;
-        gettimeofday(&start, NULL) ;
-#endif
-
-	int recovered = 0;
-
-// FTI CPR code
-    if (enable_fti) {
-	recovered = 0;
-	printf("Add FTI protection to data objects ... \n");
-	FTI_Protect_LULESH(*locDom, opts, start);
-	printf("Done: Add FTI protection to data objects ... \n");
-
+        printf("Total number of elements: %lld\n\n", (long long int)(numRanks*opts.nx*opts.nx*opts.nx));
+        printf("To run other sizes, use -s <integer>.\n");
+        printf("To run a fixed number of iterations, use -i <integer>.\n");
+        printf("To run a more or less balanced region set, use -b <integer>.\n");
+        printf("To change the relative costs of regions, use -c <integer>.\n");
+        printf("To print out progress, use -p\n");
+        printf("To write an output file for VisIt, use -v\n");
+        printf("See help (-h) for more options\n\n");
     }
-// FTI CPR code
+
+    // Set up the mesh and decompose. Assumes regular cubes for now
+    Int_t col, row, plane, side;
+    InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);
+
+    // Build the main data structure and initialize it
+    locDom = new Domain(numRanks, col, row, plane, opts.nx,
+            side, opts.numReg, opts.balance, opts.cost) ;
+
+#if USE_MPI
+    fieldData = &Domain::nodalMass ;
+
+    // Initial domain boundary communication
+    CommRecv(*locDom, MSG_COMM_SBN, 1,
+            locDom->sizeX() + 1, locDom->sizeY() + 1, locDom->sizeZ() + 1,
+            true, false) ;
+    CommSend(*locDom, MSG_COMM_SBN, 1, &fieldData,
+            locDom->sizeX() + 1, locDom->sizeY() + 1, locDom->sizeZ() +  1,
+            true, false) ;
+    CommSBN(*locDom, 1, &fieldData) ;
+
+    // End initialization
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    ProtectLULESH(*locDom);
+
+    int ckpt_version = LULESH_CKPT_RESTART_TEST();
+    if (ckpt_version > 0) {
+        if ((myRank == 0) && (opts.quiet == 0)) {
+            printf("Restarting from checkpoint version %d\n", ckpt_version);
+        }
+        if (LULESH_CKPT_RESTART(ckpt_version) != 0) {
+            printf("Rank %d failed to restart from checkpoint version %d\n",
+                   myRank, ckpt_version);
+            fflush(stdout);
+#if USE_MPI
+            MPI_Abort(MPI_COMM_WORLD, 2);
+#else
+            exit(2);
+#endif
+        }
+    }
+
+    // BEGIN timestep to solution
+#if USE_MPI
+    start = MPI_Wtime();
+#else
+    gettimeofday(&start, NULL) ;
+#endif
 
     while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
-
-#if USE_MPI
-	if (enable_fti) {
-		if ( FTI_Status() != 0){ 
-#ifdef TIMER
-   double elapsed_time;
-   struct timeval start;
-   struct timeval end;
-   gettimeofday(&start, NULL) ;
-#endif
-	    		printf("Do FTI Recover to data objects from failure ... \n");
-	    		FTI_Recover();
-	    		printf("Done: FTI Recover data objects from failure ... \n");
-#ifdef TIMER
-   gettimeofday(&end, NULL) ;
-   elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
-   printf("READ CP TIME: %lf (s) Rank %d \n", elapsed_time, myRank);
-   fflush(stdout);
-#endif
-	    		recovered = 1;
-        		opts.procfi = 0;
-        		opts.nodefi = 0;
-		}
-	}
-        /* Checkpoint the state of the application */
-	// do FTI CPR
-	if (enable_fti){
-#ifdef TIMER
-   double elapsed_time;
-   struct timeval start;
-   struct timeval end;
-   gettimeofday(&start, NULL) ;
-#endif
-	    if ( (!recovered) && ((locDom->cycle())%opts.cpInterval +1) == opts.cpInterval ){ 
-		printf("Do FTI checkpointing ... \n");
-		int cyc = locDom->cycle();
-		FTI_Checkpoint(cyc, opts.level);
-	    }
-	    recovered = 0;
-#ifdef TIMER
-   gettimeofday(&end, NULL) ;
-   elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
-   acc_write_time+=elapsed_time;
-
-#endif
-	}
-	// do FTI CPR
-#endif
-
         TimeIncrement(*locDom) ;
         LagrangeLeapFrog(*locDom) ;
 
@@ -2929,54 +2824,24 @@ if (enable_fti) {
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-        if (opts.procfi == 1 && locDom->cycle()==51){
-#ifdef TIMER
-   	      printf("WRITE CP TIME: %lf (s) Rank %d \n", acc_write_time, myRank);
-		fflush(stdout);
+        if ((opts.cpInterval > 0) &&
+            ((locDom->cycle() % opts.cpInterval) == 0)) {
+            if (LULESH_CKPT_CHECKPOINT(locDom->cycle()) != 0) {
+                printf("Rank %d failed to checkpoint cycle %d\n",
+                       myRank, locDom->cycle());
+                fflush(stdout);
+#if USE_MPI
+                MPI_Abort(MPI_COMM_WORLD, 2);
+#else
+                exit(2);
 #endif
-        	if (myRank == (numRanks-1)){
-#ifdef TIMER
-           struct timeval tv;
-           gettimeofday( &tv, NULL );
-           double ts = tv.tv_sec + tv.tv_usec / 1000000.0;
-     	   char hostname[64];
-   	   gethostname(hostname, 64);
-   	   printf("TIMESTAMP KILL: %lf (s) node %s daemon %d\n", ts, hostname, getpid());
-           fflush(stdout);
-#endif
-      	   printf("KILL rank %d\n", myRank);
-      	   kill(getpid(), SIGTERM);
-		}
+            }
         }
-
-        if (opts.nodefi == 1 && locDom->cycle()==51){
-#ifdef TIMER
-   	      printf("WRITE CP TIME: %lf (s) Rank %d \n", acc_write_time, myRank);
-		fflush(stdout);
-#endif
-        	if (myRank == (numRanks-1)){
-#ifdef TIMER
-           char hostname[HOST_NAME_MAX + 1];
-           gethostname(hostname, HOST_NAME_MAX + 1);
-           struct timeval tv;
-           gettimeofday( &tv, NULL );
-           double ts = tv.tv_sec + tv.tv_usec / 1000000.0;
-     	   //char hostname[64];
-   	   gethostname(hostname, 64);
-   	   printf("TIMESTAMP KILL: %lf (s) node %s daemon %d\n", ts, hostname, getpid());
-           fflush(stdout);
-#endif
-      	   gethostname(hostname, 64);
-      	   printf("KILL %s daemon %d rank %d\n", hostname, (int) getppid(), myRank);
-           kill(getppid(), SIGTERM );
-		}
-        }
-
     }
 
     // Use reduced max elapsed time
-    //double elapsed_time;
-#if USE_MPI   
+    double elapsed_time;
+#if USE_MPI
     elapsed_time = MPI_Wtime() - start;
 #else
     timeval end;
@@ -2984,7 +2849,7 @@ if (enable_fti) {
     elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
 #endif
     double elapsed_timeG;
-#if USE_MPI   
+#if USE_MPI
     MPI_Reduce(&elapsed_time, &elapsed_timeG, 1, MPI_DOUBLE,
             MPI_MAX, 0, MPI_COMM_WORLD);
 #else
@@ -3000,25 +2865,11 @@ if (enable_fti) {
         VerifyAndWriteFinalOutput(elapsed_timeG, *locDom, opts.nx, numRanks);
     }
 
-if (enable_fti) {
-    FTI_Finalize();
-}
-
-#ifdef TIMER
-   gettimeofday(&endd, NULL) ;
-   elapsed_time = (double)(endd.tv_sec - startt.tv_sec) + ((double)(endd.tv_usec - startt.tv_usec))/1000000 ;
-   //char hostname[64];
-   gethostname(hostname, 64);
-   printf("APP EXE TIME: %lf (s) node %s daemon %d \n", elapsed_time, hostname, getpid());
-   fflush(stdout);
-#endif
-
-   printf("WRITE CP TIME: %lf (s) node %s daemon %d \n", acc_write_time, hostname, getpid());
-   fflush(stdout);
+    LULESH_CKPT_FINALIZE();
 
 #if USE_MPI
-   MPI_Finalize() ;
+    MPI_Finalize() ;
 #endif
 
-   return 0 ;
+    return 0 ;
 }
