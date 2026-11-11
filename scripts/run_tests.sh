@@ -71,10 +71,10 @@ function submit_test() {
 	local TEST_NODES="${(j:,:)TEST_NODE_ARR}"
 	local BACKEND_NODES="${(j:,:)BACKEND_NODE_ARR}"
 
-	# Keep the single-node job name stable for existing results; multi-node
-	# jobs share one name because they are launched as one aggregated job.
+	# Job names are not suffixed with node names; multi-node jobs share one
+	# name because they are launched as one aggregated job.
 	if [[ $N_NODES -eq 1 ]]; then
-		local JOB_FULL_NAME="${JOB_NAME}_${TEST_NODE_ARR[1]}"
+		local JOB_FULL_NAME="${JOB_NAME}"
 	else
 		local JOB_FULL_NAME="${JOB_NAME}_multi"
 	fi
@@ -126,7 +126,7 @@ function submit_test() {
 			local -a NODE_PAIR=(${(s:,:)PAIR})
 			local TEST_NODE=${NODE_PAIR[1]}
 			local BACKEND_NODE=${NODE_PAIR[2]:-${NODE_PAIR[1]}}
-			local PAIR_JOB_NAME="${JOB_NAME}_${TEST_NODE}"
+			local PAIR_JOB_NAME="${JOB_NAME}"
 			echo "Running JOB:"
 			echo " NAME: ${PAIR_JOB_NAME}"
 			echo " TEST_NODE: ${TEST_NODE}"

@@ -54,7 +54,7 @@ function ath_launch_test_ssh(){
         fi
         ATH_TARGETS+=("$ATH_SSH_TARGET")
 
-        local ATH_REMOTE_CMD="cd '${AURORA_TOP_DIR}' && { ${ATH_REMOTE_PREFIX}exec nohup '${ATH_BACKEND_EXE}' > '${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_backend_${ATH_BACKEND_NODE}.log' 2>&1 & echo \$!; }"
+        local ATH_REMOTE_CMD="cd '${AURORA_TOP_DIR}' && { ${ATH_REMOTE_PREFIX}exec nohup '${ATH_BACKEND_EXE}' > '${ATH_JOB_LOG_DIR}/${ATH_JOB_NAME}_backend.log' 2>&1 & echo \$!; }"
         ATH_PIDS+=("$(ssh ${=AURORA_SSH_OPTS} "$ATH_SSH_TARGET" "$ATH_REMOTE_CMD")")
     done
 
