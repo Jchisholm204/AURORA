@@ -2,10 +2,11 @@
  * @file listener_group.h
  * @author Connor Leung (https://github.com/connor-leung)
  * @author Claude Opus 5.5 (claude-opus-5-5) Claude Code
+ * @author Claude Fable 5.2 (claude-fable-5-2) Claude Code
  * @brief Group level aggregation of per-rank AEL events
- * @version 0.3
+ * @version 0.4
  * @date Created: 2026-11-06
- * @modified Last Modified: 2026-11-06
+ * @modified Last Modified: 2026-11-12
  *
  * @copyright Copyright (c) 2026
  *
@@ -13,13 +14,20 @@
  * attributed to a group event, keyed by event code plus, for checkpoint,
  * restore, and region events, the payload id_version (checkpoint version or
  * region ID). Lifecycle events (connect, failure, disconnect) use one key per
- * group. Each rank is counted once per group event, so duplicate datagrams do
- * not advance the count.
+ * group. Each member is counted once per group event, so duplicate datagrams
+ * do not advance the count. A member is identified by its rank and sending
+ * endpoint (IP and port): the rank alone is not unique, because every ARE
+ * instance of a group reports rank 0.
+ *
+ * A group can run more than once. A connect from a new member starts a new run,
+ * and clears the group's events, once the previous run has ended: a member
+ * disconnected or failed, or every member had connected.
  *
  * The group size is learned from the payload size field of connect and
  * failure events; a size of 0 there is a sender fault and is logged and
  * ignored. Until a valid size is received, a group event can report its first
- * rank but never completes.
+ * rank but never completes, and a run that ends without any disconnect or
+ * failure is not recognised as ended.
  */
 
 #ifndef _LISTENER_GROUP_H_
@@ -43,7 +51,8 @@ enum listener_group_e {
     eLISTENER_GROUP_FIRST = BIT(0),
     /* State: this rank completed the group event (count reached group size) */
     eLISTENER_GROUP_LAST = BIT(1),
-    /* State: this rank had already reported the group event */
+    /* State: this member (rank and sending endpoint) had already reported the
+     * group event */
     eLISTENER_GROUP_DUPLICATE = BIT(2),
     /* State: the event is counted per payload.id_version (checkpoint version
      * or region ID) rather than once per group */
@@ -99,7 +108,8 @@ extern uint64_t listener_groups_get_size(const listener_groups_t *pGroups,
                                          uint64_t group_id);
 
 /**
- * @brief Number of distinct ranks that have reported a group event
+ * @brief Number of distinct members that have reported a group event in the
+ *        group's current run
  *
  * @param pGroups Group table
  * @param origin Group origin
@@ -107,7 +117,7 @@ extern uint64_t listener_groups_get_size(const listener_groups_t *pGroups,
  * @param event Event code
  * @param id_version Checkpoint version or region ID; ignored for lifecycle
  *        events (connect, failure, disconnect)
- * @return Distinct rank count, 0 when the group event has not been seen
+ * @return Distinct member count, 0 when the group event has not been seen
  */
 extern size_t listener_groups_get_ranks_done(const listener_groups_t *pGroups,
                                              eAEL_origin origin,
