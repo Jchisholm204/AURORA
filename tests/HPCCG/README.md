@@ -143,7 +143,7 @@ Three executables are produced:
 
 Usage:
 
-    mpirun -np <x> ./hpccg nx ny nz [-cp <interval>] [-ckpt <path>] [-ckpt-host <host>]
+    mpirun -np <x> ./hpccg nx ny nz [-cp <interval>] [-ckpt <path>] [-ckpt-host <host>] [-yaml <path>]
 
 where nx, ny and nz are the local sub-block dimensions. Checkpointing is
 controlled by the checkpoint interval:
@@ -164,3 +164,10 @@ VELOC requires a VELOC configuration file:
 
 Restart is automatic: if a checkpoint is available, the application restores
 the latest version and continues from that iteration.
+
+The YAML performance report is always printed to stdout. To also write it to a
+file, pass the destination path:
+
+    mpirun -np <x> ./hpccg nx ny nz -yaml <path>
+
+    -yaml <path>   write the YAML report to <path> (stdout is always printed)

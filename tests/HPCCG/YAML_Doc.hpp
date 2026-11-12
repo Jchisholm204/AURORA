@@ -122,8 +122,8 @@ class YAML_Doc: public YAML_Element {
   YAML_Doc(const std::string& miniApp_Name, const std::string& miniApp_Version, const std::string& destination_Directory = "", const std::string& destination_FileName = "");
   //! Destructor
   ~YAML_Doc();
-  //! Generate YAML results to standard out and to a file using specified directory and filename, using current directory and miniAppName + miniAppVersion + ".yaml" by default
-  std::string generateYAML();
+  //! Generate the YAML results string. When output_file is non-empty, also write it to that path.
+  std::string generateYAML(const std::string& output_file = "");
 
 protected:
   std::string miniAppName;

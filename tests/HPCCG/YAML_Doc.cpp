@@ -1,15 +1,4 @@
-#include <ctime>
-#include <cstdlib>
-#include <ctime>
-#include <vector>
-#include <iostream>
 #include <fstream>
-#include <sstream>
-#ifdef REDSTORM
-#include <time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#endif
 #include "YAML_Doc.hpp"
 using namespace std;
 
@@ -26,48 +15,23 @@ YAML_Doc::~YAML_Doc(void){
 }
 
 /*
-* generates YAML from the elements of the document and saves it
-* to a file
+* generates YAML from the elements of the document and, when an output
+* file is supplied, writes it to that file
 */
-string YAML_Doc::generateYAML(){
+string YAML_Doc::generateYAML(const std::string& output_file){
   string yaml;
   yaml =  yaml + "Mini-Application Name: " + miniAppName + "\n";
   yaml =  yaml + "Mini-Application Version: " + miniAppVersion + "\n";
   for(size_t i=0; i<children.size(); i++){
     yaml = yaml + children[i]->printYAML("");
   }
-  
-  time_t rawtime;
-  tm * ptm;
-  time ( &rawtime );
-  ptm = localtime(&rawtime);
-  char sdate[25];
-  //use tm_mon+1 because tm_mon is 0 .. 11 instead of 1 .. 12
-  sprintf (sdate,"%04d_%02d_%02d__%02d_%02d_%02d",ptm->tm_year + 1900, ptm->tm_mon+1,
-    ptm->tm_mday, ptm->tm_hour, ptm->tm_min,ptm->tm_sec);
 
-  string filename;
-  if (destinationFileName=="") 
-    filename = miniAppName + "-" + miniAppVersion + "_";
-  else 
-    filename = destinationFileName;
-  filename = filename + string(sdate) + ".yaml";
-  if (destinationDirectory!="" && destinationDirectory!=".") {
-    string mkdir_cmd = "mkdir " + destinationDirectory;
-#ifdef REDSTORM
-    mkdir(destinationDirectory.c_str(),0755);
-#else
-    system(mkdir_cmd.c_str());
-#endif
-    filename = destinationDirectory + "/" + destinationFileName;
+  if (!output_file.empty()) {
+    ofstream myfile;
+    myfile.open(output_file.c_str());
+    myfile << yaml;
+    myfile.close();
   }
-  else 
-    filename = "./" + filename;
-
-  ofstream myfile;
-  myfile.open(filename.c_str());
-  myfile << yaml;
-  myfile.close();
   return yaml;
 }
 

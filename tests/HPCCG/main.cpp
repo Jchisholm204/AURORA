@@ -109,6 +109,7 @@ int nx,ny,nz;
 int cp_iters = 0;
 char *ckptPath = NULL;
 char *ckptHost = NULL;
+char *yamlPath = NULL;
 
 int niters = 0;
 double normr = 0.0;
@@ -172,7 +173,8 @@ int main(int argc, char *argv[])
            << "Optional arguments related to checkpointing:" << endl
            << "     -cp <interval>   checkpoint frequency in iterations (0 disables checkpoints)" << endl
            << "     -ckpt <path>     AURORA checkpoint directory or VELOC config file" << endl
-           << "     -ckpt-host <host> AURORA backend hostname (optional)" << endl;
+           << "     -ckpt-host <host> AURORA backend hostname (optional)" << endl
+           << "     -yaml <path>     write the YAML report to <path> (stdout is always printed)" << endl;
     exit(1);
   }
 
@@ -197,6 +199,11 @@ int main(int argc, char *argv[])
     else if( !strcmp("-ckpt-host", argv[i]) ) {
       if (i+1 >= argc) { if (rank==0) cerr << "Missing argument to -ckpt-host" << endl; exit(1); }
       ckptHost = argv[i+1];
+      i += 2;
+    }
+    else if( !strcmp("-yaml", argv[i]) ) {
+      if (i+1 >= argc) { if (rank==0) cerr << "Missing argument to -yaml" << endl; exit(1); }
+      yamlPath = argv[i+1];
       i += 2;
     }
     else {
@@ -303,7 +310,7 @@ int main(int argc, char *argv[])
       doc.get("SPARSEMV OVERHEADS")->add("SPARSEMV PARALLEL OVERHEAD Bdry Exch Pct", (times[5])/totalSparseMVTime*100.0);
 
       if (rank == 0) { // only PE 0 needs to compute and report timing results
-        std::string yaml = doc.generateYAML();
+        std::string yaml = yamlPath ? doc.generateYAML(yamlPath) : doc.generateYAML();
         cout << yaml;
        }
     }
