@@ -206,6 +206,25 @@ int HPCCG(HPC_Sparse_Matrix * A,
       niters = k;
     }
 
+  // Final checkpoint of the completed state (version = next iteration index)
+  if (cp_iters > 0 && k <= max_iter) {
+#ifdef TIMER
+   double elapsed_time;
+   struct timeval start;
+   struct timeval end;
+   gettimeofday(&start, NULL) ;
+#endif
+        if (HPCCG_CKPT_CHECKPOINT(k) != 0) {
+            cerr << "Rank " << rank << " failed to checkpoint iteration " << k << endl;
+            MPI_Abort(MPI_COMM_WORLD, 2);
+        }
+#ifdef TIMER
+   gettimeofday(&end, NULL) ;
+   elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
+   acc_write_time+=elapsed_time;
+#endif
+  }
+
   // Store times
   times[1] = t1; // ddot time
   times[2] = t2; // waxpby time
