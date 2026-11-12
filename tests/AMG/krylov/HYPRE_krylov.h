@@ -23,9 +23,6 @@
 #include <mpi.h>
 #include <mpi-ext.h>
 
-#include <fti.h>
-#define enable_fti 1
-
 #ifdef __cplusplus
 extern "C" {
 #endif

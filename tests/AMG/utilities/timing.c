@@ -21,7 +21,9 @@
  *
  *****************************************************************************/
 
+#ifndef HYPRE_TIMING
 #define HYPRE_TIMING
+#endif
 #define HYPRE_TIMING_GLOBALS
 #include "_hypre_utilities.h"
 #include "timing.h"

@@ -37,30 +37,44 @@ distribution.
 
 Building the Code
 
-AMG uses a simple Makefile system for building the code.  All compiler and
-link options are set by modifying the file 'AMG/Makefile.include'
-appropriately.  
+AMG is built as part of the AURORA CMake test suite (requires MPI):
 
-To build the code, first modify the 'Makefile.include' file appropriately, 
-(it is recommended to use the options -DHYPRE_BIGINT )
-then type (in the AMG directory)
+    $ cmake -DBUILD_TESTING=ON ...
+    $ cmake --build <build-dir> --target amg amg_aurora amg_veloc
 
-  make
+Three executables are produced:
 
-Other available targets are
+  amg        - no checkpointing
+  amg_aurora - AURORA checkpoint backend
+  amg_veloc  - VELOC checkpoint backend (only built when VELOC is found)
 
-  make clean        (deletes .o files)
-  make veryclean    (deletes .o files, libraries, and executables)
+Usage:
 
-To configure the code to run with:
+    mpirun -np <x> ./amg -problem 2 -n nx ny nz -P Q R [-cp <interval>]
+                          [-ckpt <path>] [-ckpt-host <host>]
 
-1 - MPI only , add '-DTIMER_USE_MPI' to the 'INCLUDE_CFLAGS' line 
-    in the 'Makefile.include' file and use a valid MPI.
-2 - OpenMP with MPI, add vendor dependent compilation flag for OMP
-3 - to be able to solve problems that are larger than 2^31-1,
-    add '-DHYPRE_BIGINT'
-4 - For additional optimizations in MPI add '-DHYPRE_USING_PERSISTENT_COMM'
-5 - For additional optimizations in OpenMP add '-DHYPRE_HOPSCOTCH'
+Problem 2 runs GMRES over multiple time steps and is the checkpoint/restart
+benchmark. Checkpointing is controlled by the checkpoint interval:
+
+  -cp <interval>   checkpoint frequency in time steps
+                   (0 disables checkpoints)
+
+A state checkpoint is written at the start of every interval-th time step.
+
+AURORA requires a checkpoint directory and optionally a backend hostname:
+
+    mpirun -np <x> ./amg_aurora -problem 2 -n nx ny nz -P Q R -cp <interval> \
+        -ckpt <checkpoint-dir> [-ckpt-host <hostname>]
+
+VELOC requires a VELOC configuration file:
+
+    mpirun -np <x> ./amg_veloc -problem 2 -n nx ny nz -P Q R -cp <interval> \
+        -ckpt <veloc-config.cfg>
+
+Restart is automatic: if a checkpoint is available, the application restores
+the latest version and continues from that time step. Delete the
+contents of the checkpoint directory before a fresh run.
+
 %==========================================================================
 %==========================================================================
 

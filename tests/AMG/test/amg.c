@@ -38,12 +38,11 @@
 #include "_hypre_parcsr_mv.h"
 #include "HYPRE_krylov.h"
 #include "amg.h"
+#include "../amg-checkpoint.h"
 //#include "../krylov/gmres.h"
 
 /* for sleep function */
-#include <signal.h>
 #include <unistd.h>
-#include <sys/wait.h>
 #include <sys/time.h>
 
 #include <time.h>
@@ -69,29 +68,6 @@ HYPRE_Int hypre_map27( HYPRE_Int  ix, HYPRE_Int  iy, HYPRE_Int  iz,
  
 /* new variables for C/R */
 int cp_stride=0;
-int procfi=0;
-int nodefi=0;
-int cp2f=0;
-int cp2m=0;
-int cp2a=0;
-int restart=0;
-int nprocs=0;
-int myrank=0;
-int survivor=0;
-int level=0;
-
-/* new variables for C/R *-/
-int cp_stride;
-int procfi;
-int nodefi;
-int cp2f;
-int cp2m;
-int cp2a;
-int restart;
-int nprocs;
-int myrank;
-int survivor;
-*/
 
 hypre_int
 main( hypre_int argc,
@@ -203,15 +179,13 @@ main( hypre_int argc,
     * Initialize some stuff
     *-----------------------------------------------------------*/
 
-if (enable_fti) {
-    FTI_Init(argv[1], MPI_COMM_WORLD);
-}
-
    hypre_MPI_Comm_rank(hypre_MPI_COMM_WORLD, &myid );
    hypre_MPI_Comm_size(comm, &nprocs);
 
-   gethostname(hostname, 65);
+#ifdef TIMER
+   gethostname(hostname, 64);
    printf("%s daemon %d rank %d\n", hostname, (int) getpid(), myid);
+#endif
    //sleep(55);
 
    /*-----------------------------------------------------------
@@ -298,57 +272,55 @@ if (enable_fti) {
       }
    }
 
-// new code for C/R implementation
+// checkpoint options (AURORA and VELOC builds)
+  char *ckpt_path = NULL;
+  char *ckpt_host = NULL;
   if(argc > 1) {
-      int i = 1; 
+      int i = 1;
       while (i<argc) {
-	 int ok;
          if(strcmp(argv[i], "-cp") == 0) {
-            if (i+1 >= argc) {
-               printf("Missing integer argument to -cp\n");
+            char *end = NULL;
+            long stride = -1;
+            if (i+1 < argc) {
+               stride = strtol(argv[i+1], &end, 10);
+               if ((end == argv[i+1]) || (*end != '\0')) {
+                  stride = -1;
+               }
             }
-            ok = atoi(argv[i+1]);
-            if(!ok) {
-               printf("Parse Error on option -cp integer value required after argument\n");
+            if (stride < 0) {
+               printf("-cp requires a non-negative integer\n");
+               hypre_MPI_Finalize();
+               exit(1);
             }
-            cp_stride=ok;
+            cp_stride = (int) stride;
             i+=2;
          }
-         else if(strcmp(argv[i], "-procfi") == 0) {
-            procfi = 1;
-            i++;
+         else if(strcmp(argv[i], "-ckpt") == 0) {
+            if (i+1 >= argc) {
+               printf("Missing argument to -ckpt\n");
+               hypre_MPI_Finalize();
+               exit(1);
+            }
+            ckpt_path = argv[i+1];
+            i+=2;
          }
-         else if(strcmp(argv[i], "-nodefi") == 0) {
-            nodefi = 1;
-            i++;
-         }
-         else if(strcmp(argv[i], "-cp2f") == 0) {
-            cp2f = 1;
-            i++;
-         }
-         else if(strcmp(argv[i], "-cp2m") == 0) {
-            cp2m = 1;
-            i++;
-         }
-         else if(strcmp(argv[i], "-cp2a") == 0) {
-            cp2a = 1;
-            i++;
-         }
-         else if(strcmp(argv[i], "-restart") == 0) {
-            restart = 1;
-            i++;
-         }
-         else if(strcmp(argv[i], "-level") == 0) {
-            level = atoi(argv[i+1]);
+         else if(strcmp(argv[i], "-ckpt-host") == 0) {
+            if (i+1 >= argc) {
+               printf("Missing argument to -ckpt-host\n");
+               hypre_MPI_Finalize();
+               exit(1);
+            }
+            ckpt_host = argv[i+1];
             i+=2;
          }
          else {
-           // printf("ERROR: Unknown command line argument: %s\n", argv[i]);
             i++;
          }
       }
   }
   // end of C/R code
+
+  AMG_CKPT_INIT(ckpt_path, ckpt_host);
 
 
 
@@ -374,6 +346,10 @@ if (enable_fti) {
       hypre_printf("  -printallstats  : prints preconditioning and convergence stats\n");
       hypre_printf("                    including residual norms for each iteration\n");
       hypre_printf("\n"); 
+      hypre_printf("  -cp <n>      : checkpoint interval in time steps for problem 2 (0 disables)\n");
+      hypre_printf("  -ckpt <path> : AURORA checkpoint directory or VELOC config file\n");
+      hypre_printf("  -ckpt-host <h> : AURORA backend hostname (optional)\n");
+      hypre_printf("\n");
       exit(1);
    }
 
@@ -587,10 +563,42 @@ if (enable_fti) {
       HYPRE_Real eps;
       HYPRE_Real diagonal = 26.5;
       AddOrRestoreAIJ(ij_A, diagonal, 0);
+      /* Checkpoint/restart at time-step boundaries. The matrix is a function of
+       * diagonal (rebuilt on restore), so only the loop-carried state is saved. */
+      j = 0;
+      AMG_CKPT_PROTECT_REGION(1, &j, 1, sizeof(HYPRE_Int));
+      AMG_CKPT_PROTECT_REGION(2, &diagonal, 1, sizeof(HYPRE_Real));
+      AMG_CKPT_PROTECT_REGION(3, &cum_num_its, 1, sizeof(HYPRE_Int));
+      AMG_CKPT_PROTECT_REGION(4, &cum_nnz_AP, 1, sizeof(HYPRE_Real));
+      AMG_CKPT_PROTECT_REGION(5, (*(hypre_Vector *)(*(hypre_ParVector *)x).local_vector).data, (*(hypre_Vector *)(*(hypre_ParVector *)x).local_vector).size, sizeof(HYPRE_Real));
+      AMG_CKPT_PROTECT_REGION(6, (*(hypre_Vector *)(*(hypre_ParVector *)b).local_vector).data, (*(hypre_Vector *)(*(hypre_ParVector *)b).local_vector).size, sizeof(HYPRE_Real));
+
+      int recovered = 0;
+      int ckpt_version = AMG_CKPT_RESTART_TEST();
+      if (ckpt_version > 0) {
+         printf("Restoring time-step state from checkpoint version %d ... \n", ckpt_version);
+         fflush(stdout);
+         if (AMG_CKPT_RESTART(ckpt_version) != 0) {
+            printf("Failed to restore checkpoint version %d \n", ckpt_version);
+            fflush(stdout);
+            hypre_MPI_Abort(hypre_MPI_COMM_WORLD, 2);
+         }
+         AddOrRestoreAIJ(ij_A, diagonal, 0);
+         recovered = 1;
+      }
+
       //time_index = hypre_InitializeTiming("GMRES Solve");
       hypre_BeginTiming(time_index);
-      for (j=0; j < time_steps; j++)
+      for (; j < time_steps; j++)
       {
+         if (!recovered && (cp_stride > 0) && (j % cp_stride == 0)) {
+            if (AMG_CKPT_CHECKPOINT(j + 1) != 0) {
+               printf("Rank %d failed to checkpoint time step %d\n", myid, j);
+               fflush(stdout);
+               hypre_MPI_Abort(hypre_MPI_COMM_WORLD, 2);
+            }
+         }
+         recovered = 0;
  
          HYPRE_ParCSRGMRESCreate(hypre_MPI_COMM_WORLD, &pcg_solver);
          HYPRE_GMRESSetKDim(pcg_solver, k_dim);
@@ -742,9 +750,7 @@ if (enable_fti) {
 
   //fclose(fp);
 
-if (enable_fti) {
-    FTI_Finalize();
-}
+  AMG_CKPT_FINALIZE();
 
 #ifdef TIMER
    gettimeofday(&end, NULL) ;
