@@ -47,8 +47,7 @@ extern bool listener_csv_write(FILE *fp, const ael_message_t *pMsg);
  * @param len Output buffer length (32 bytes is sufficient)
  * @return buf
  */
-extern char *listener_format_time(uint64_t timestamp_ns, char *buf,
-                                  size_t len);
+extern char *listener_format_time(uint64_t timestamp_ns, char *buf, size_t len);
 
 /**
  * @brief Format a host byte order IPv4 address as dotted decimal

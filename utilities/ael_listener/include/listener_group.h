@@ -67,9 +67,8 @@ enum listener_group_e {
 typedef enum listener_group_e eLISTENER_group;
 
 /* Any error flag set */
-#define LISTENER_GROUP_ERR_MASK \
+#define LISTENER_GROUP_ERR_MASK                                                \
     (eLISTENER_GROUP_ERR_NULL | eLISTENER_GROUP_ERR_ALLOC)
-
 
 /**
  * @brief Allocate an empty group table
@@ -104,8 +103,7 @@ extern eLISTENER_group listener_groups_record(listener_groups_t *pGroups,
  *         connect/failure has been received for it yet
  */
 extern uint64_t listener_groups_get_size(const listener_groups_t *pGroups,
-                                         eAEL_origin origin,
-                                         uint64_t group_id);
+                                         eAEL_origin origin, uint64_t group_id);
 
 /**
  * @brief Number of distinct members that have reported a group event in the

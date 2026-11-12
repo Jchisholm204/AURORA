@@ -101,7 +101,11 @@ void listener_groups_destroy(listener_groups_t **ppGroups) {
 }
 
 size_t listener_groups_count(const listener_groups_t *pGroups) {
-    return pGroups ? pGroups->n_groups : 0;
+    if (!pGroups) {
+        log_error("NULL Parameter");
+        return 0;
+    }
+    return pGroups->n_groups;
 }
 
 /**
@@ -127,9 +131,8 @@ static struct listener_group *_lookup_group(const listener_groups_t *pGroups,
     return NULL;
 }
 
-static struct listener_tracker *
-_lookup_tracker(const struct listener_group *pGroup, eAEL_event event,
-                int64_t key) {
+static struct listener_tracker *_lookup_tracker(
+    const struct listener_group *pGroup, eAEL_event event, int64_t key) {
     assert(pGroup != NULL);
     assert(pGroup->n_trackers == 0 || pGroup->trackers != NULL);
 
@@ -290,9 +293,8 @@ eLISTENER_group listener_groups_record(listener_groups_t *pGroups,
             if (pGroup->size != 0) {
                 log_warn("Group %s:%" PRIu64 " size changed %" PRIu64
                          " -> %" PRIu64 " (rank %" PRIu64 ")",
-                         listener_origin_name(pGroup->origin),
-                         pGroup->group_id, pGroup->size, pMsg->payload.size,
-                         pMsg->rank);
+                         listener_origin_name(pGroup->origin), pGroup->group_id,
+                         pGroup->size, pMsg->payload.size, pMsg->rank);
             }
             pGroup->size = pMsg->payload.size;
         }
@@ -317,7 +319,7 @@ eLISTENER_group listener_groups_record(listener_groups_t *pGroups,
         return eLISTENER_GROUP_ERR_ALLOC;
     }
     assert(pTracker->members != NULL);
-    pTracker->members[pTracker->n_members++] = (struct listener_member) {
+    pTracker->members[pTracker->n_members++] = (struct listener_member){
         .rank = pMsg->rank,
         .ip = pMsg->from_ip,
         .port = pMsg->from_port,

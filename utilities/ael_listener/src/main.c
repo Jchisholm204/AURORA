@@ -39,7 +39,8 @@ static const struct {
     eLISTENER_level level;
 } g_levels[eLISTENER_LEVEL_COUNT] = {
     [eLISTENER_LEVEL_NONE] = {"none", eLISTENER_LEVEL_NONE},
-    [eLISTENER_LEVEL_GROUP_LIGHT] = {"group-light", eLISTENER_LEVEL_GROUP_LIGHT},
+    [eLISTENER_LEVEL_GROUP_LIGHT] = {"group-light",
+                                     eLISTENER_LEVEL_GROUP_LIGHT},
     [eLISTENER_LEVEL_GROUP_ALL] = {"group-all", eLISTENER_LEVEL_GROUP_ALL},
     [eLISTENER_LEVEL_LIGHT] = {"light", eLISTENER_LEVEL_LIGHT},
     [eLISTENER_LEVEL_ALL] = {"all", eLISTENER_LEVEL_ALL},
@@ -58,14 +59,16 @@ static void _signal_handler(int signal) {
 
 static void _print_usage(const char *prog) {
     fprintf(stderr, "Usage: %s [PORT [LEVEL [CSV_LOCATION]]]\n", prog);
-    fprintf(stderr, "  PORT          UDP port to receive AEL messages on "
-                    "(1..65535, default: %d)\n",
+    fprintf(stderr,
+            "  PORT          UDP port to receive AEL messages on "
+            "(1..65535, default: %d)\n",
             LISTENER_DEFAULT_PORT);
     fprintf(stderr, "  LEVEL         stdout logging level (default: %s):\n",
             g_levels[LISTENER_DEFAULT_LEVEL].name);
     fprintf(stderr, "                  none         internal listener events "
                     "only\n");
-    fprintf(stderr, "                  group-light  group connect/disconnect\n");
+    fprintf(stderr,
+            "                  group-light  group connect/disconnect\n");
     fprintf(stderr, "                  group-all    all group events\n");
     fprintf(stderr, "                  light        group-all + per-rank "
                     "connect/disconnect/failure\n");
@@ -133,9 +136,9 @@ static void _log_group(const listener_groups_t *pGroups,
         (void) snprintf(id, sizeof(id), " id=%" PRId64,
                         pMsg->payload.id_version);
     }
-    size_t done = listener_groups_get_ranks_done(
-        pGroups, pMsg->origin, pMsg->group_id, pMsg->event,
-        pMsg->payload.id_version);
+    size_t done =
+        listener_groups_get_ranks_done(pGroups, pMsg->origin, pMsg->group_id,
+                                       pMsg->event, pMsg->payload.id_version);
     uint64_t group_size =
         listener_groups_get_size(pGroups, pMsg->origin, pMsg->group_id);
     char size[24] = "?";
@@ -297,8 +300,8 @@ int main(int argc, char *argv[]) {
 
 cleanup:
     if (pAEL) {
-        log_info("AEL listener stopped: received=%" PRIu64
-                 " discarded=%" PRIu64 " csv_rows=%" PRIu64 " groups=%zu",
+        log_info("AEL listener stopped: received=%" PRIu64 " discarded=%" PRIu64
+                 " csv_rows=%" PRIu64 " groups=%zu",
                  stats.received, stats.discarded, stats.csv_rows,
                  listener_groups_count(pGroups));
         ael_destroy_instance(&pAEL);

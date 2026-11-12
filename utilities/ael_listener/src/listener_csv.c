@@ -105,12 +105,11 @@ bool listener_csv_write(FILE *fp, const ael_message_t *pMsg) {
     (void) listener_format_time(pMsg->timestamp_ns, ts, sizeof(ts));
     (void) listener_format_ip(pMsg->from_ip, ip, sizeof(ip));
 
-    int status = fprintf(fp, "%s,%s,%" PRIu64 ",%" PRIu64 ",%s,%" PRId64
-                             ",%" PRIu64 ",",
-                         listener_origin_name(pMsg->origin),
-                         listener_event_name(pMsg->event), pMsg->group_id,
-                         pMsg->rank, ts, pMsg->payload.id_version,
-                         pMsg->payload.size);
+    int status =
+        fprintf(fp, "%s,%s,%" PRIu64 ",%" PRIu64 ",%s,%" PRId64 ",%" PRIu64 ",",
+                listener_origin_name(pMsg->origin),
+                listener_event_name(pMsg->event), pMsg->group_id, pMsg->rank,
+                ts, pMsg->payload.id_version, pMsg->payload.size);
     if (status < 0 ||
         _csv_write_string(fp, pMsg->payload.name, AEL_NAME_LEN) == EOF ||
         fprintf(fp, ",%s,%u,", ip, (unsigned) pMsg->from_port) < 0 ||
