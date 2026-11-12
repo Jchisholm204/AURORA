@@ -4,7 +4,7 @@
  * @brief AURORA User Library Configuration
  * @version 0.1
  * @date Created: 2026-02-24
- * @modified Last Modified: 2026-02-24
+ * @modified Last Modified: 2026-11-11
  *
  * @copyright Copyright (c) 2026
  */
@@ -15,6 +15,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Aurora Connection Mode
 enum eAULConnMode {
@@ -55,5 +59,9 @@ typedef struct {
 
 typedef struct aul_external_logger_client_configuration aul_el_client_t;
 extern const aul_configuration_t AUL_CONFIG_DEFAULT;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

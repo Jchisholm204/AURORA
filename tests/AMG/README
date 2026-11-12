@@ -1,0 +1,92 @@
+#BHEADER**********************************************************************
+# Copyright (c) 2017,  Lawrence Livermore National Security, LLC.
+# Produced at the Lawrence Livermore National Laboratory.
+# Written by Ulrike Yang (yang11@llnl.gov) et al. CODE-LLNL-738-322.
+# This file is part of AMG.  See files COPYRIGHT and README for details.
+#
+# AMG is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License (as published by the Free
+# Software Foundation) version 2.1 dated February 1999.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the IMPLIED WARRANTY OF MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the terms and conditions of the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+#EHEADER**********************************************************************
+
+
+General description:
+
+AMG is a parallel algebraic multigrid solver for linear systems arising from
+problems on unstructured grids.  The driver provided with AMG builds linear 
+systems for various 3-dimensional problems.
+AMG is written in ISO-C.  It is an SPMD code which uses MPI and OpenMP 
+threading within MPI tasks. Parallelism is achieved by data decomposition. The 
+driver provided with AMG achieves this decomposition by simply subdividing 
+driver provided with AMG achieves this decomposition by simply subdividing 
+the grid into logical P x Q x R (in 3D) chunks of equal size.
+For more information, see the amg.readme file in the docs directory of the
+distribution.
+%==========================================================================
+%==========================================================================
+
+Building the Code
+
+AMG is built as part of the AURORA CMake test suite (requires MPI):
+
+    $ cmake -DBUILD_TESTING=ON ...
+    $ cmake --build <build-dir> --target amg amg_aurora amg_veloc
+
+Three executables are produced:
+
+  amg        - no checkpointing
+  amg_aurora - AURORA checkpoint backend
+  amg_veloc  - VELOC checkpoint backend (only built when VELOC is found)
+
+Usage:
+
+    mpirun -np <x> ./amg -problem 2 -n nx ny nz -P Q R [-cp <interval>]
+                          [-ckpt <path>] [-ckpt-host <host>]
+
+Problem 2 runs GMRES over multiple time steps and is the checkpoint/restart
+benchmark. Checkpointing is controlled by the checkpoint interval:
+
+  -cp <interval>   checkpoint frequency in time steps
+                   (0 disables checkpoints)
+
+A state checkpoint is written at the start of every interval-th time step.
+
+AURORA requires a checkpoint directory and optionally a backend hostname:
+
+    mpirun -np <x> ./amg_aurora -problem 2 -n nx ny nz -P Q R -cp <interval> \
+        -ckpt <checkpoint-dir> [-ckpt-host <hostname>]
+
+VELOC requires a VELOC configuration file:
+
+    mpirun -np <x> ./amg_veloc -problem 2 -n nx ny nz -P Q R -cp <interval> \
+        -ckpt <veloc-config.cfg>
+
+Restart is automatic: if a checkpoint is available, the application restores
+the latest version and continues from that time step. Delete the
+contents of the checkpoint directory before a fresh run.
+
+%==========================================================================
+%==========================================================================
+
+Figure of Merit (FOM)
+
+For problem 1, 
+there are 2 FOMs printed out at the end of each run:
+nnz_AP / setup_time
+nnz_AP * #iterations / solve time
+Both need to be considered.
+
+For problem 2,
+one FOM needs to be considered:
+nnz_AP * (#iterations + time_steps) / time
+
