@@ -47,14 +47,8 @@
 #include "waxpby.hpp"
 #include "HPC_Sparse_Matrix.hpp"
 
-#ifdef USING_MPI
 #include "exchange_externals.hpp"
-#include <mpi.h> // If this routine is compiled with -DUSING_MPI
-                 // then include mpi.h
-#include <mpi-ext.h>
-#include <fti.h>
-#define enable_fti 1
-#endif
+#include <mpi.h>
 
 #ifdef TIMER
 extern double acc_write_time;
@@ -63,7 +57,7 @@ extern double acc_write_time;
 int HPCCG(HPC_Sparse_Matrix * A,
 	  const double * const b, double * const x,
 	  const int max_iter, const double tolerance, int & niters, double & normr, double * times,
-	  int cp_iters, bool procfi, bool nodefi, int level);
+	  int cp_iters);
 
 // this function will compute the Conjugate Gradient...
 // A <=> Matrix

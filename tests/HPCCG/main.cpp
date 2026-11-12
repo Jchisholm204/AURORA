@@ -72,11 +72,8 @@ using std::endl;
 #include <cstring>
 #include <string>
 #include <cmath>
-#ifdef USING_MPI
-#include <mpi.h> // If this routine is compiled with -DUSING_MPI
-                 // then include mpi.h
+#include <mpi.h>
 #include "make_local_matrix.hpp" // Also include this function
-#endif
 #ifdef USING_OMP
 #include <omp.h>
 #endif
@@ -86,6 +83,7 @@ using std::endl;
 #include "HPC_sparsemv.hpp"
 #include "compute_residual.hpp"
 #include "HPCCG.hpp"
+#include "hpccg-checkpoint.h"
 #include "HPC_Sparse_Matrix.hpp"
 #include "dump_matlab_matrix.hpp"
 #include <signal.h>
@@ -108,9 +106,9 @@ int ione = 1;
 double times[7];
 double t6 = 0.0;
 int nx,ny,nz;
-int cp_iters = 1;
-int level = 0;
-bool procfi = false, nodefi = false;
+int cp_iters = 0;
+char *ckptPath = NULL;
+char *ckptHost = NULL;
 
 int niters = 0;
 double normr = 0.0;
@@ -129,9 +127,7 @@ int main(int argc, char *argv[])
    struct timeval end;
 #endif
 
-#ifdef USING_MPI
   MPI_Init(&argc, &argv);
-#endif 
 #ifdef TIMER
    gettimeofday(&start, NULL) ;
 #endif
@@ -145,10 +141,6 @@ int main(int argc, char *argv[])
    printf("TIMESTAMP START/RESTART: %lf (s) node %s daemon %d\n", ts, hostname, getpid());
    fflush(stdout);
 #endif
-
-if (enable_fti) {
-    FTI_Init(argv[1], MPI_COMM_WORLD);
-}
 
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -167,60 +159,55 @@ if (enable_fti) {
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-   //char hostname[65];
-   gethostname(hostname, 65);
+   gethostname(hostname, sizeof(hostname));
    printf("%s daemon %d rank %d\n", hostname, (int) getpid(), rank);
    sleep(5);
 
 
-  if(argc<3) {
+  if(argc<4) {
     if (rank==0)
       cerr << "Usage:" << endl
-	   << "Mode 1: " << argv[0] << " nx ny nz" << endl
-	   << "     where nx, ny and nz are the local sub-block dimensions, or" << endl
-	   << "Mode 2: " << argv[0] << " HPC_data_file " << endl
-	   << "     where HPC_data_file is a globally accessible file containing matrix data." << endl
-	   << "Both modes take a mandatory extra arguments related to checkpointing:" << endl
-           <<  "     checkpoint frequency = # iters (0 means no checkpoint) >" << endl
-           << "There are three optional arguments to select checkpointing mode (valid combinations permitted)" << endl
-           << "There are also two optional arguments for fault injection" << endl
-           << "     -procfi (enables random process FI) -nodefi (enables random node FI)" << endl;
+           << "Mode 1: " << argv[0] << " nx ny nz" << endl
+           << "     where nx, ny and nz are the local sub-block dimensions." << endl
+           << "Optional arguments related to checkpointing:" << endl
+           << "     -cp <interval>   checkpoint frequency in iterations (0 disables checkpoints)" << endl
+           << "     -ckpt <path>     AURORA checkpoint directory or VELOC config file" << endl
+           << "     -ckpt-host <host> AURORA backend hostname (optional)" << endl;
     exit(1);
   }
 
-  if (argc>=5)
-  {
-    nx = atoi(argv[2]);
-    ny = atoi(argv[3]);
-    nz = atoi(argv[4]);
-    generate_matrix(nx, ny, nz, &A, &x, &b, &xexact);
-    cp_iters = atoi(argv[5]);
-    i = 5;
-  }
-  else
-  {
-    assert(false && "File input is not supported at this version!\n");
-    read_HPC_row(argv[2], &A, &x, &b, &xexact);
-    cp_iters = atoi(argv[3]);
-    i = 3;
-  }
+  nx = atoi(argv[1]);
+  ny = atoi(argv[2]);
+  nz = atoi(argv[3]);
+  generate_matrix(nx, ny, nz, &A, &x, &b, &xexact);
 
   // Parse optional arguments
+  i = 4;
   while( i < argc ) {
-    if( !strcmp("-procfi", argv[i]) )
-      procfi = true;
-    else if( !strcmp("-nodefi", argv[i]) )
-      nodefi = true;
-    else if( !strcmp("-level", argv[i]) )
-      level = atoi(argv[i+1]);
-
-    i++;
+    if( !strcmp("-cp", argv[i]) ) {
+      if (i+1 >= argc) { if (rank==0) cerr << "Missing argument to -cp" << endl; exit(1); }
+      cp_iters = atoi(argv[i+1]);
+      i += 2;
+    }
+    else if( !strcmp("-ckpt", argv[i]) ) {
+      if (i+1 >= argc) { if (rank==0) cerr << "Missing argument to -ckpt" << endl; exit(1); }
+      ckptPath = argv[i+1];
+      i += 2;
+    }
+    else if( !strcmp("-ckpt-host", argv[i]) ) {
+      if (i+1 >= argc) { if (rank==0) cerr << "Missing argument to -ckpt-host" << endl; exit(1); }
+      ckptHost = argv[i+1];
+      i += 2;
+    }
+    else {
+      i++;
+    }
   }
+
+  HPCCG_CKPT_INIT(ckptPath, ckptHost);
 
   bool dump_matrix = false;
   if (dump_matrix && size<=4) dump_matlab_matrix(A, rank);
-
-#ifdef USING_MPI
 
   // Transform matrix indices from global to local values.
   // Define number of columns for the local matrix.
@@ -228,16 +215,13 @@ if (enable_fti) {
   t6 = mytimer(); make_local_matrix(A);  t6 = mytimer() - t6;
   times[6] = t6;
 
-#endif
-
   double t1 = mytimer();   // Initialize it (if needed)
 
   ierr = HPCCG( A, b, x, max_iter, tolerance, niters, normr, times,
-         cp_iters, procfi, nodefi, level );
+         cp_iters );
 
   if (ierr) cerr << "Error in call to CG: " << ierr << ".\n" << endl;
 
-#ifdef USING_MPI
       double t4 = times[4];
       double t4min = 0.0;
       double t4max = 0.0;
@@ -246,7 +230,6 @@ if (enable_fti) {
       MPI_Allreduce(&t4, &t4max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
       MPI_Allreduce(&t4, &t4avg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
       t4avg = t4avg/((double) size);
-#endif
 
 // initialize YAML doc
 
@@ -264,11 +247,7 @@ if (enable_fti) {
 
       doc.add("Parallelism","");
 
-#ifdef USING_MPI
           doc.get("Parallelism")->add("Number of MPI ranks",size);
-#else
-          doc.get("Parallelism")->add("MPI not enabled","");
-#endif
 
 #ifdef USING_OMP
           int nthreads = 1;
@@ -308,7 +287,6 @@ if (enable_fti) {
       doc.get("MFLOPS Summary")->add("WAXPBY  ",fnops_waxpby/times[2]/1.0E6);
       doc.get("MFLOPS Summary")->add("SPARSEMV",fnops_sparsemv/(times[3])/1.0E6);
 
-#ifdef USING_MPI
       doc.add("DDOT Timing Variations","");
       doc.get("DDOT Timing Variations")->add("Min DDOT MPI_Allreduce time",t4min);
       doc.get("DDOT Timing Variations")->add("Max DDOT MPI_Allreduce time",t4max);
@@ -323,7 +301,6 @@ if (enable_fti) {
       doc.get("SPARSEMV OVERHEADS")->add("SPARSEMV PARALLEL OVERHEAD Setup Pct", (times[6])/totalSparseMVTime*100.0);
       doc.get("SPARSEMV OVERHEADS")->add("SPARSEMV PARALLEL OVERHEAD Bdry Exch Time", (times[5]));
       doc.get("SPARSEMV OVERHEADS")->add("SPARSEMV PARALLEL OVERHEAD Bdry Exch Pct", (times[5])/totalSparseMVTime*100.0);
-#endif
 
       if (rank == 0) { // only PE 0 needs to compute and report timing results
         std::string yaml = doc.generateYAML();
@@ -343,9 +320,7 @@ if (enable_fti) {
   //        << residual << ".\n" << endl;
 
 
-if (enable_fti) {
-    FTI_Finalize();
-}
+HPCCG_CKPT_FINALIZE();
 
 #ifdef TIMER
    gettimeofday(&end, NULL) ;
@@ -359,9 +334,7 @@ if (enable_fti) {
    printf("WRITE CP TIME: %lf (s) node %s daemon %d \n", acc_write_time, hostname, getpid());
    fflush(stdout);
 
-#if USE_MPI
   MPI_Finalize() ;
-#endif
 
   return 0 ;
 

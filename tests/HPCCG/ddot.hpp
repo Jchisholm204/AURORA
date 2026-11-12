@@ -41,10 +41,8 @@
 //@HEADER
 #ifndef DDOT_H
 #define DDOT_H
-#ifdef USING_MPI
 #include <mpi.h>
 #include "mytimer.hpp"
-#endif
 
 
 

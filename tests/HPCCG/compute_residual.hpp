@@ -42,10 +42,7 @@
 
 #ifndef COMPUTE_RESIDUAL_H
 #define COMPUTE_RESIDUAL_H
-#ifdef USING_MPI
-#include <mpi.h> // If this routine is compiled with -DUSING_MPI
-                 // then include mpi.h
-#endif
+#include <mpi.h>
 
 int compute_residual(const int n, const double * const v1, 
 		     const double * const v2, double * const residual);

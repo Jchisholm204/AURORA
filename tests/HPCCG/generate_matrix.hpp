@@ -42,9 +42,7 @@
 
 #ifndef GENERATE_MATRIX_H
 #define GENERATE_MATRIX_H
-#ifdef USING_MPI
 #include <mpi.h>
-#endif
 #include "HPC_Sparse_Matrix.hpp"
 
 void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, double **b, double **xexact);

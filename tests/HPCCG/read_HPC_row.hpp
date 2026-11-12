@@ -41,9 +41,7 @@
 //@HEADER
 #ifndef READ_HPC_ROW_H
 #define READ_HPC_ROW_H
-#ifdef USING_MPI
 #include <mpi.h>
-#endif
 #include "HPC_Sparse_Matrix.hpp"
 
 void read_HPC_row(char *data_file, HPC_Sparse_Matrix **A,

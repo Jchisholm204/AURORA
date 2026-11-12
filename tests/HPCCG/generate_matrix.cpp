@@ -67,14 +67,9 @@ void generate_matrix(int nx, int ny, int nz, HPC_Sparse_Matrix **A, double **x, 
   int debug = 0;
 #endif
 
-#ifdef USING_MPI
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#else
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-#endif
 
   *A = new HPC_Sparse_Matrix; // Allocate matrix struct and fill it
   (*A)->title = 0;

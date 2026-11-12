@@ -62,20 +62,17 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
-#include <csignal>
 #include <cstring>
 #include <cstdlib>
-#include <unistd.h>
 #include <mpi.h>
-#include <mpi-ext.h>
 using std::cout;
 using std::cerr;
 using std::endl;
 #include <cmath>
 #include "mytimer.hpp"
 #include "HPCCG.hpp"
+#include "hpccg-checkpoint.h"
 #include <sys/time.h>
-#include "../libcheckpoint/checkpoint.h"
 
 #define TICK()  t0 = mytimer() // Use TICK and TOCK to time a code section
 #define TOCK(t) t += mytimer() - t0
@@ -83,9 +80,7 @@ using std::endl;
 /* XXX: Definition of variables: promoted to globals to persist longjmp  */
 double t_begin;
 double t0, t1, t2, t3, t4;
-#ifdef USING_MPI
 double t5;
-#endif
 int nrow;
 int ncol;
 
@@ -95,10 +90,6 @@ double * Ap;
 
 double rtrans;
 double oldrtrans;
-
-size_t CP_SIZE;
-char *cp_data;
-int fi_iter, fi_rank;
 
 int k;
 int print_freq;
@@ -111,16 +102,14 @@ int HPCCG(HPC_Sparse_Matrix * A,
     const double * const b, double * const x,
     const int max_iter, const double tolerance, int &niters, double & normr,
     double * times,
-    int cp_iters, bool procfi, bool nodefi, int level)
+    int cp_iters)
 
 {
   // Initialize data when new or restarted
     t_begin = mytimer();  // Start timing right away
 
     t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0;
-#ifdef USING_MPI
     t5 = 0.0;
-#endif
     nrow = A->local_nrow;
     ncol = A->local_ncol;
 
@@ -132,170 +121,64 @@ int HPCCG(HPC_Sparse_Matrix * A,
     rtrans = 0.0;
     oldrtrans = 0.0;
 
-    // compute size saving, p, normr, rtrans, niters, iter
-    CP_SIZE = sizeof(double) * ( 1 * nrow + ncol + 2 ) + sizeof(int) * 2;
-    // buffer to save checkpoint data
-    cp_data = new char[CP_SIZE];
-
-#ifdef USING_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#else
-    rank = 0; // Serial case (not using MPI)
-#endif
     k = 1;
     //niters = 0; // add by az
     print_freq = max_iter/20;
     if (print_freq>50) print_freq=50;
     if (print_freq<1)  print_freq=1;
 
-  // Initialize data ONLY when new 
-    if( procfi || nodefi ) {
-      int nranks;
-      MPI_Comm_size( MPI_COMM_WORLD, &nranks );
-      std::srand(1337);
-      fi_iter = std::rand() % max_iter;
-      fi_rank = std::rand() % nranks;
-    }
-
     // p is of length ncols, copy x to p for sparse MV operation
     TICK(); waxpby(nrow, 1.0, x, 0.0, x, p); TOCK(t2);
-#ifdef USING_MPI
     TICK(); exchange_externals(A,p); TOCK(t5);
-#endif
     TICK(); HPC_sparsemv(A, p, Ap); TOCK(t3);
     TICK(); waxpby(nrow, 1.0, b, -1.0, Ap, r); TOCK(t2);
     TICK(); ddot(nrow, r, r, &rtrans, t4); TOCK(t1);
     normr = sqrt(rtrans);
 
     if (rank==0) cout << "Initial Residual = "<< normr << endl;
-  
-  int recovered = 0;
 
-// FTI CPR code
-    if (enable_fti) {
-	recovered = 0;
-	printf("Add FTI protection to data objects ... \n");
-	FTI_Protect(0,r,nrow,FTI_DBLE);
-	FTI_Protect(1,p,ncol,FTI_DBLE);
-	FTI_Protect(2,&normr,1,FTI_DBLE);
-	FTI_Protect(3,&rtrans,1,FTI_DBLE);
-	FTI_Protect(4,&niters,1,FTI_INTG);
-	FTI_Protect(5,&k,1,FTI_INTG);
-	printf("Done: Add FTI protection to data objects ... \n");
+  // Register the CG state for checkpoint/restart
+  HPCCG_CKPT_PROTECT_REGION(0, x, nrow, sizeof(double));
+  HPCCG_CKPT_PROTECT_REGION(1, r, nrow, sizeof(double));
+  HPCCG_CKPT_PROTECT_REGION(2, p, ncol, sizeof(double));
+  HPCCG_CKPT_PROTECT_REGION(3, &normr, 1, sizeof(double));
+  HPCCG_CKPT_PROTECT_REGION(4, &rtrans, 1, sizeof(double));
+  HPCCG_CKPT_PROTECT_REGION(5, &niters, 1, sizeof(int));
+  HPCCG_CKPT_PROTECT_REGION(6, &k, 1, sizeof(int));
 
+  // Restore from a previous checkpoint if one is available
+  int ckpt_version = HPCCG_CKPT_RESTART_TEST();
+  if (ckpt_version > 0) {
+    if (rank == 0) cout << "Restarting from checkpoint version " << ckpt_version << endl;
+    if (HPCCG_CKPT_RESTART(ckpt_version) != 0) {
+      cerr << "Rank " << rank << " failed to restart from checkpoint version "
+           << ckpt_version << endl;
+      MPI_Abort(MPI_COMM_WORLD, 2);
     }
-// FTI CPR code
-
-if (enable_fti) {
-		if ( FTI_Status() != 0){ 
-#ifdef TIMER
-   double elapsed_time;
-   struct timeval start;
-   struct timeval end;
-   gettimeofday(&start, NULL) ;
-#endif
-	    		printf("Do FTI Recover to data objects from failure ... \n");
-	    		FTI_Recover();
-	    		printf("Done: FTI Recover data objects from failure ... \n");
-#ifdef TIMER
-   gettimeofday(&end, NULL) ;
-   elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
-   printf("READ CP TIME: %lf (s) Rank %d \n", elapsed_time, rank);
-   fflush(stdout);
-#endif
-	    		recovered = 1;
-        		procfi = false;
-        		nodefi = false;
-		}
-}
+  }
 
   for(; k<max_iter && normr > tolerance; k++ )
   {
-	
+
         /* Checkpoint the state of the application */
-	// do FTI CPR
-	if (enable_fti){
+        if (cp_iters > 0 && (k % cp_iters) == 0) {
 #ifdef TIMER
    double elapsed_time;
    struct timeval start;
    struct timeval end;
    gettimeofday(&start, NULL) ;
 #endif
-	    if ( (!recovered) && cp_iters > 0 && (k%cp_iters +1) == cp_iters ){ 
-		FTI_Checkpoint(k, level);
-	    }
-	    recovered = 0;
+            if (HPCCG_CKPT_CHECKPOINT(k) != 0) {
+                cerr << "Rank " << rank << " failed to checkpoint iteration " << k << endl;
+                MPI_Abort(MPI_COMM_WORLD, 2);
+            }
 #ifdef TIMER
    gettimeofday(&end, NULL) ;
    elapsed_time = (double)(end.tv_sec - start.tv_sec) + ((double)(end.tv_usec - start.tv_usec))/1000000 ;
    acc_write_time+=elapsed_time;
-
 #endif
-	}
-	// do FTI CPR
-/*
-    if( cp_iters > 0 && (k%cp_iters) == 0 ) {
-
-      // Pack application data to buffer
-      char *cp_data_ptr = cp_data;
-      std::memcpy(cp_data_ptr, r, sizeof(double) * nrow);
-      cp_data_ptr += sizeof(double) * nrow;
-      std::memcpy(cp_data_ptr, p, sizeof(double) * ncol);
-      cp_data_ptr += sizeof(double) * ncol;
-      std::memcpy(cp_data_ptr, &normr, sizeof(double) );
-      cp_data_ptr += sizeof(double);
-      std::memcpy(cp_data_ptr, &rtrans, sizeof(double) );
-      cp_data_ptr += sizeof(double);
-      std::memcpy(cp_data_ptr, &niters, sizeof(int) );
-      cp_data_ptr += sizeof(int);
-      std::memcpy(cp_data_ptr, &k, sizeof(int) );
-
-      write_cp( cp2f, cp2m, cp2a, rank, k, cp_data, CP_SIZE, MPI_COMM_WORLD );
-
-    }
-*/
-    if( procfi && k == 50 ) {
-#ifdef TIMER
-   	      printf("WRITE CP TIME: %lf (s) Rank %d \n", acc_write_time, rank);
-		fflush(stdout);
-#endif
-	if (fi_rank == rank) {
-#ifdef TIMER
-           struct timeval tv;
-           gettimeofday( &tv, NULL );
-           double ts = tv.tv_sec + tv.tv_usec / 1000000.0;
-     	   char hostname[64];
-   	   gethostname(hostname, 64);
-   	   printf("TIMESTAMP KILL: %lf (s) node %s daemon %d\n", ts, hostname, getpid());
-           fflush(stdout);
-#endif
-      	   printf("KILL rank %d\n", rank);
-      	   kill(getpid(), SIGTERM);
-	}
-    }
-
-    if( nodefi && k == 50 ) {
-#ifdef TIMER
-   	      printf("WRITE CP TIME: %lf (s) Rank %d \n", acc_write_time,rank);
-		fflush(stdout);
-#endif
-	if (fi_rank == rank) {
-#ifdef TIMER
-           char hostname[64];
-           gethostname(hostname, 64);
-           struct timeval tv;
-           gettimeofday( &tv, NULL );
-           double ts = tv.tv_sec + tv.tv_usec / 1000000.0;
-     	   //char hostname[64];
-   	   gethostname(hostname, 64);
-   	   printf("TIMESTAMP KILL: %lf (s) node %s daemon %d\n", ts, hostname, getpid());
-           fflush(stdout);
-#endif
-      	   gethostname(hostname, 64);
-      	   printf("KILL %s daemon %d rank %d\n", hostname, (int) getppid(),rank);
-           kill(getppid(), SIGTERM );
-	}
-    }
+        }
 
       if (k == 1)
 	{
@@ -313,9 +196,7 @@ if (enable_fti) {
       if (rank==0)
 	cout << "Iteration = "<< k << "   Residual = "<< normr << endl;
 
-#ifdef USING_MPI
       TICK(); exchange_externals(A,p); TOCK(t5);
-#endif
       TICK(); HPC_sparsemv(A, p, Ap); TOCK(t3); // 2*nnz ops
       double alpha = 0.0;
       TICK(); ddot(nrow, p, Ap, &alpha, t4); TOCK(t1); // 2*nrow ops
@@ -330,13 +211,10 @@ if (enable_fti) {
   times[2] = t2; // waxpby time
   times[3] = t3; // sparsemv time
   times[4] = t4; // AllReduce time
-#ifdef USING_MPI
   times[5] = t5; // exchange boundary time
-#endif
   delete [] p;
   delete [] Ap;
   delete [] r;
-  delete [] cp_data;
   times[0] = mytimer() - t_begin;  // Total time. All done...
   return(0);
 }

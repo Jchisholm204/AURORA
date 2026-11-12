@@ -40,7 +40,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef USING_MPI  // Compile this routine only if running in parallel
 #include <iostream>
 using std::cerr;
 using std::endl;
@@ -130,4 +129,3 @@ void exchange_externals(HPC_Sparse_Matrix * A, const double *x)
 
   return;
 }
-#endif // USING_MPI

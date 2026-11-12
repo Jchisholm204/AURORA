@@ -125,3 +125,42 @@ Changing the sparse matrix structure:
 HPCCG supports two sparse matrix data structures: a 27-pt 3D grid based
 structure and a 7-pt 3D grid based structure.  To switch between the two
 change the bool value for use_7pt_stencil in generate_matrix.cpp.
+
+=====================================================
+BUILD and RUN HPCCG with Checkpoint/Restart support
+=====================================================
+
+HPCCG is built as part of the AURORA CMake test suite:
+
+    $ cmake -DBUILD_TESTING=ON ...
+    $ cmake --build <build-dir> --target hpccg hpccg_aurora hpccg_veloc
+
+Three executables are produced:
+
+  hpccg        - no checkpointing
+  hpccg_aurora - AURORA checkpoint backend
+  hpccg_veloc  - VELOC checkpoint backend (only built when VELOC is found)
+
+Usage:
+
+    mpirun -np <x> ./hpccg nx ny nz [-cp <interval>] [-ckpt <path>] [-ckpt-host <host>]
+
+where nx, ny and nz are the local sub-block dimensions. Checkpointing is
+controlled by the checkpoint interval:
+
+  -cp <interval>   checkpoint frequency in iterations (0 disables checkpoints)
+
+A state checkpoint is written after each interval iterations. An interval of
+zero disables checkpointing.
+
+AURORA requires a checkpoint directory and optionally a backend hostname:
+
+    mpirun -np <x> ./hpccg_aurora nx ny nz -cp <interval> \
+        -ckpt <checkpoint-dir> [-ckpt-host <hostname>]
+
+VELOC requires a VELOC configuration file:
+
+    mpirun -np <x> ./hpccg_veloc nx ny nz -cp <interval> -ckpt <veloc-config.cfg>
+
+Restart is automatic: if a checkpoint is available, the application restores
+the latest version and continues from that iteration.

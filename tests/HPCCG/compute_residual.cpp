@@ -65,17 +65,13 @@ int compute_residual(const int n, const double * const v1,
     double diff = fabs(v1[i] - v2[i]);
     if (diff > local_residual) local_residual = diff;
   }
-#ifdef USING_MPI
   // Use MPI's reduce function to collect all partial sums
 
   double global_residual = 0;
-  
+
   MPI_Allreduce(&local_residual, &global_residual, 1, MPI_DOUBLE, MPI_MAX,
                 MPI_COMM_WORLD);
   *residual = global_residual;
-#else
-  *residual = local_residual;
-#endif
 
   return(0);
 }

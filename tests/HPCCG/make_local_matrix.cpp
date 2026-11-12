@@ -40,7 +40,6 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef USING_MPI  // Compile this routine only if running in parallel
 #include <iostream>
 using std::cout;
 using std::cerr;
@@ -609,4 +608,3 @@ void make_local_matrix(HPC_Sparse_Matrix * A)
 
   return;
 }
-#endif // USING_MPI

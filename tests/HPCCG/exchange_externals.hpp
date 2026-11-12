@@ -42,9 +42,7 @@
 
 #ifndef EXCHANGE_EXTERNALS_H
 #define EXCHANGE_EXTERNALS_H
-#ifdef USING_MPI
 #include <mpi.h>
-#endif
 #include "HPC_Sparse_Matrix.hpp"
 void exchange_externals(HPC_Sparse_Matrix *A, const double *x);
 #endif
