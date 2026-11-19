@@ -4,7 +4,7 @@
 #         ael_listener
 #  @version 0.1
 #  @date Created: 2026-11-13
-#  @modified Last Modified: 2026-11-13
+#  @modified Last Modified: 2026-11-19
 #
 #  @copyright Copyright (c) 2026
 #
@@ -253,7 +253,8 @@ def test_help():
 
 @pytest.mark.parametrize("level", LEVELS)
 def test_matches_c_listener(level, tmp_path):
-    """Same datagrams into both listeners: identical CSV and log output."""
+    """Same datagrams into both listeners: identical CSV, and identical
+    group, rank, group-warning, and shutdown log lines."""
     c_listener = _c_listener()
     if c_listener is None:
         pytest.skip("C ael_listener not built (set AEL_C_LISTENER)")

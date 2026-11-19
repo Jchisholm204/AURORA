@@ -15,9 +15,11 @@ python3 ael_listener.py [PORT [LEVEL [CSV_LOCATION]]]
   `light`, `all`. Does not affect the CSV.
 - `CSV_LOCATION` CSV that every received message is appended to (optional)
 
-Arguments, levels, log lines, and the CSV are the same as the C listener: given
-the same datagrams, both write byte identical CSV files. Stop it with Ctrl+C or
-SIGTERM.
+Arguments, levels, and the CSV are the same as the C listener: given the same
+datagrams, both write byte identical CSV files and the same group, rank,
+group-warning, and shutdown log lines. Discarded datagrams are reported
+differently (the C side logs them from `ael_recv_message`). Stop it with
+Ctrl+C or SIGTERM.
 
 ## Library
 
