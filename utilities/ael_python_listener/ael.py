@@ -4,7 +4,7 @@
 #  @brief AURORA External Logger (AEL) packet library
 #  @version 0.2
 #  @date Created: 2026-11-03
-#  @modified Last Modified: 2026-11-13
+#  @modified Last Modified: 2026-11-19
 #
 #  @copyright Copyright (c) 2026
 #
@@ -26,7 +26,8 @@ from datetime import datetime, timezone
 #
 #   [0:8]    rank          uint64
 #   [8:16]   group_id      uint64
-#   [16:24]  timestamp_ns  uint64
+#   [16:24]  timestamp     uint64 (ns since the Unix epoch; timestamp_ns in
+#                                  ael_message_t)
 #   [24:26]  event         uint16 (eAEL_event)
 #   [26:28]  origin        uint16 (eAEL_origin)
 #   [28:32]  crc           uint32 (CRC-32 of every byte except this field)
