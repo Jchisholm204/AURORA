@@ -125,6 +125,8 @@ static test_params_t *parse_multi_client_args(int argc, char **argv) {
         goto fail;
     }
 
+    return tp;
+
 fail:
     print_usage(argv[0]);
     free(tp);
