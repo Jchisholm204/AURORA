@@ -1,0 +1,58 @@
+name: Python AEL listener
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "utilities/ael_python_listener/**"
+      - "utilities/ael_listener/**"
+      - "common/include/ael/**"
+      - "common/src/ael/**"
+      - ".github/workflows/ael-python-listener.yml"
+  pull_request:
+    paths:
+      - "utilities/ael_python_listener/**"
+      - "utilities/ael_listener/**"
+      - "common/include/ael/**"
+      - "common/src/ael/**"
+      - ".github/workflows/ael-python-listener.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported (README) and newest
+        python: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # common/mdns is needed to build the AROC library
+          submodules: true
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake libucx-dev
+
+      # The C listener is built so the parity tests run instead of skipping.
+      # Ubuntu's ucx CMake package points at a missing include directory, so
+      # the repo's own FindUCX fallback is used instead.
+      - name: Build C ael_listener
+        run: |
+          cmake -S . -B build -DCMAKE_DISABLE_FIND_PACKAGE_ucx=ON
+          cmake --build build --target ael_listener -j "$(nproc)"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install pytest
+        run: python -m pip install pytest
+
+      - name: Run tests
+        working-directory: utilities/ael_python_listener
+        env:
+          AEL_C_LISTENER: ${{ github.workspace }}/build/utilities/ael_listener/ael_listener
+        run: python -m pytest tests -v -rs
