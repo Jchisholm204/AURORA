@@ -8,7 +8,7 @@
 
 # local AURORA_CLUSTER_NAME="odp0k"
 local AURORA_CLUSTER_NAME="rome"
-local AURORA_LOG_DIR="results/0.0.3"
+local AURORA_LOG_DIR="results/0.0.4"
 
 # -- END User Environment Variables -- 
 
