@@ -92,7 +92,7 @@ afv_file_hndl *afv_file_open_r(afv_hndl *pAFV,
     pHndl->mode_w = false;
     snprintf(pHndl->fname, AFV_FNAME_LEN, "%s/%.*s-%lu-%lu-%lu.afvdat",
              pAFV->persistent_path, AFV_CKPT_NAME_LEN, pMetadata->chkpt_name,
-             pMetadata->version, pMetadata->rank, pAFV->group_id);
+             pMetadata->version, pAFV->rank, pAFV->group_id);
 
     log_trace("Opening: %s", pHndl->fname);
 
