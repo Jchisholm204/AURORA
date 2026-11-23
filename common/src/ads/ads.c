@@ -9,7 +9,6 @@
  * @copyright Copyright (c) 2026
  */
 
-#include <pmix_common.h>
 #define MDNS_BUF_SIZE 2048
 #define ADS_CONN_PORT 9063
 #define ADS_LISTEN_N 64
