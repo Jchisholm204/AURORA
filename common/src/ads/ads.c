@@ -9,6 +9,7 @@
  * @copyright Copyright (c) 2026
  */
 
+#include <pmix_common.h>
 #define MDNS_BUF_SIZE 2048
 #define ADS_CONN_PORT 9063
 #define ADS_LISTEN_N 64
@@ -78,14 +79,18 @@ extern ads_hndl *ads_init(void) {
     }
 
     { // PMIx BEGIN 
-        pmix_status_t pmix_status = PMIX_SUCCESS;
         size_t ninfo = 3;
-        pmix_persistence_t persistence = PMIX_PERSIST_PROC;
         bool overwrite = true;
-        pmix_info_t info[ninfo];
+
+        pmix_status_t pmix_status = PMIX_SUCCESS;
+        pmix_persistence_t persistence = PMIX_PERSIST_PROC;
         pmix_byte_object_t bo;
+        pmix_info_t info[ninfo];
+        pHndl->pmix_proc = (pmix_proc_t) PMIX_PROC_STATIC_INIT;
         if (!PMIx_Initialized()) pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
+        if (pmix_status != PMIX_SUCCESS) {
+            log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
+        }
 
 
         log_info("Server proc = %s:%d", pHndl->pmix_proc.nspace, pHndl->pmix_proc.rank);
@@ -94,13 +99,13 @@ extern ads_hndl *ads_init(void) {
         bo.size = sizeof(struct sockaddr_in);
 
         pmix_status = PMIx_Info_load(&info[0], "server_sock_addr", &bo, PMIX_BYTE_OBJECT);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed with %s", PMIx_Error_string(pmix_status));
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to load key with %s", PMIx_Error_string(pmix_status));
 
         pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE, &persistence, PMIX_PERSIST);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed with %s", PMIx_Error_string(pmix_status));
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed persistence with %s", PMIx_Error_string(pmix_status));
 
         pmix_status = PMIx_Info_load(&info[2], "prte.pub.replace", &overwrite, PMIX_BOOL);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed with %s", PMIx_Error_string(pmix_status));
+        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to load overwrite with %s", PMIx_Error_string(pmix_status));
 
         pmix_status = PMIx_Publish(info, ninfo);
         if (pmix_status != PMIX_SUCCESS) log_error("PMIx Publish failed with %s", PMIx_Error_string(pmix_status));
@@ -140,11 +145,10 @@ extern int ads_accept_any(ads_hndl *pHndl) {
     }
 
     fd_set readfds;
-    int max_fd = pHndl->tcp_sock;
     while (1) {
         FD_ZERO(&readfds);
         FD_SET(pHndl->tcp_sock, &readfds);
-        select(max_fd + 1, &readfds, NULL, NULL, NULL);
+        select(pHndl->tcp_sock + 1, &readfds, NULL, NULL, NULL);
         if (FD_ISSET(pHndl->tcp_sock, &readfds)) {
             return accept(pHndl->tcp_sock, NULL, NULL);
         }
@@ -258,11 +262,12 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
     size_t ndata = 1;
     size_t ninfo = 1;
 
-    pmix_info_t info[ninfo];
-    pmix_pdata_t pdata = PMIX_LOOKUP_STATIC_INIT;
-    pmix_data_range_t range = PMIX_RANGE_SESSION;
     pmix_status_t pmix_status = PMIX_SUCCESS;
+    pmix_pdata_t pdata = PMIX_LOOKUP_STATIC_INIT;
     pmix_proc_t client_proc = PMIX_PROC_STATIC_INIT;
+    pmix_data_range_t range = PMIX_RANGE_SESSION;
+
+    pmix_info_t info[ninfo];
 
     if (!PMIx_Initialized()) pmix_status = PMIx_Init(&client_proc, NULL, 0);
     log_info("Client proc = %s:%d", client_proc.nspace, client_proc.rank);
