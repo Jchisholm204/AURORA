@@ -93,6 +93,7 @@ afv_checkpoint_t *afv_checkpoint_create(afv_hndl *pAFV, int64_t version,
     eAFV_verif metadata_status = eAFV_VERIF_OK;
     metadata_status |= afv_metadata_set_version(pMetadata, version);
     metadata_status |= afv_metadata_set_name(pMetadata, name);
+    pMetadata->rank = pAFV->rank;
     if (metadata_status != eAFV_VERIF_OK) {
         log_error("Metadata Verification Failure 0x%x", metadata_status);
         afv_metadata_destroy(&pMetadata);
