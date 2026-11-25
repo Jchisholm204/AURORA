@@ -21,12 +21,12 @@
 #include <malloc.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <pmix.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <pmix.h>
 
 struct aurora_discovery_service_hndl {
     int tcp_sock;
@@ -34,7 +34,7 @@ struct aurora_discovery_service_hndl {
 };
 
 extern ads_hndl *ads_init(void) {
-    
+
     ads_hndl *pHndl = malloc(sizeof(ads_hndl));
     if (!pHndl) {
         log_error("Failed to allocated ADS Handle");
@@ -69,7 +69,8 @@ extern ads_hndl *ads_init(void) {
 
     struct sockaddr_in pmix_addr;
     socklen_t pmix_addr_len = sizeof(pmix_addr);
-    ec = getsockname(pHndl->tcp_sock, (struct sockaddr *)&pmix_addr, &pmix_addr_len);
+    ec = getsockname(pHndl->tcp_sock, (struct sockaddr *) &pmix_addr,
+                     &pmix_addr_len);
     if (ec != 0) {
         log_error("getsockname failed with e=%d", ec);
         close(pHndl->tcp_sock);
@@ -77,7 +78,7 @@ extern ads_hndl *ads_init(void) {
         return NULL;
     }
 
-    { // PMIx BEGIN 
+    { // PMIx BEGIN
         size_t ninfo = 2;
 
         pmix_status_t pmix_status = PMIX_SUCCESS;
@@ -85,28 +86,37 @@ extern ads_hndl *ads_init(void) {
         pmix_byte_object_t pmix_bo;
         pmix_info_t info[ninfo];
         pHndl->pmix_proc = (pmix_proc_t) PMIX_PROC_STATIC_INIT;
-        if (!PMIx_Initialized()) pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
+        if (!PMIx_Initialized())
+            pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
         if (pmix_status != PMIX_SUCCESS) {
-            log_error("PMIx failed to intialize with error %s", PMIx_Error_string(pmix_status));
+            log_error("PMIx failed to intialize with error %s",
+                      PMIx_Error_string(pmix_status));
         }
 
+        log_info("Server proc = %s:%d", pHndl->pmix_proc.nspace,
+                 pHndl->pmix_proc.rank);
 
-        log_info("Server proc = %s:%d", pHndl->pmix_proc.nspace, pHndl->pmix_proc.rank);
-
-        pmix_bo.bytes = (char *)&pmix_addr;
+        pmix_bo.bytes = (char *) &pmix_addr;
         pmix_bo.size = sizeof(struct sockaddr_in);
 
-        pmix_status = PMIx_Info_load(&info[0], "server_sock_addr", &pmix_bo, PMIX_BYTE_OBJECT);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to load key with %s", PMIx_Error_string(pmix_status));
+        pmix_status = PMIx_Info_load(&info[0], "server_sock_addr", &pmix_bo,
+                                     PMIX_BYTE_OBJECT);
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("PMIx failed to load key with %s",
+                      PMIx_Error_string(pmix_status));
 
-        pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE, &pmix_persistence, PMIX_PERSIST);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed persistence with %s", PMIx_Error_string(pmix_status));
+        pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE,
+                                     &pmix_persistence, PMIX_PERSIST);
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("PMIx failed persistence with %s",
+                      PMIx_Error_string(pmix_status));
 
         pmix_status = PMIx_Publish(info, ninfo);
-        if (pmix_status != PMIX_SUCCESS) log_error("PMIx Publish failed with %s", PMIx_Error_string(pmix_status));
-
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("PMIx Publish failed with %s",
+                      PMIx_Error_string(pmix_status));
     }
-     
+
     return pHndl;
 }
 
@@ -120,14 +130,15 @@ extern int ads_finalize(ads_hndl **ppHndl) {
         pmix_status_t pmix_status = PMIX_SUCCESS;
         char *pmix_keys[] = {"server_sock_addr"};
         pmix_status = PMIx_Unpublish(pmix_keys, NULL, 0);
-        if (pmix_status != PMIX_SUCCESS) log_error("Failed to unpublish addr %s", PMIx_Error_string(pmix_status));
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("Failed to unpublish addr %s",
+                      PMIx_Error_string(pmix_status));
         pmix_status = PMIx_Finalize(NULL, 0);
-        if (pmix_status != PMIX_SUCCESS) log_error("Failed to finalize the PMIx Client");
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("Failed to finalize the PMIx Client");
     }
 
-     
     close((*ppHndl)->tcp_sock);
-    
 
     free((*ppHndl));
     *ppHndl = NULL;
@@ -148,7 +159,6 @@ extern int ads_accept_any(ads_hndl *pHndl) {
             return accept(pHndl->tcp_sock, NULL, NULL);
         }
     }
-    
 
     return 0;
 }
@@ -264,22 +274,29 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
 
     pmix_info_t info[ninfo];
 
-    if (!PMIx_Initialized()) pmix_status = PMIx_Init(&pmix_cproc, NULL, 0);
+    if (!PMIx_Initialized())
+        pmix_status = PMIx_Init(&pmix_cproc, NULL, 0);
     log_debug("Client proc = %s:%d", pmix_cproc.nspace, pmix_cproc.rank);
-    
-    if (pmix_status != PMIX_SUCCESS) log_error("PMIx failed to initialize with error %s", PMIx_Error_string(pmix_status));
+
+    if (pmix_status != PMIX_SUCCESS)
+        log_error("PMIx failed to initialize with error %s",
+                  PMIx_Error_string(pmix_status));
 
     PMIx_Load_key(pmix_pdata.key, "server_sock_addr");
     PMIx_Info_load(&info[0], PMIX_RANGE, &pmix_range, PMIX_DATA_RANGE);
     pmix_status = PMIx_Lookup(&pmix_pdata, ndata, info, ninfo);
 
-    if (pmix_status != PMIX_SUCCESS) log_error("PMIx Lookup failed with %s.", PMIx_Error_string(pmix_status));
+    if (pmix_status != PMIX_SUCCESS)
+        log_error("PMIx Lookup failed with %s.",
+                  PMIx_Error_string(pmix_status));
 
-    log_debug("Got proc %d/%s with key %s and val %s", pmix_pdata.proc.rank, pmix_pdata.proc.nspace, pmix_pdata.key, PMIx_Value_string(&pmix_pdata.value));
+    log_debug("Got proc %d/%s with key %s and val %s", pmix_pdata.proc.rank,
+              pmix_pdata.proc.nspace, pmix_pdata.key,
+              PMIx_Value_string(&pmix_pdata.value));
 
     ads_conf_t conf;
     conf = *pConf;
-    
+
     struct timeval tv = {
         .tv_sec = conf.timeout_ms / 1000,
         .tv_usec = conf.timeout_ms % 1000,
@@ -295,11 +312,20 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
         .sin_family = AF_INET,
         .sin_port = htons(ADS_CONN_PORT),
     };
-    memcpy(&addr, pmix_pdata.value.data.bo.bytes, sizeof(struct sockaddr_in));
+
+    if (pConf->opt_server_ip == NULL) {
+        log_info("Using PMIx provided IP");
+        memcpy(&addr, pmix_pdata.value.data.bo.bytes,
+               sizeof(struct sockaddr_in));
+    } else {
+        log_info("Using config provided IP");
+        inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
+    }
+
     if (connect(sd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         log_warn("Failed to connect to server socket");
         return NULL;
     }
-    
+
     return ads_exchange(sd, pTxData);
 }
