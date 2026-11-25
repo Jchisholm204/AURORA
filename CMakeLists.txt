@@ -49,6 +49,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/FindVeLOC.cmake)
 set(COMMON_LIBRARIES
     m
     pthread
+    pmix # added by Ryan
 )
 
 # Add All Subprojects

@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
     cfg.rank = rank;
     cfg.opt_group_id = rank;
     cfg.opt_group_size = size;
+    // cfg.opt_hostname = "";
     int ini_s = AUL_Init(&cfg);
 
     if (rank == 0) {

@@ -16,12 +16,12 @@
 #include "ads/ads.h"
 
 #include "log.h"
-#include "mdns.h"
 
 #include <arpa/inet.h>
 #include <malloc.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <pmix.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -29,42 +29,16 @@
 #include <unistd.h>
 
 struct aurora_discovery_service_hndl {
-    int mdns_sock;
     int tcp_sock;
-    uint8_t mdns_buf[MDNS_BUF_SIZE];
+    pmix_proc_t pmix_proc;
 };
 
-const char servicename[] = "_aurora._tcp.local";
-static int _ads_mdns_callback(int sock, const struct sockaddr *from,
-                              size_t addrlen, mdns_entry_type_t entry,
-                              uint16_t query_id, uint16_t rtype,
-                              uint16_t rclass, uint32_t ttl, const void *data,
-                              size_t size, size_t name_offset,
-                              size_t name_length, size_t record_offset,
-                              size_t record_length, void *user_data);
-static int _client_discovery_callback(int sock, const struct sockaddr *from,
-                                      size_t addrlen, mdns_entry_type_t entry,
-                                      uint16_t query_id, uint16_t rtype,
-                                      uint16_t rclass, uint32_t ttl,
-                                      const void *data, size_t size,
-                                      size_t name_offset, size_t name_length,
-                                      size_t record_offset,
-                                      size_t record_length, void *user_data);
-
 extern ads_hndl *ads_init(void) {
+
     ads_hndl *pHndl = malloc(sizeof(ads_hndl));
     if (!pHndl) {
-        log_error("Failed to allocate ADS Handle");
+        log_error("Failed to allocated ADS Handle");
         return NULL;
-    }
-
-    pHndl->mdns_sock = mdns_socket_open_ipv4(NULL);
-    mdns_socket_setup_ipv4(pHndl->mdns_sock, NULL);
-
-    int loop = 1;
-    if (setsockopt(pHndl->mdns_sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop,
-                   sizeof(loop)) < 0) {
-        log_error("Failed to set IP_MULTICAST_LOOP");
     }
 
     pHndl->tcp_sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -81,7 +55,6 @@ extern ads_hndl *ads_init(void) {
     int ec = bind(pHndl->tcp_sock, (struct sockaddr *) &addr, sizeof(addr));
     if (ec != 0) {
         log_error("Bind to port %d failed eith e=%d", ADS_CONN_PORT, ec);
-        mdns_socket_close(pHndl->mdns_sock);
         close(pHndl->tcp_sock);
         free(pHndl);
         return NULL;
@@ -89,10 +62,63 @@ extern ads_hndl *ads_init(void) {
     ec = listen(pHndl->tcp_sock, ADS_LISTEN_N);
     if (ec != 0) {
         log_error("listener failed eith e=%d", ec);
-        mdns_socket_close(pHndl->mdns_sock);
         close(pHndl->tcp_sock);
         free(pHndl);
         return NULL;
+    }
+
+    struct sockaddr_in pmix_addr;
+    socklen_t pmix_addr_len = sizeof(pmix_addr);
+    ec = getsockname(pHndl->tcp_sock, (struct sockaddr *) &pmix_addr,
+                     &pmix_addr_len);
+    if (ec != 0) {
+        log_error("getsockname failed with e=%d", ec);
+        close(pHndl->tcp_sock);
+        free(pHndl);
+        return NULL;
+    }
+
+    { // PMIx BEGIN
+        size_t ninfo = 2;
+
+        pmix_status_t pmix_status = PMIX_SUCCESS;
+        pmix_persistence_t pmix_persistence = PMIX_PERSIST_PROC;
+        pmix_byte_object_t pmix_bo;
+        pmix_info_t info[ninfo];
+        pHndl->pmix_proc = (pmix_proc_t) PMIX_PROC_STATIC_INIT;
+        if (!PMIx_Initialized()) {
+            pmix_status = PMIx_Init(&pHndl->pmix_proc, NULL, 0);
+        }
+        if (pmix_status != PMIX_SUCCESS) {
+            log_error("PMIx failed to intialize with error %s",
+                      PMIx_Error_string(pmix_status));
+        }
+
+        log_info("Server proc = %s:%d", pHndl->pmix_proc.nspace,
+                 pHndl->pmix_proc.rank);
+
+        pmix_bo.bytes = (char *) &pmix_addr;
+        pmix_bo.size = sizeof(struct sockaddr_in);
+
+        pmix_status = PMIx_Info_load(&info[0], "server_sock_addr", &pmix_bo,
+                                     PMIX_BYTE_OBJECT);
+        if (pmix_status != PMIX_SUCCESS) {
+            log_error("PMIx failed to load key with %s",
+                      PMIx_Error_string(pmix_status));
+        }
+
+        pmix_status = PMIx_Info_load(&info[1], PMIX_PERSISTENCE,
+                                     &pmix_persistence, PMIX_PERSIST);
+        if (pmix_status != PMIX_SUCCESS) {
+            log_error("PMIx failed persistence with %s",
+                      PMIx_Error_string(pmix_status));
+        }
+
+        pmix_status = PMIx_Publish(info, ninfo);
+        if (pmix_status != PMIX_SUCCESS) {
+            log_error("PMIx Publish failed with %s",
+                      PMIx_Error_string(pmix_status));
+        }
     }
 
     return pHndl;
@@ -103,8 +129,21 @@ extern int ads_finalize(ads_hndl **ppHndl) {
         return -1;
     if (!*ppHndl)
         return -1;
-    mdns_socket_close((*ppHndl)->mdns_sock);
+
+    { // PMIx BEGIN
+        pmix_status_t pmix_status = PMIX_SUCCESS;
+        char *pmix_keys[] = {"server_sock_addr"};
+        pmix_status = PMIx_Unpublish(pmix_keys, NULL, 0);
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("Failed to unpublish addr %s",
+                      PMIx_Error_string(pmix_status));
+        pmix_status = PMIx_Finalize(NULL, 0);
+        if (pmix_status != PMIX_SUCCESS)
+            log_error("Failed to finalize the PMIx Client");
+    }
+
     close((*ppHndl)->tcp_sock);
+
     free((*ppHndl));
     *ppHndl = NULL;
     return 0;
@@ -114,22 +153,18 @@ extern int ads_accept_any(ads_hndl *pHndl) {
     if (!pHndl) {
         return -1;
     }
+
     fd_set readfds;
-    int max_fd = (pHndl->mdns_sock > pHndl->tcp_sock) ? pHndl->mdns_sock
-                                                      : pHndl->tcp_sock;
     while (1) {
         FD_ZERO(&readfds);
-        FD_SET(pHndl->mdns_sock, &readfds);
         FD_SET(pHndl->tcp_sock, &readfds);
-        select(max_fd + 1, &readfds, NULL, NULL, NULL);
-        if (FD_ISSET(pHndl->mdns_sock, &readfds)) {
-            mdns_socket_listen(pHndl->mdns_sock, pHndl->mdns_buf, MDNS_BUF_SIZE,
-                               _ads_mdns_callback, pHndl);
-        }
+        select(pHndl->tcp_sock + 1, &readfds, NULL, NULL, NULL);
         if (FD_ISSET(pHndl->tcp_sock, &readfds)) {
             return accept(pHndl->tcp_sock, NULL, NULL);
         }
     }
+
+    return 0;
 }
 
 extern ads_exchange_data_t *ads_exchange(int sock_fd,
@@ -137,6 +172,7 @@ extern ads_exchange_data_t *ads_exchange(int sock_fd,
     if (!pTxData) {
         return NULL;
     }
+
     // Transmit Data to client side
     send(sock_fd, pTxData, sizeof(ads_exchange_data_t), 0);
     send(sock_fd, pTxData->comm.data, pTxData->comm.size, 0);
@@ -232,38 +268,41 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
         return NULL;
     }
 
-    log_trace("Connecting to %s", pConf->opt_server_ip);
+    size_t ndata = 1;
+    size_t ninfo = 1;
 
-    char target_ip[64];
+    pmix_status_t pmix_status = PMIX_SUCCESS;
+    pmix_pdata_t pmix_pdata = PMIX_LOOKUP_STATIC_INIT;
+    pmix_proc_t pmix_cproc = PMIX_PROC_STATIC_INIT;
+    pmix_data_range_t pmix_range = PMIX_RANGE_SESSION;
+
+    pmix_info_t info[ninfo];
+
+    if (!PMIx_Initialized()) {
+        pmix_status = PMIx_Init(&pmix_cproc, NULL, 0);
+        log_debug("Client proc = %s:%d", pmix_cproc.nspace, pmix_cproc.rank);
+    }
+
+    if (pmix_status != PMIX_SUCCESS) {
+        log_error("PMIx failed to initialize with error %s",
+                  PMIx_Error_string(pmix_status));
+    }
+
+    PMIx_Load_key(pmix_pdata.key, "server_sock_addr");
+    PMIx_Info_load(&info[0], PMIX_RANGE, &pmix_range, PMIX_DATA_RANGE);
+    pmix_status = PMIx_Lookup(&pmix_pdata, ndata, info, ninfo);
+
+    if (pmix_status != PMIX_SUCCESS) {
+        log_error("PMIx Lookup failed with %s.",
+                  PMIx_Error_string(pmix_status));
+    }
+
+    log_debug("Got proc %d/%s with key %s and val %s", pmix_pdata.proc.rank,
+              pmix_pdata.proc.nspace, pmix_pdata.key,
+              PMIx_Value_string(&pmix_pdata.value));
+
     ads_conf_t conf;
     conf = *pConf;
-    if (conf.opt_server_ip == NULL) {
-        log_trace("Using Dynamic Discovery to find server");
-        conf.opt_server_ip = target_ip;
-        // Change NULL to a zeroed sockaddr to bind to a random port
-        struct sockaddr_in client_addr;
-        memset(&client_addr, 0, sizeof(client_addr));
-        client_addr.sin_family = AF_INET;
-        client_addr.sin_port = 0; // The OS will pick a random port
-        int sock = mdns_socket_open_ipv4(&client_addr);
-        if (sock < 0) {
-            log_error("Failed to open the socket");
-            return NULL;
-        }
-        int loop = 1;
-        setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-        mdns_query_send(sock, MDNS_RECORDTYPE_A, servicename,
-                        strlen(servicename), NULL, 0, 0);
-        uint8_t buffer[MDNS_BUF_SIZE];
-        int found = mdns_query_recv(sock, buffer, sizeof(buffer),
-                                    _client_discovery_callback, &conf,
-                                    pConf->timeout_ms);
-        mdns_socket_close(sock);
-        if (found <= 0) {
-            log_warn("Failed find the server e=%d", found);
-            return NULL;
-        }
-    }
 
     struct timeval tv = {
         .tv_sec = conf.timeout_ms / 1000,
@@ -280,93 +319,20 @@ extern ads_exchange_data_t *ads_request_exchange(const ads_conf_t *pConf,
         .sin_family = AF_INET,
         .sin_port = htons(ADS_CONN_PORT),
     };
-    inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
+
+    if (pConf->opt_server_ip == NULL) {
+        log_debug("Using PMIx provided IP");
+        memcpy(&addr, pmix_pdata.value.data.bo.bytes,
+               sizeof(struct sockaddr_in));
+    } else {
+        log_debug("Using config provided IP");
+        inet_pton(AF_INET, pConf->opt_server_ip, &addr.sin_addr);
+    }
+
     if (connect(sd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         log_warn("Failed to connect to server socket");
         return NULL;
     }
+
     return ads_exchange(sd, pTxData);
-}
-
-static int _ads_mdns_callback(int sock, const struct sockaddr *from,
-                              size_t addrlen, mdns_entry_type_t entry,
-                              uint16_t query_id, uint16_t rtype,
-                              uint16_t rclass, uint32_t ttl, const void *data,
-                              size_t size, size_t name_offset,
-                              size_t name_length, size_t record_offset,
-                              size_t record_length, void *user_data) {
-
-    (void) rtype;
-    (void) rclass;
-    (void) ttl;
-    (void) name_length;
-    (void) record_offset;
-    (void) record_length;
-    ads_hndl *pHndl = (ads_hndl *) user_data;
-    if (entry != MDNS_ENTRYTYPE_QUESTION)
-        return 0;
-
-    char namebuffer[256];
-    mdns_string_t name = mdns_string_extract(data, size, &name_offset,
-                                             namebuffer, sizeof(namebuffer));
-
-    // Match your specific service name
-    if (strcmp(namebuffer, servicename) == 0) {
-        // Construct the IPv4 address record
-        struct sockaddr_in addr_ipv4;
-        // For BF internal link, this is usually 192.168.100.2
-        // addr_ipv4.sin_addr.s_addr = inet_addr("192.168.100.2");
-        addr_ipv4.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-        mdns_record_t answer = {
-            .name = {servicename, strlen(servicename)},
-            .type = MDNS_RECORDTYPE_A,
-            .data = {.a = {.addr = {addr_ipv4.sin_addr.s_addr, 0, {0}, {0}}}},
-        };
-
-        mdns_query_answer_unicast(sock, from, addrlen, pHndl->mdns_buf,
-                                  MDNS_BUF_SIZE, query_id, MDNS_RECORDTYPE_A,
-                                  namebuffer, name.length, answer, NULL, 0,
-                                  NULL, 0);
-    }
-    return 0;
-}
-
-static int _client_discovery_callback(int sock, const struct sockaddr *from,
-                                      size_t addrlen, mdns_entry_type_t entry,
-                                      uint16_t query_id, uint16_t rtype,
-                                      uint16_t rclass, uint32_t ttl,
-                                      const void *data, size_t size,
-                                      size_t name_offset, size_t name_length,
-                                      size_t record_offset,
-                                      size_t record_length, void *user_data) {
-
-    (void) sock;
-    (void) from;
-    (void) addrlen;
-    (void) query_id;
-    (void) entry;
-    (void) rclass;
-    (void) ttl;
-    (void) name_offset;
-    (void) name_length;
-    log_trace("Callback triggered: Entry Type %d, Record Type %d", entry,
-              rtype);
-    ads_conf_t *pConf = (ads_conf_t *) user_data;
-
-    // We only care about the Answer (RESPONSE), not the Question
-    if (entry != MDNS_ENTRYTYPE_ANSWER)
-        return 0;
-
-    // We specifically want an IPv4 address (A Record)
-    if (rtype == MDNS_RECORDTYPE_A) {
-        struct sockaddr_in addr;
-        mdns_record_parse_a(data, size, record_offset, record_length, &addr);
-
-        // Copy the found IP string into our user_data buffer
-        inet_ntop(AF_INET, &addr.sin_addr, pConf->opt_server_ip, 16);
-
-        return 1; // Returning 1 tells mdns.h to stop the loop immediately
-    }
-    return 0;
 }
