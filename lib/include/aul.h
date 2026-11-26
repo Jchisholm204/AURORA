@@ -4,7 +4,7 @@
  * @brief AURORA User Library
  * @version 0.1
  * @date Created: 2026-02-24
- * @modified Last Modified: 2026-02-24
+ * @modified Last Modified: 2026-11-11
  *
  * @copyright Copyright (c) 2026
  */
@@ -21,6 +21,10 @@
 #define AUL_NAME_LEN 16
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int AUL_Init(const aul_configuration_t *pCFG);
 
 extern int AUL_Finalize(void);
@@ -30,7 +34,7 @@ extern int AUL_Mem_protect(const uint64_t mem_id, const void *const ptr,
 extern int AUL_Mem_unprotect(const uint64_t mem_id);
 
 extern int AUL_Checkpoint(const int version,
-                          const char name[static AUL_NAME_LEN]);
+                          const char name[AUL_NAME_LEN]);
 
 extern int AUL_Test(const int version, const char *name);
 
@@ -43,9 +47,13 @@ extern int AUL_Test(const int version, const char *name);
 
 // Uses DPU Cores - Performs restarts on the DPU
 extern int AUL_Restart_remote(const int version,
-                              const char name[static AUL_NAME_LEN]);
+                              const char name[AUL_NAME_LEN]);
 // Uses CPU Cores - Performs restarts on the CPU
 extern int AUL_Restart_local(const int version,
-                             const char name[static AUL_NAME_LEN]);
+                             const char name[AUL_NAME_LEN]);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
